@@ -59,7 +59,7 @@ function status(){
  const hazards=state.hazards.length>0&&state.hazards.every(z=>state.processes.some(p=>p.id===z.processId)&&["description","exposed","effects","controls","method"].every(k=>isFilled(z[k])));
  const plans=state.plans.length>0&&state.plans.every(p=>state.hazards.some(z=>z.id===p.hazardId)&&["type","objective","goal","frequency","owner","preventive","predictive","corrective","divulgative","instruments","resources"].every(k=>isFilled(p[k])));
  const evidence=EVIDENCE.every(e=>state.evidence.some(f=>f.category===e.id));
- return {entidad:company,procesos,hazards, peligros:hazards,planes,evidencias:evidence};
+ return {entidad:company,procesos:processes,peligros:hazards,planes:plans,evidencias:evidence};
 }
 function updateProgress(){
  const s=status();const done=STEPS.slice(0,5).filter(x=>s[x.id]).length;
