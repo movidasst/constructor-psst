@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#007b85">
+  <meta name="description" content="Prototipo de construcción trazable de Programas de Seguridad y Salud en el Trabajo, basado en NT-04-2023.">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Constructor PSST | La Movida de SST+</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="./assets/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Ir al contenido</a>
+  <header class="topbar">
+    <div class="top-inner">
+      <a class="brand" href="https://www.movidasst.com/" aria-label="La Movida de SST+, página principal">
+        <img src="https://www.movidasst.com/logo-horizontal-movida-sst-plus.webp" alt="Logo horizontal oficial de La Movida de SST+" onerror="this.style.display='none'">
+        <span><strong>Constructor PSST</strong><small>La Movida de SST+</small></span>
+      </a>
+      <span class="version">PROTOTIPO TÉCNICO · FASE 1</span>
+    </div>
+  </header>
+  <div class="disclaimer" role="note"><strong>Entorno de demostración.</strong> Los datos y archivos se guardan únicamente en este navegador, sin cifrado ni respaldo en servidor. Usa <strong>datos de prueba</strong>; no ingreses información médica, personal o empresarial confidencial. No equivale a aprobación, validación ni registro ante INPSASEL.</div>
+  <main id="workspace" class="layout">
+    <aside class="sidebar" aria-label="Etapas del proyecto">
+      <div class="sidebar-intro"><p class="eyebrow">NT-04-2023 · Venezuela</p><h1>Construye desde la evidencia</h1><p>Describe el trabajo real. Conecta los hallazgos con acciones y registra sus soportes.</p></div>
+      <div class="progress-label"><strong id="progressLabel">0 de 5 etapas con datos mínimos</strong><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div id="progressFill"></div></div>
+      <nav id="stepNav" class="step-nav" aria-label="Navegación por etapas"></nav>
+      <div class="sidebar-actions">
+        <button id="downloadBtn" type="button" class="btn btn-outline">Exportar respaldo JSON</button>
+        <button id="resetBtn" type="button" class="btn btn-text">Borrar datos de prueba</button>
+      </div>
+    </aside>
+    <section class="mainarea">
+      <div class="page-heading"><div><p class="eyebrow" id="stepMeta">Programa de Seguridad y Salud en el Trabajo</p><h2 id="stepTitle">Constructor PSST</h2></div><span id="saveStatus" class="save-status" role="status">Guardado local</span></div>
+      <div id="stepDescription" class="description"></div>
+      <div id="content" class="content" aria-live="polite"></div>
+      <div class="footer-actions">
+        <button id="backBtn" type="button" class="btn btn-outline">Anterior</button>
+        <button id="nextBtn" type="button" class="btn btn-primary">Continuar</button>
+      </div>
+      <footer class="footer">La Movida de SST+ · De la Reacción a la Prevención · Herramienta de apoyo, no pronunciamiento oficial del INPSASEL.</footer>
+    </section>
+  </main>
+</body>
+</html>
