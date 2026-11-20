@@ -1,0 +1,13 @@
+:root { color-scheme: light; font-family: system-ui, sans-serif; background: #f8fafc; color: #00205b; }
+body { margin: 0; padding: clamp(16px, 5vw, 48px); }
+main { max-width: 48rem; margin: auto; padding: clamp(16px, 4vw, 32px); background: white; border-top: 5px solid #007b85; border-radius: 12px; }
+.brand { margin: 0; color: #007b85; font-weight: 700; }
+h1 { margin-block: .4rem 1rem; }
+label { display: block; margin-block: .7rem; font-weight: 600; }
+input, textarea { display: block; box-sizing: border-box; margin-top: .25rem; width: 100%; padding: .55rem; border: 1px solid #8293a5; border-radius: 5px; font: inherit; }
+textarea { min-height: 6rem; }
+.actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+button { padding: .7rem; border: 0; border-radius: 5px; background: #007b85; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .55; cursor: wait; }
+button#deliver { background: #00205b; }
+a { color: #007b85; }
