@@ -58,3 +58,13 @@ test("diagnostic accepts course staff while withholding identities and rejecting
   assert.equal(route(launch("new-activity", { ...grader, [prefix + "context"]: { id: "other" } })), null);
   assert.equal(route(launch("new-activity", { [roles]: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"] })), null);
 });
+
+test("student pilot grants only the named learner access to M1", async () => {
+  const { createPilotRouter } = await import("./course-154.mjs");
+  const route = createPilotRouter({ ...config, diagnostic: true, studentPilot: { enabled: true, subject: "100" } });
+  const student = { sub: "100", [prefix + "roles"]: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"] };
+  assert.deepEqual(route(launch("link-1", student)), { moduleId: "m1", contextId: config.contextId, subject: "100" });
+  assert.equal(route(launch("link-2", student)), null);
+  assert.equal(route(launch("link-1", { ...student, sub: "200" })), null);
+  assert.equal(route(launch("link-1", { ...student, [prefix + "roles"]: [] })), null);
+});

@@ -1,4 +1,4 @@
-import { createCourseRouter, createInstructorDiagnostic, course } from "./course-154.mjs";
+import { createPilotRouter, course } from "./course-154.mjs";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -110,7 +110,7 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
   const loginUrl = https(config.loginUrl);
   if (!launchUrl.pathname.endsWith("/launch") || !loginUrl.pathname.endsWith("/login") || loginUrl.origin !== launchUrl.origin ||
       loginUrl.search || launchUrl.search) throw new TypeError("URLs de inicio y retorno incompatibles");
-  const route = config.diagnostic === true ? createInstructorDiagnostic(config) : createCourseRouter(config);
+  const route = createPilotRouter(config);
 
   return async function handle(req) {
     const path = new URL(req.url).pathname;

@@ -74,3 +74,20 @@ export function createInstructorDiagnostic(config) {
       title: typeof resource.title === "string" ? resource.title.slice(0, 200) : null };
   };
 }
+
+export function createPilotRouter(config) {
+  if (config.diagnostic !== true) return createCourseRouter(config);
+  const diagnostic = createInstructorDiagnostic(config);
+  if (config.studentPilot?.enabled !== true) return diagnostic;
+  const normal = createCourseRouter(config);
+  const subject = config.studentPilot.subject;
+  if (!/^[1-9][0-9]{0,17}$/.test(subject ?? "")) throw new TypeError("Cuenta de prueba inválida");
+  return claims => {
+    if (claims.sub === subject && Array.isArray(claims[claimBase + "roles"]) &&
+        claims[claimBase + "roles"].includes("http://purl.imsglobal.org/vocab/lis/v2/membership#Learner")) {
+      const match = normal(claims);
+      if (match?.moduleId === "m1") return match;
+    }
+    return diagnostic(claims);
+  };
+}
