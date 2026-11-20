@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=structured-1">
-  <script src="assets/lti.mjs?v=structured-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=guided-1">
+  <script src="assets/lti.mjs?v=guided-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -36,12 +36,24 @@
           <a href="#m1-evidencias">Bitácora y evidencias</a>
         </nav>
 
+        <fieldset class="card module-guide" data-module="m1">
+          <legend>Cómo trabajar este módulo</legend>
+          <ol>
+            <li>Elige un proceso y prepara un recorrido con el equipo de trabajo y quienes ejecutan las tareas.</li>
+            <li>Observa una tarea completa, contrasta lo observado con el relato de los trabajadores y registra las diferencias.</li>
+            <li>Asigna códigos al mapa, la minuta y la bitácora. Relaciona cada evidencia con lo que respalda.</li>
+          </ol>
+          <p><strong>Entregable.</strong> Ficha del proceso, registro de participación y bitácora. El registro de campo servirá para preparar la validación formal con su acta.</p>
+          <details class="module-details"><summary>Ver ejemplo de recepción de materiales</summary><p>En recepción, el recorrido muestra que el traslado a estantería coincide con el paso de peatones. Regístralo en la descripción y vincúlalo con el croquis E01.</p></details>
+          <p class="reference">NT-04-2023, arts. 7, 8 y 14. Instrumento de revisión, capítulo III.</p>
+        </fieldset>
         <fieldset id="m1-mesa" class="card" data-module="m1">
           <legend>Mesa de trabajo y alcance</legend>
           <p class="section-guide">Delimita dónde harán el levantamiento y cómo se repartirá el trabajo.</p>
           <div class="fields">
             <label>Centro de trabajo<input name="alcance.centro" maxlength="200" placeholder="Planta principal"></label>
             <label>Área, turno y alcance<input name="alcance.area" maxlength="300" placeholder="Recepción de materiales · turno diurno"></label>
+            <label class="wide">Organigrama y estructura del SSST<input name="alcance.organigrama" maxlength="500" placeholder="E00 · Organigrama y referencia a la estructura del SSST"></label>
             <label class="wide">Integrantes, roles y acuerdos de la mesa<textarea name="mesa.organizacion" maxlength="3000" placeholder="Indica quién coordina, quién observa, quién registra y qué actividad acordaron levantar."></textarea></label>
           </div>
         </fieldset>
@@ -78,7 +90,14 @@
 
         <fieldset class="card" data-module="m2" hidden disabled>
           <legend>Alcance y método</legend>
-          <p class="section-guide">Retoma el proceso observado en el Módulo 1. Identifica la etapa de cada hallazgo en la matriz.</p>
+          <ol>
+            <li>Retoma la tarea observada en M1 e identifica las condiciones asociadas al objeto, los medios y la organización del trabajo.</li>
+            <li>Registra el proceso peligroso y documenta por separado la exposición, el posible daño y los controles que observaste.</li>
+            <li>Aplica el método que declare tu equipo. Deja como pendiente lo que requiera mediciones o evaluación especializada.</li>
+          </ol>
+          <p><strong>Entregable.</strong> Matriz con hallazgos codificados (R-01, R-02…), evidencia y evaluaciones pendientes. Usa esos códigos en el Módulo 3.</p>
+          <details class="module-details"><summary>Ver ejemplo de recepción de materiales</summary><p>R-01 · Traslado a estantería · Cruce de equipos móviles y peatones · Riesgo de impacto · Croquis E01 · Por verificar: franjas de mayor tránsito.</p></details>
+          <p class="reference">LOPCYMAT, art. 62. Reglamento Parcial, art. 82. NT-04-2023, art. 14.</p>
           <div class="fields">
             <label>Proceso y alcance<input name="m2.etapa" maxlength="300" required></label>
             <label>Método de evaluación empleado<input name="m2.metodo" maxlength="300" placeholder="Instrumento, versión y criterios aplicados"></label>
@@ -99,7 +118,14 @@
 
         <fieldset class="card" data-module="m3" hidden disabled>
           <legend>Planes de trabajo</legend>
-          <p class="section-guide">Vincula cada actividad con el hallazgo que la motiva y asigna su responsable, recursos y meses de ejecución.</p>
+          <ol>
+            <li>Selecciona un hallazgo de M2. Define qué se quiere lograr y cómo se verificará.</li>
+            <li>Registra alcance, frecuencia, procedimiento, responsables, instrumentos y recursos. Usa el campo de presupuesto para cuantificar los recursos cuando corresponda.</li>
+            <li>Programa la ejecución en el Gantt y revisa la cobertura de los planes que corresponden a los procesos de tu empresa.</li>
+          </ol>
+          <p><strong>Entregable.</strong> Planes vinculados con los hallazgos y cronograma 2027.</p>
+          <details class="module-details"><summary>Ver ejemplo de recepción de materiales</summary><p>R-01 · Revisar la circulación en recepción · Responsable: equipo del área · Inicio y cierre: febrero a marzo · Evidencia: recorrido verificado y plano actualizado.</p></details>
+          <p class="reference">Reglamento Parcial, art. 82. NT-04-2023, arts. 17 y 18. Instrumento de revisión, capítulo IV.</p>
           <div class="row-editor" data-editor="m3"><div data-rows></div><button type="button" data-add>Agregar actividad</button></div>
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
@@ -118,45 +144,57 @@
 
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Primer borrador del PSST</legend>
+          <ol>
+            <li>Revisa las fuentes disponibles de los módulos anteriores. El borrador exportado prioriza la última entrega registrada.</li>
+            <li>Redacta cada capítulo o indica la sección que lo desarrolla. Documenta en el registro de brechas qué falta validar.</li>
+            <li>Descarga y revisa el borrador antes de entregarlo para revisión del taller.</li>
+          </ol>
+          <div class="integration-panel">
+            <h2>Fuentes y documento de trabajo</h2>
+            <div id="integration-sources"></div>
+            <button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
+          </div>
+          <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
           <p class="section-guide">Integra el trabajo de los módulos anteriores. En cada capítulo puedes escribir un resumen o indicar la sección del documento que lo desarrolla.</p>
           <div class="chapter-grid">
             <details class="module-details" open>
               <summary>Capítulo 1 · Generalidades</summary>
-              <label>Contenido o referencia del capítulo 1<textarea name="m4.cap1" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 1<textarea name="m4.cap1" maxlength="1500" placeholder="Identifica la entidad, el alcance, el basamento legal, los objetivos y las responsabilidades."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
-              <label>Contenido o referencia del capítulo 2<textarea name="m4.cap2" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 2<textarea name="m4.cap2" maxlength="1500" placeholder="Expón los compromisos preventivos y cómo se comunica y revisa la política."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 3 · Proceso productivo, procesos de trabajo y procesos peligrosos</summary>
-              <label>Contenido o referencia del capítulo 3<textarea name="m4.cap3" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 3<textarea name="m4.cap3" maxlength="1500" placeholder="Explica el alcance del levantamiento, los procesos cubiertos y la evidencia que queda por validar."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 4 · Planes de trabajo</summary>
-              <label>Contenido o referencia del capítulo 4<textarea name="m4.cap4" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 4<textarea name="m4.cap4" maxlength="1500" placeholder="Resume la cobertura de los planes, sus objetivos, responsables, recursos y seguimiento."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 5 · Investigación de accidentes y enfermedades ocupacionales</summary>
-              <label>Contenido o referencia del capítulo 5<textarea name="m4.cap5" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 5<textarea name="m4.cap5" maxlength="1500" placeholder="Describe responsables, procedimiento y registros de investigación y seguimiento."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 6 · Compromiso de cumplimiento</summary>
-              <label>Contenido o referencia del capítulo 6<textarea name="m4.cap6" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 6<textarea name="m4.cap6" maxlength="1500" placeholder="Identifica a quien se compromete con la ejecución y remite a la carta compromiso."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 7 · Otras consideraciones para la elaboración del PSST</summary>
-              <label>Contenido o referencia del capítulo 7<textarea name="m4.cap7" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 7<textarea name="m4.cap7" maxlength="1500" placeholder="Describe el tratamiento de contratistas u otras situaciones aplicables a tu entidad."></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 8 · Evaluación del programa</summary>
-              <label>Contenido o referencia del capítulo 8<textarea name="m4.cap8" maxlength="1500"></textarea></label>
+              <label>Contenido o referencia del capítulo 8<textarea name="m4.cap8" maxlength="1500" placeholder="Define cómo, cuándo y quién evalúa el programa y da seguimiento a las mejoras."></textarea></label>
             </details>
             <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="600"></textarea></label>
           </div>
         </fieldset>
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Revisión y registro de brechas</legend>
+          <details class="module-details"><summary>Ver ejemplo de una brecha</summary><p>Capítulo III · Falta contrastar el croquis E01 con el turno nocturno · Acción: hacer un recorrido con ese turno y actualizar el registro · Responsable: equipo de campo.</p></details>
           <p class="section-guide">Identifica qué falta verificar, quién lo atenderá y cuándo. Si en la revisión no se detectaron brechas, registra esa conclusión.</p>
           <div class="row-editor" data-editor="m4"><div data-rows></div><button type="button" data-add>Agregar brecha</button></div>
           <div class="fields module-followup">

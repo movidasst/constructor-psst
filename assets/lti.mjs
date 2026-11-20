@@ -1,3 +1,5 @@
+import { buildPsstDocument } from "./psst-document.mjs?v=guided-1";
+
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
 const status = document.getElementById("status");
 const startup = document.getElementById("startup");
@@ -18,6 +20,7 @@ let busy = false;
 const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const rowSchemas = {
   m2: { singular: "Riesgo", fields: [
+    ["codigo","Código del hallazgo (p. ej., R-01)"], ["proceso","Proceso peligroso asociado"],
     ["etapa","Etapa o tarea",true], ["peligro","Peligro o condición observada",true],
     ["riesgo","Riesgo y posible consecuencia",true], ["expuestos","Personas o puestos expuestos"],
     ["controles","Controles existentes"], ["valoracion","Valoración según el método elegido"],
@@ -27,7 +30,9 @@ const rowSchemas = {
     ["plan","Plan de trabajo",true], ["actividad","Actividad preventiva",true],
     ["hallazgo","Hallazgo o riesgo de origen"], ["responsable","Responsable",true],
     ["inicio","Mes de inicio",true,"month"], ["fin","Mes de cierre",true,"month"],
-    ["recursos","Recursos previstos"], ["seguimiento","Indicador o evidencia de ejecución"],
+    ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
+    ["procedimiento","Procedimiento e instrumento"], ["recursos","Recursos y presupuesto"],
+    ["seguimiento","Indicador o evidencia de ejecución"],
   ] },
   m4: { singular: "Brecha", fields: [
     ["capitulo","Capítulo o sección"], ["brecha","Brecha o hallazgo",true],
@@ -37,6 +42,8 @@ const rowSchemas = {
 };
 let editor;
 let moduleId;
+let projectLabel;
+let integrationInputs;
 
 function element(tag, content) {
   const node = document.createElement(tag);
@@ -278,6 +285,35 @@ deliver.addEventListener("click", () => {
   });
 });
 
+function setupDocument(info) {
+  if (info.moduleId !== "m4") return;
+  projectLabel = info.label;
+  integrationInputs = info.inputs ?? {};
+  const sources = document.getElementById("integration-sources");
+  const list = element("ul");
+  for (const number of [1, 2, 3]) {
+    const source = integrationInputs["m" + number];
+    const status = source?.submittedAt ? "Última entrega registrada"
+      : Object.keys(source?.data ?? {}).length ? "Borrador guardado" : "Sin datos guardados";
+    list.append(element("li", "Módulo " + number + " · " + status));
+  }
+  sources.replaceChildren(list);
+  const button = document.getElementById("export-psst");
+  button.addEventListener("click", () => void update("Preparando el borrador…", async () => {
+    await saveIfChanged();
+    const documentText = buildPsstDocument({ label: projectLabel, inputs: integrationInputs, draft });
+    const url = URL.createObjectURL(new Blob([documentText], { type: "text/html;charset=utf-8" }));
+    const link = element("a");
+    link.href = url;
+    link.download = "Borrador_PSST.html";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    tell("Borrador preparado. Ábrelo en tu navegador para revisarlo o guardarlo como PDF.", "success");
+  }));
+}
+
 async function start() {
   if (!ticket) throw new Error("Abre la actividad desde el curso en Moodle.");
   const auth = await api("exchange", { ticket });
@@ -320,6 +356,7 @@ async function start() {
     input.value = typeof value === "string" || typeof value === "number" ? value : "";
   }
   setupRows(info);
+  setupDocument(info);
   savedValues = draftFingerprint();
   if (lastDelivery?.revision === revision) {
     tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. Pendiente de revisión.", "success");
