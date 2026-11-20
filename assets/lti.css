@@ -45,3 +45,17 @@ button#deliver{background:var(--teal);color:white}
 .card[id]{scroll-margin-top:1rem;border-color:#cbdfe5}
 .card[id]:target{border-color:var(--teal)}
 .section-guide{margin:0 0 1rem;max-width:70ch;color:#415669;font-size:.93rem;line-height:1.5}
+.row-editor [data-rows]{display:grid;gap:12px;margin-bottom:12px}
+.row-card{min-inline-size:0;margin:0;padding:12px;border:1px solid #cbdfe5;border-radius:10px;background:#f6fbfb}
+.row-card legend{padding:0 6px;font-size:.9rem}
+.row-card button{margin-top:12px}
+.row-card select{display:block;width:100%;margin-top:.35rem;padding:.64rem .72rem;border:1px solid #9dafbd;border-radius:8px;background:#fbfdff;color:var(--ink);font:inherit;font-weight:450}
+.module-details{margin-top:14px;border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+.module-details summary{cursor:pointer;color:#175960;font-weight:750}
+.module-details label{margin-top:12px}
+.module-followup,.chapter-grid>label{margin-top:1rem}
+.gantt-view{overflow-x:auto}
+.gantt-view table{border-collapse:collapse;width:100%;font-size:.82rem;background:#fff}
+.gantt-view th,.gantt-view td{padding:6px;border:1px solid #d1e2e7;text-align:center}
+.gantt-view th[scope=row]{text-align:left;min-width:10rem;overflow-wrap:anywhere}
+.gantt-view td[data-active]{background:#d7eeee;color:#004d54;font-weight:900}

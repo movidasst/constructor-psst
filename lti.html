@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=m1-campo-1">
-  <script src="assets/lti.mjs?v=m1-campo-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=structured-1">
+  <script src="assets/lti.mjs?v=structured-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -77,41 +77,99 @@
         </fieldset>
 
         <fieldset class="card" data-module="m2" hidden disabled>
-          <legend>Procesos peligrosos por etapa</legend>
+          <legend>Alcance y método</legend>
+          <p class="section-guide">Retoma el proceso observado en el Módulo 1. Identifica la etapa de cada hallazgo en la matriz.</p>
           <div class="fields">
-            <label class="wide">Proceso y etapa observada<input name="m2.etapa" maxlength="300" required></label>
-            <label class="wide">Registro de procesos peligrosos<textarea name="m2.procesos" maxlength="4000" placeholder="Indica en qué etapa o condición de trabajo se identificó cada proceso peligroso y cómo se documentó."></textarea></label>
+            <label>Proceso y alcance<input name="m2.etapa" maxlength="300" required></label>
+            <label>Método de evaluación empleado<input name="m2.metodo" maxlength="300" placeholder="Instrumento, versión y criterios aplicados"></label>
+            <label class="wide">Observaciones generales<textarea name="m2.procesos" maxlength="4000" placeholder="Registra cómo identificaste los procesos peligrosos y quiénes participaron."></textarea></label>
           </div>
         </fieldset>
         <fieldset class="card" data-module="m2" hidden disabled>
           <legend>Matriz inicial de riesgos</legend>
-          <div class="fields">
-            <label class="wide">Entradas de la matriz<textarea name="m2.matriz" maxlength="8000" required placeholder="Pega las filas de tu matriz e incluye los encabezados. Indica el instrumento que usaste y consigna los controles existentes."></textarea></label>
-            <label class="wide">Evaluaciones pendientes<textarea name="m2.pendientes" maxlength="3000" placeholder="Identifica qué falta verificar o medir. Si no hay evaluaciones pendientes, indícalo."></textarea></label>
-            <label class="wide">Referencias de campo y participación<textarea name="m2.evidencia" maxlength="2000" placeholder="Relaciona las entradas con observaciones de campo, aportes de los trabajadores u otras evidencias."></textarea></label>
-          </div>
+          <p class="section-guide">Agrega una fila por hallazgo. Registra los controles que observaste y lo que queda pendiente de verificar.</p>
+          <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
+          <details class="module-details">
+            <summary>Matriz de una versión anterior o archivo de referencia</summary>
+            <label>Referencia o matriz previa<textarea name="m2.matriz" maxlength="8000"></textarea></label>
+            <label>Evaluaciones pendientes<textarea name="m2.pendientes" maxlength="3000"></textarea></label>
+            <label>Referencias de campo y participación<textarea name="m2.evidencia" maxlength="2000"></textarea></label>
+          </details>
         </fieldset>
 
         <fieldset class="card" data-module="m3" hidden disabled>
-          <legend>Planes de trabajo y carta Gantt 2027</legend>
-          <div class="fields">
-            <label class="wide">Planes prioritarios<textarea name="m3.planes" maxlength="8000" required placeholder="Enumera los planes y sus actividades."></textarea></label>
-            <label class="wide">Carta Gantt 2027<textarea name="m3.gantt" maxlength="2000" required placeholder="Pega las actividades y sus meses o una referencia accesible al cronograma."></textarea></label>
-            <label class="wide">Responsables<textarea name="m3.responsables" maxlength="2000" placeholder="Indica quién ejecuta y quién hace seguimiento."></textarea></label>
-            <label class="wide">Recursos<textarea name="m3.recursos" maxlength="2000" placeholder="Describe los recursos previstos."></textarea></label>
-            <label class="wide">Seguimiento<textarea name="m3.seguimiento" maxlength="2000" placeholder="Indica cómo verificarás el avance."></textarea></label>
-          </div>
+          <legend>Planes de trabajo</legend>
+          <p class="section-guide">Vincula cada actividad con el hallazgo que la motiva y asigna su responsable, recursos y meses de ejecución.</p>
+          <div class="row-editor" data-editor="m3"><div data-rows></div><button type="button" data-add>Agregar actividad</button></div>
+        </fieldset>
+        <fieldset class="card" data-module="m3" hidden disabled>
+          <legend>Carta Gantt 2027</legend>
+          <p class="section-guide">El cronograma se actualiza al completar los meses de inicio y cierre de cada actividad.</p>
+          <div id="gantt-view" class="gantt-view"></div>
+          <details class="module-details">
+            <summary>Planes y cronograma de una versión anterior</summary>
+            <label>Planes prioritarios<textarea name="m3.planes" maxlength="8000"></textarea></label>
+            <label>Referencia al cronograma<textarea name="m3.gantt" maxlength="2000"></textarea></label>
+            <label>Responsables<textarea name="m3.responsables" maxlength="2000"></textarea></label>
+            <label>Recursos<textarea name="m3.recursos" maxlength="2000"></textarea></label>
+            <label>Seguimiento<textarea name="m3.seguimiento" maxlength="2000"></textarea></label>
+          </details>
         </fieldset>
 
         <fieldset class="card" data-module="m4" hidden disabled>
-          <legend>Borrador integrado y revisión del PSST</legend>
-          <div class="fields">
-            <label class="wide">Primer borrador del PSST<textarea name="m4.borrador" maxlength="8000" required placeholder="Pega el borrador o una referencia accesible a la versión entregada."></textarea></label>
-            <label class="wide">Registro de brechas<textarea name="m4.brechas" maxlength="2000" required placeholder="Indica los aspectos que quedan por completar o validar."></textarea></label>
-            <label class="wide">Evidencias<textarea name="m4.evidencia" maxlength="2000" placeholder="Identifica las evidencias que respaldan el borrador."></textarea></label>
-            <label class="wide">Participación y revisión<textarea name="m4.validacion" maxlength="2000" placeholder="Registra quién participó y qué falta validar."></textarea></label>
-            <label class="wide">Acciones pendientes<textarea name="m4.pendientes" maxlength="2000" placeholder="Indica qué se hará a continuación, con responsables y plazos."></textarea></label>
+          <legend>Primer borrador del PSST</legend>
+          <p class="section-guide">Integra el trabajo de los módulos anteriores. En cada capítulo puedes escribir un resumen o indicar la sección del documento que lo desarrolla.</p>
+          <div class="chapter-grid">
+            <details class="module-details" open>
+              <summary>Capítulo 1 · Generalidades</summary>
+              <label>Contenido o referencia del capítulo 1<textarea name="m4.cap1" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
+              <label>Contenido o referencia del capítulo 2<textarea name="m4.cap2" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 3 · Proceso productivo, procesos de trabajo y procesos peligrosos</summary>
+              <label>Contenido o referencia del capítulo 3<textarea name="m4.cap3" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 4 · Planes de trabajo</summary>
+              <label>Contenido o referencia del capítulo 4<textarea name="m4.cap4" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 5 · Investigación de accidentes y enfermedades ocupacionales</summary>
+              <label>Contenido o referencia del capítulo 5<textarea name="m4.cap5" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 6 · Compromiso de cumplimiento</summary>
+              <label>Contenido o referencia del capítulo 6<textarea name="m4.cap6" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 7 · Otras consideraciones para la elaboración del PSST</summary>
+              <label>Contenido o referencia del capítulo 7<textarea name="m4.cap7" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 8 · Evaluación del programa</summary>
+              <label>Contenido o referencia del capítulo 8<textarea name="m4.cap8" maxlength="1500"></textarea></label>
+            </details>
+            <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="600"></textarea></label>
           </div>
+        </fieldset>
+        <fieldset class="card" data-module="m4" hidden disabled>
+          <legend>Revisión y registro de brechas</legend>
+          <p class="section-guide">Identifica qué falta verificar, quién lo atenderá y cuándo. Si en la revisión no se detectaron brechas, registra esa conclusión.</p>
+          <div class="row-editor" data-editor="m4"><div data-rows></div><button type="button" data-add>Agregar brecha</button></div>
+          <div class="fields module-followup">
+            <label class="wide">Resultado de la revisión de brechas<textarea name="m4.resultado" maxlength="1200"></textarea></label>
+            <label class="wide">Evidencias de respaldo<textarea name="m4.evidencia" maxlength="2000"></textarea></label>
+            <label class="wide">Participación y revisión<textarea name="m4.validacion" maxlength="2000"></textarea></label>
+            <label class="wide">Acciones pendientes generales<textarea name="m4.pendientes" maxlength="2000"></textarea></label>
+          </div>
+          <details class="module-details">
+            <summary>Borrador y brechas de una versión anterior</summary>
+            <label>Referencia al borrador integrado<textarea name="m4.borrador" maxlength="8000"></textarea></label>
+            <label>Registro previo de brechas<textarea name="m4.brechas" maxlength="2000"></textarea></label>
+          </details>
         </fieldset>
 
         <div class="action-panel">
@@ -119,7 +177,7 @@
             <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Puedes guardar tu avance y volver después.</p>
           </div>
           <div class="actions">
-            <button type="submit">Guardar borrador</button>
+            <button type="submit" formnovalidate>Guardar borrador</button>
             <button type="button" id="deliver">Entregar para revisión</button>
           </div>
         </div>
