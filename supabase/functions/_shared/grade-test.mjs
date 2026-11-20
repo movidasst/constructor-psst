@@ -1,6 +1,7 @@
-// Call only after a signed staff launch matches the registered M1 activity and line item.
-export async function checkOrDispatchGradeTest({ rpc, sender, activity }) {
-  const test = await rpc("psst_lti_claim_grade_test", {
+// Call only after a signed staff launch matches the registered activity and line item.
+export async function checkOrDispatchGradeTest({ rpc, sender, activity, connectionTest = false }) {
+  const testType = connectionTest ? "connection_test" : "grade_test";
+  const test = await rpc("psst_lti_claim_" + testType, {
     p_resource: activity.resourceId, p_line_item: activity.lineItem,
   });
   if (!test) return sender.verifyConnection();
@@ -14,7 +15,7 @@ export async function checkOrDispatchGradeTest({ rpc, sender, activity }) {
   }
 
   try {
-    const saved = await rpc("psst_lti_finish_grade_test",
+    const saved = await rpc("psst_lti_finish_" + testType,
       { p_attempt: test.attempt, p_sent: result.sent, p_http: result.status });
     if (!saved) return { notaDePrueba: "revisar_estado", fase: result.phase, http: result.status };
   } catch {

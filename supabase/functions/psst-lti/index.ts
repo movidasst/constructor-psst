@@ -1,3 +1,4 @@
+import { course } from "../_shared/course-154.mjs";
 import { createLaunchHandler, digest, random } from "../_shared/launch.mjs";
 import { createWorkspaceApi } from "../_shared/workspace.mjs";
 import { createPublicKeyReader } from "../_shared/jwks.mjs";
@@ -48,8 +49,9 @@ async function configuredServices() {
         consume: async (params) => (await rpc("psst_lti_consume", params)) === true,
       },
       onDiagnostic: async (activity) => {
-        if (!config.resourceLinks?.m1 || activity.resourceId !== config.resourceLinks.m1 ||
-            activity.lineItem !== config.lineItems?.m1) return null;
+        const moduleId = Object.keys(course.modules).find(id =>
+          config.resourceLinks?.[id] === activity.resourceId && config.lineItems?.[id] === activity.lineItem);
+        if (!moduleId || !activity.lineItem) return null;
         try {
           await publicKeys();
           const material = await rpc("psst_lti_signing_material", {});
@@ -58,8 +60,11 @@ async function configuredServices() {
             { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
           const sender = createAgsSender({ issuer: config.issuer, tokenUrl: config.tokenUrl,
             clientId: config.clientId, keyId: material.kid, privateKey });
-          const reviewed = await dispatchReviewedPilot({ rpc, sender, activity });
-          return reviewed ?? await checkOrDispatchGradeTest({ rpc, sender, activity });
+          if (moduleId === "m1") {
+            const reviewed = await dispatchReviewedPilot({ rpc, sender, activity });
+            if (reviewed) return reviewed;
+          }
+          return await checkOrDispatchGradeTest({ rpc, sender, activity, connectionTest: moduleId !== "m1" });
         } catch {
           return { autorizado: false, fase: "conexion" };
         }
