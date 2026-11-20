@@ -20,7 +20,7 @@ async function rpc(name, body) {
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => null);
-    throw new Error(problem?.code === "P0001" ? "P0001" : "Datos LTI no disponibles");
+    throw new Error(["P0001", "22023"].includes(problem?.code) ? problem.code : "Datos LTI no disponibles");
   }
   if (name === "psst_lti_begin") {
     await response.body?.cancel();

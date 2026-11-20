@@ -82,11 +82,12 @@ export function createPilotRouter(config) {
   const normal = createCourseRouter(config);
   const subject = config.studentPilot.subject;
   if (!/^[1-9][0-9]{0,17}$/.test(subject ?? "")) throw new TypeError("Cuenta de prueba inválida");
+  const modules = new Set(config.studentPilot.modules ?? ["m1"]);
   return claims => {
     if (claims.sub === subject && Array.isArray(claims[claimBase + "roles"]) &&
         claims[claimBase + "roles"].includes("http://purl.imsglobal.org/vocab/lis/v2/membership#Learner")) {
       const match = normal(claims);
-      if (match?.moduleId === "m1") return match;
+      if (match && modules.has(match.moduleId)) return match;
     }
     return diagnostic(claims);
   };

@@ -52,19 +52,22 @@ export function createWorkspaceApi({ origin, rpc }) {
           if (!body.draft || typeof body.draft !== "object" || Array.isArray(body.draft)) {
             return json({ error: "Borrador inválido." }, 400);
           }
-          result = await rpc("psst_lti_save_m1", { p_hash, p_revision: body.revision, p_draft: body.draft });
+          result = await rpc("psst_lti_save_activity", { p_hash, p_revision: body.revision, p_draft: body.draft });
           if (Number.isInteger(result)) result = { revision: result };
         } else {
           if (typeof body.requestId !== "string" || !requestPattern.test(body.requestId)) {
             return json({ error: "Identificador de entrega inválido." }, 400);
           }
-          result = await rpc("psst_lti_submit_m1", { p_hash, p_revision: body.revision, p_request: body.requestId });
+          result = await rpc("psst_lti_submit_activity", { p_hash, p_revision: body.revision, p_request: body.requestId });
         }
       }
       return result === null ? json({ error: "La sesión venció o la actividad no está disponible." }, 403) : json(result);
     } catch (error) {
       if (error instanceof Error && error.message === "P0001") {
         return json({ error: "El borrador cambió. Vuelve a abrirlo antes de intentar nuevamente." }, 409);
+      }
+      if (error instanceof Error && error.message === "22023") {
+        return json({ error: "Identifica la etapa e incluye al menos una entrada en la matriz antes de entregar." }, 422);
       }
       return json({ error: "No se pudo completar la operación. Inténtalo más tarde." }, 503);
     }

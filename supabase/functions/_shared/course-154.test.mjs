@@ -65,6 +65,11 @@ test("student pilot grants only the named learner access to M1", async () => {
   const student = { sub: "100", [prefix + "roles"]: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"] };
   assert.deepEqual(route(launch("link-1", student)), { moduleId: "m1", contextId: config.contextId, subject: "100" });
   assert.equal(route(launch("link-2", student)), null);
+  const m2Pilot = createPilotRouter({ ...config, diagnostic: true,
+    studentPilot: { enabled: true, subject: "100", modules: ["m1", "m2"] } });
+  assert.equal(m2Pilot(launch("link-2", student))?.moduleId, "m2");
+  assert.equal(m2Pilot(launch("link-2", { ...student, sub: "200" })), null);
+  assert.equal(m2Pilot(launch("link-3", student)), null);
   assert.equal(route(launch("link-1", { ...student, sub: "200" })), null);
   assert.equal(route(launch("link-1", { ...student, [prefix + "roles"]: [] })), null);
 });

@@ -27,7 +27,7 @@ test("passes only the session and revision to the database when submitting", asy
   let calls = 0;
   const api = createWorkspaceApi({ origin, rpc: async (name, args) => {
     calls++;
-    assert.equal(name, "psst_lti_submit_m1");
+    assert.equal(name, "psst_lti_submit_activity");
     assert.deepEqual(Object.keys(args).sort(), ["p_hash", "p_request", "p_revision"]);
     return null;
   } });
