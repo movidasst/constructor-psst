@@ -15,11 +15,11 @@ function https(value) {
   return url;
 }
 
-function random() {
+export function random() {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function digest(value) {
+export async function digest(value) {
   const bytes = await crypto.subtle.digest("SHA-256", encoder.encode(value));
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, "0")).join("");
 }
@@ -29,7 +29,7 @@ function bytes(value) {
   return Uint8Array.from(atob(value.replace(/-/g, "+").replace(/_/g, "/")), ch => ch.charCodeAt(0));
 }
 
-async function readText(message, maxBytes) {
+export async function readText(message, maxBytes) {
   if (!message.body) return "";
   const reader = message.body.getReader();
   const output = new Uint8Array(maxBytes);
@@ -102,7 +102,7 @@ function headers(extra = {}) {
     "X-Frame-Options": "DENY", ...extra };
 }
 
-export function createLaunchHandler(config, { stateStore, get = fetch, now = Date.now }) {
+export function createLaunchHandler(config, { stateStore, get = fetch, now = Date.now, onVerified }) {
   https(config.issuer);
   const auth = https(config.authorizationUrl);
   const jwks = https(config.jwksUrl);
@@ -155,9 +155,16 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
           p_state_hash: await digest(state), p_browser_hash: await digest(browser), p_nonce: claims.nonce,
         });
         if (!used) throw new Error("Sesión vencida o usada");
-        // This diagnostic launch grants no app session or access to project data.
+        const clearCookie = cookieName + "=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0";
+        if (onVerified) {
+          const location = await onVerified({ ...resolved, resourceId: claims[claim + "resource_link"].id });
+          if (!location) return new Response("Tu cuenta todavía no tiene un equipo asignado para este curso.", {
+            status: 403, headers: headers({ "Set-Cookie": clearCookie }),
+          });
+          return new Response(null, { status: 303, headers: headers({ Location: location, "Set-Cookie": clearCookie }) });
+        }
         return new Response("Conexión LTI verificada · " + course.modules[resolved.moduleId], {
-          headers: headers({ "Set-Cookie": cookieName + "=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0" }),
+          headers: headers({ "Set-Cookie": clearCookie }),
         });
       }
 
