@@ -1,11 +1,7 @@
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
-const chapters = [
-  "Generalidades", "Política de Seguridad y Salud en el Trabajo",
-  "Proceso productivo, procesos de trabajo y procesos peligrosos", "Planes de trabajo",
-  "Investigación de accidentes de trabajo y enfermedades ocupacionales",
-  "Compromiso de cumplimiento", "Otras consideraciones", "Evaluación del programa",
-];
+import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=chapters-1";
+
 const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const escape = value => String(value ?? "").replace(/[&<>"']/g, c =>
   ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
@@ -110,16 +106,43 @@ export function buildPsstDocument({ label, inputs = {}, draft = {} }) {
       facts([["Planes anteriores",three.planes],["Cronograma anterior",three.gantt],["Responsables",three.responsables],["Recursos",three.recursos],["Seguimiento",three.seguimiento]]),
     5: note(four.compromiso),
   };
+  const recovered = {
+    cap3_organigrama: hasValue(one.alcance?.organigrama),
+    cap3_diagramas: hasValue(one.flujo?.referencia) || processRows.some(row=>hasValue(row.evidencia)),
+    cap3_riesgos: matrix.length>0 || hasValue(two.matriz),
+    cap3_validacion: hasValue(one.mesa?.asamblea),
+    cap4_prioridades: activities.some(row=>hasValue(row.hallazgo)),
+    cap4_estructura: planRows.length>0,
+    cap4_presupuesto: planRows.some(row=>hasValue(row.recursos)),
+    cap4_cronograma: Boolean(gantt) || hasValue(three.gantt),
+    cap6_carta: hasValue(four.compromiso),
+  };
+  const chapterSections = chapterStructure.map(([title,sections], index) => {
+    const number = index+1;
+    const legacy = note(four["cap"+number]);
+    const content = sections.map(([key,section]) => {
+      const field = chapterKey(number,key);
+      const placeholder = recovered[field]
+        ? "Hay información de apoyo incorporada en este capítulo. Completa o valida la redacción del apartado."
+        : "Pendiente de completar o indicar su referencia.";
+      return "<h3>"+escape(section)+"</h3>"+(note(four[field]) || '<p class="pending">'+placeholder+'</p>');
+    }).join("");
+    return "<section><h2>Capítulo "+number+" · "+escape(title)+"</h2>"+
+      (legacy ? "<h3>Notas generales o referencia adicional</h3>"+legacy : "")+content+(extras[index]??"")+"</section>";
+  }).join("");
+  const annexIndex = table([["Apartado","label"],["Referencia","value"]],annexStructure.map(([key,label])=>({
+    label,value:hasValue(four["anexo_"+key]) ? four["anexo_"+key] : "Pendiente de identificar",
+  })));
   return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Borrador del PSST</title>
 <style>body{font:15px system-ui,sans-serif;max-width:1020px;margin:2rem auto;padding:0 1.2rem;color:#183047}h1,h2,h3{color:#00205b}h2{border-bottom:1px solid #bad9d9;padding-bottom:.35rem}header{border-top:5px solid #007b85;padding-top:.8rem}.note,td{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:.86rem;margin:1rem 0}th,td{border:1px solid #d1e2e7;padding:.35rem;text-align:left;vertical-align:top}th{background:#e3f1f1}.pending{color:#6d4b08}@media print{body{margin:0;padding:0}table{font-size:8pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>
 <body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>Borrador del Programa de Seguridad y Salud en el Trabajo</h1><p>${escape(label)} · Versión de trabajo para revisión</p></header>
+<h2>Introducción</h2>${note(four.introduccion) || '<p class="pending">Pendiente de redactar la introducción.</p>'}
 <h2>Fuentes del taller</h2>${facts([1,2,3].map(n => {
   const source = inputs["m"+n];
   return ["Módulo "+n,source?.submittedAt ? "Última entrega registrada" : "Borrador de trabajo, entrega por verificar"];
 }))}
-${chapters.map((title,index) => '<section><h2>Capítulo '+(index+1)+' · '+title+'</h2>'+
-  (note(four["cap"+(index+1)]) || "<p class=pending>Texto del capítulo pendiente de elaborar o validar.</p>")+
-  (extras[index]??"")+'</section>').join("")}
+${chapterSections}
+<h2>Índice de anexos y soportes</h2>${annexIndex}
 <h2>Anexo · Evidencias y brechas</h2>
 ${facts([["Organización de la mesa",one.mesa?.organizacion],["Bitácora",one.bitacora?.referencia],["Horas",one.bitacora?.horas],
  ["Registro de campo",one.bitacora?.evidencias],["Pendientes de campo",one.bitacora?.pendientes],["Evidencias",four.evidencia],

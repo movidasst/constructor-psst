@@ -82,3 +82,5 @@ button#deliver{background:var(--teal);color:white}
 .review-item select{width:100%;min-height:40px;margin-top:.35rem;border:1px solid #9dafbd;border-radius:8px;background:#fbfdff;color:#253951;font:inherit}
 #plan-coverage li{margin:.38rem 0}
 @media(max-width:600px){.step-controls nav button{flex:1 1 140px;text-align:left}.row-card .fields{gap:.8rem}}
+
+.field-guide{display:block;margin:.35rem 0;color:#415568;font-size:.85rem;font-weight:400;line-height:1.4}

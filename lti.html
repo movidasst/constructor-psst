@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=linked-1">
-  <script src="assets/lti.mjs?v=print-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=chapters-1">
+  <script src="assets/lti.mjs?v=chapters-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -264,7 +264,8 @@
             <button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
           </div>
           <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
-          <p class="section-guide">Integra el trabajo de los módulos anteriores. En cada capítulo puedes escribir un resumen o indicar la sección del documento que lo desarrolla.</p>
+          <p class="section-guide">Completa cada apartado con un texto breve o una referencia precisa al documento que lo desarrolla. Lo que quede vacío aparecerá como pendiente en la descarga.</p>
+          <label>Introducción del PSST<textarea name="m4.introduccion" maxlength="2000" placeholder="Presenta el centro de trabajo, la finalidad del PSST, cómo se elaboró y las fuentes que integra."></textarea></label>
         </fieldset>
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Capítulos I a III</legend>
@@ -278,15 +279,18 @@
           <div class="chapter-grid">
             <details class="module-details" open>
               <summary>Capítulo 1 · Generalidades</summary>
-              <label>Contenido o referencia del capítulo 1<textarea name="m4.cap1" maxlength="1500" placeholder="Identifica la entidad, el alcance, el basamento legal, los objetivos y las responsabilidades."></textarea></label>
+              <div data-chapter="1"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap1" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
-              <label>Contenido o referencia del capítulo 2<textarea name="m4.cap2" maxlength="1500" placeholder="Expón los compromisos preventivos y cómo se comunica y revisa la política."></textarea></label>
+              <div data-chapter="2"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap2" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 3 · Proceso productivo, procesos de trabajo y procesos peligrosos</summary>
-              <label>Contenido o referencia del capítulo 3<textarea name="m4.cap3" maxlength="1500" placeholder="Explica el alcance del levantamiento, los procesos cubiertos y la evidencia que queda por validar."></textarea></label>
+              <div data-chapter="3"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap3" maxlength="1500"></textarea></label>
             </details>
           </div>
         </fieldset>
@@ -302,15 +306,18 @@
           <div class="chapter-grid">
             <details class="module-details">
               <summary>Capítulo 4 · Planes de trabajo</summary>
-              <label>Contenido o referencia del capítulo 4<textarea name="m4.cap4" maxlength="1500" placeholder="Resume la cobertura de los planes, sus objetivos, responsables, recursos y seguimiento."></textarea></label>
+              <div data-chapter="4"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap4" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 5 · Investigación de accidentes y enfermedades ocupacionales</summary>
-              <label>Contenido o referencia del capítulo 5<textarea name="m4.cap5" maxlength="1500" placeholder="Describe responsables, procedimiento y registros de investigación y seguimiento."></textarea></label>
+              <div data-chapter="5"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap5" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 6 · Compromiso de cumplimiento</summary>
-              <label>Contenido o referencia del capítulo 6<textarea name="m4.cap6" maxlength="1500" placeholder="Identifica a quien se compromete con la ejecución y remite a la carta compromiso."></textarea></label>
+              <div data-chapter="6"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap6" maxlength="1500"></textarea></label>
             </details>
           </div>
           <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="2000"></textarea></label>
@@ -327,11 +334,13 @@
           <div class="chapter-grid">
             <details class="module-details">
               <summary>Capítulo 7 · Otras consideraciones para la elaboración del PSST</summary>
-              <label>Contenido o referencia del capítulo 7<textarea name="m4.cap7" maxlength="1500" placeholder="Describe el tratamiento de contratistas u otras situaciones aplicables a tu entidad."></textarea></label>
+              <div data-chapter="7"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap7" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 8 · Evaluación del programa</summary>
-              <label>Contenido o referencia del capítulo 8<textarea name="m4.cap8" maxlength="1500" placeholder="Define cómo, cuándo y quién evalúa el programa y da seguimiento a las mejoras."></textarea></label>
+              <div data-chapter="8"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap8" maxlength="1500"></textarea></label>
             </details>
 
           </div>
@@ -372,6 +381,11 @@
             </details>
           </div>
           <p class="reference"><a class="back" href="https://www.piensosst.com/wp-content/uploads/2025/03/Guia-de-Elaboracion-PSST.pdf" target="_blank" rel="noopener noreferrer">Consultar Guía de Elaboración del INPSASEL</a></p>
+          <details class="module-details">
+            <summary>Índice de anexos y soportes</summary>
+            <p>Indica el código, nombre y ubicación de cada soporte. Usa referencias a los formatos y evidencias de tu equipo.</p>
+            <div id="chapter-annexes" class="fields"></div>
+          </details>
           <div id="review-items"></div>
         </fieldset>
 
