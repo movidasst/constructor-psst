@@ -127,16 +127,25 @@ async function start() {
   const auth = await api("exchange", { ticket });
   session = auth.session;
   const info = await api("workspace");
-  if (!["m1", "m2"].includes(info.moduleId)) {
-    startup.textContent = "Tu proyecto está vinculado. Este módulo se habilitará cuando su entrega esté lista.";
+  const moduleContent = {
+    m2: ["Procesos peligrosos y evaluación de riesgos",
+      "Registra lo observado en campo y entrega la matriz inicial de riesgos para revisión."],
+    m3: ["Planes de trabajo y carta Gantt 2027",
+      "Organiza las acciones preventivas, los responsables y el cronograma para 2027."],
+    m4: ["Integración y revisión final del PSST",
+      "Entrega el primer borrador integrado junto con las brechas y evidencias de revisión."],
+  };
+  const content = moduleContent[info.moduleId];
+  if (info.moduleId !== "m1" && !content) {
+    startup.textContent = "Esta actividad no está disponible.";
     return;
   }
-  if (info.moduleId === "m2") {
-    document.title = "Módulo 2 · Constructor de PSST";
-    document.querySelector(".hero .eyebrow").textContent = "Constructor de PSST · Módulo 2";
-    document.querySelector(".hero h1").textContent = "Procesos peligrosos y evaluación de riesgos";
-    document.querySelector(".hero h1 + p").textContent =
-      "Registra lo observado en campo y entrega la matriz inicial de riesgos para revisión.";
+  if (content) {
+    const number = info.moduleId.slice(1);
+    document.title = "Módulo " + number + " · Constructor de PSST";
+    document.querySelector(".hero .eyebrow").textContent = "Constructor de PSST · Módulo " + number;
+    document.querySelector(".hero h1").textContent = content[0];
+    document.querySelector(".hero h1 + p").textContent = content[1];
   }
   for (const section of form.querySelectorAll("[data-module]")) {
     section.hidden = section.dataset.module !== info.moduleId;

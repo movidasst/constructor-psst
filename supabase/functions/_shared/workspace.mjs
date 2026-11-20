@@ -67,7 +67,7 @@ export function createWorkspaceApi({ origin, rpc }) {
         return json({ error: "El borrador cambió. Vuelve a abrirlo antes de intentar nuevamente." }, 409);
       }
       if (error instanceof Error && error.message === "22023") {
-        return json({ error: "Identifica la etapa e incluye al menos una entrada en la matriz antes de entregar." }, 422);
+        return json({ error: "Completa los campos obligatorios del módulo antes de entregar." }, 422);
       }
       return json({ error: "No se pudo completar la operación. Inténtalo más tarde." }, 503);
     }
