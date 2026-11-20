@@ -1,5 +1,6 @@
 import { createLaunchHandler, digest, random } from "../_shared/launch.mjs";
 import { createWorkspaceApi } from "../_shared/workspace.mjs";
+import { createPublicKeyReader } from "../_shared/jwks.mjs";
 
 const settings = Deno.env.get("PSST_LTI_REGISTRATION");
 const supabase = Deno.env.get("SUPABASE_URL");
@@ -61,26 +62,20 @@ function configuredServices() {
   }
 }
 
-function publicKeys() {
-  try {
-    const key = JSON.parse(Deno.env.get("PSST_LTI_AGS_PUBLIC_JWK") ?? "null");
-    if (key?.kty !== "RSA" || typeof key.kid !== "string" || !key.kid ||
-        typeof key.n !== "string" || typeof key.e !== "string") return null;
-    return { keys: [{ kty: "RSA", kid: key.kid, n: key.n, e: key.e, alg: "RS256", use: "sig" }] };
-  } catch {
-    return null;
-  }
-}
+const publicKeys = createPublicKeyReader(rpc);
 
 const services = configuredServices();
-Deno.serve((req) => {
+Deno.serve(async (req) => {
   const url = new URL(req.url);
   const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|draft|submit)$/)?.[1];
   if (route === "jwks" && req.method === "GET") {
-    const keys = publicKeys();
-    return keys
-      ? Response.json(keys, { headers: { "Cache-Control": "public, max-age=300" } })
-      : Response.json({ error: "Llave de la herramienta pendiente." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+    try {
+      if (!supabase || !secret) throw new Error("Servicio no configurado");
+      return Response.json(await publicKeys(), { headers: { "Cache-Control": "public, max-age=300" } });
+    } catch {
+      return Response.json({ error: "Llave pública no disponible." },
+        { status: 503, headers: { "Cache-Control": "no-store" } });
+    }
   }
   if (!route || route === "jwks") return new Response("Ruta no disponible.", { status: 404 });
   if (!services || !serviceBase) {
