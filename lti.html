@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
   <link rel="stylesheet" href="assets/lti.css?v=receipt-1">
-  <script src="assets/lti.mjs?v=m2-pilot-1" type="module"></script>
+  <script src="assets/lti.mjs?v=all-modules-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -73,6 +73,28 @@
             <label class="wide">Entradas de la matriz<textarea name="m2.matriz" maxlength="8000" required placeholder="Pega las filas de tu matriz e incluye los encabezados. Indica el instrumento que usaste y consigna los controles existentes."></textarea></label>
             <label class="wide">Evaluaciones pendientes<textarea name="m2.pendientes" maxlength="3000" placeholder="Identifica qué falta verificar o medir. Si no hay evaluaciones pendientes, indícalo."></textarea></label>
             <label class="wide">Referencias de campo y participación<textarea name="m2.evidencia" maxlength="2000" placeholder="Relaciona las entradas con observaciones de campo, aportes de los trabajadores u otras evidencias."></textarea></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="card" data-module="m3" hidden disabled>
+          <legend>Planes de trabajo y carta Gantt 2027</legend>
+          <div class="fields">
+            <label class="wide">Planes prioritarios<textarea name="m3.planes" maxlength="8000" required placeholder="Enumera los planes y sus actividades."></textarea></label>
+            <label class="wide">Carta Gantt 2027<textarea name="m3.gantt" maxlength="2000" required placeholder="Pega las actividades y sus meses o una referencia accesible al cronograma."></textarea></label>
+            <label class="wide">Responsables<textarea name="m3.responsables" maxlength="2000" placeholder="Indica quién ejecuta y quién hace seguimiento."></textarea></label>
+            <label class="wide">Recursos<textarea name="m3.recursos" maxlength="2000" placeholder="Describe los recursos previstos."></textarea></label>
+            <label class="wide">Seguimiento<textarea name="m3.seguimiento" maxlength="2000" placeholder="Indica cómo verificarás el avance."></textarea></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="card" data-module="m4" hidden disabled>
+          <legend>Borrador integrado y revisión del PSST</legend>
+          <div class="fields">
+            <label class="wide">Primer borrador del PSST<textarea name="m4.borrador" maxlength="8000" required placeholder="Pega el borrador o una referencia accesible a la versión entregada."></textarea></label>
+            <label class="wide">Registro de brechas<textarea name="m4.brechas" maxlength="2000" required placeholder="Indica los aspectos que quedan por completar o validar."></textarea></label>
+            <label class="wide">Evidencias<textarea name="m4.evidencia" maxlength="2000" placeholder="Identifica las evidencias que respaldan el borrador."></textarea></label>
+            <label class="wide">Participación y revisión<textarea name="m4.validacion" maxlength="2000" placeholder="Registra quién participó y qué falta validar."></textarea></label>
+            <label class="wide">Acciones pendientes<textarea name="m4.pendientes" maxlength="2000" placeholder="Indica qué se hará a continuación, con responsables y plazos."></textarea></label>
           </div>
         </fieldset>
 
