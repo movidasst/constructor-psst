@@ -25,10 +25,11 @@ async function rpc(name, body) {
   return response.json();
 }
 
-function configuredServices() {
-  if (!settings || !serviceBase || !secret) return null;
+async function configuredServices() {
+  if (!serviceBase || !secret) return null;
   try {
-    const config = JSON.parse(settings);
+    const config = settings ? JSON.parse(settings) : await rpc("psst_lti_registration", {});
+    if (!config) return null;
     const app = new URL(config.appUrl ?? "https://constructor.movidasst.com/lti.html");
     if (app.protocol !== "https:" || app.username || app.password || app.hash || app.search) return null;
     if (app.origin !== "https://constructor.movidasst.com" &&
@@ -64,7 +65,15 @@ function configuredServices() {
 
 const publicKeys = createPublicKeyReader(rpc);
 
-const services = configuredServices();
+let currentConfig;
+let loadedUntil = 0;
+function servicesForRequest() {
+  if (!currentConfig || Date.now() >= loadedUntil) {
+    loadedUntil = Date.now() + 15_000;
+    currentConfig = configuredServices();
+  }
+  return currentConfig;
+}
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|draft|submit)$/)?.[1];
@@ -78,6 +87,7 @@ Deno.serve(async (req) => {
     }
   }
   if (!route || route === "jwks") return new Response("Ruta no disponible.", { status: 404 });
+  const services = await servicesForRequest();
   if (!services || !serviceBase) {
     return new Response("La conexión con Moodle todavía no está habilitada.", {
       status: 503, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },

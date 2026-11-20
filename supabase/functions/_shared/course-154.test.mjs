@@ -43,3 +43,18 @@ test("requires a dedicated activity for each of the four modules", () => {
   assert.throws(() => createCourseRouter({ ...config, resourceLinks: { ...config.resourceLinks, m4: "link-1" } }));
   assert.throws(() => createCourseRouter({ ...config, resourceLinks: { m1: "link-1" } }));
 });
+
+test("diagnostic accepts course staff while withholding identities and rejecting learners", async () => {
+  const { createInstructorDiagnostic } = await import("./course-154.mjs");
+  const route = createInstructorDiagnostic(config);
+  const roles = prefix + "roles";
+  const grader = { [roles]: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"],
+    "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint": {
+      lineitem: "https://moodle.example/mod/lti/services.php/154/lineitems/28" } };
+  assert.deepEqual(route(launch("new-activity", grader)), {
+    diagnostic: true, contextId: config.contextId, resourceId: "new-activity",
+    lineItem: "https://moodle.example/mod/lti/services.php/154/lineitems/28", title: null,
+  });
+  assert.equal(route(launch("new-activity", { ...grader, [prefix + "context"]: { id: "other" } })), null);
+  assert.equal(route(launch("new-activity", { [roles]: ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"] })), null);
+});

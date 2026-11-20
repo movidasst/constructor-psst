@@ -1,4 +1,4 @@
-import { createCourseRouter, course } from "./course-154.mjs";
+import { createCourseRouter, createInstructorDiagnostic, course } from "./course-154.mjs";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder("utf-8", { fatal: true });
@@ -110,7 +110,7 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
   const loginUrl = https(config.loginUrl);
   if (!launchUrl.pathname.endsWith("/launch") || !loginUrl.pathname.endsWith("/login") || loginUrl.origin !== launchUrl.origin ||
       loginUrl.search || launchUrl.search) throw new TypeError("URLs de inicio y retorno incompatibles");
-  const route = createCourseRouter(config);
+  const route = config.diagnostic === true ? createInstructorDiagnostic(config) : createCourseRouter(config);
 
   return async function handle(req) {
     const path = new URL(req.url).pathname;
@@ -156,6 +156,13 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
         });
         if (!used) throw new Error("Sesión vencida o usada");
         const clearCookie = cookieName + "=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0";
+        if (resolved.diagnostic === true) {
+          return Response.json({
+            mensaje: "Actividad del curso 154 verificada. Copia estos datos para completar el registro.",
+            curso: resolved.contextId, actividad: resolved.title,
+            idActividadLTI: resolved.resourceId, itemAGS: resolved.lineItem,
+          }, { headers: headers({ "Content-Type": "application/json; charset=utf-8", "Set-Cookie": clearCookie }) });
+        }
         if (onVerified) {
           const location = await onVerified({ ...resolved, resourceId: claims[claim + "resource_link"].id });
           if (!location) return new Response("Tu cuenta todavía no tiene un equipo asignado para este curso.", {

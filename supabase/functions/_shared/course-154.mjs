@@ -30,20 +30,47 @@ export function createCourseRouter({ issuer, clientId, deploymentId, contextId, 
   const lookup = new Map(entries);
 
   return function resolveVerifiedLaunch(claims) {
-    const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-    if (claims.iss !== issuer || !audience.includes(clientId) ||
-        (audience.length > 1 && claims.azp !== clientId) ||
-        (claims.azp !== undefined && claims.azp !== clientId) ||
-        claims[claimBase + "version"] !== "1.3.0" ||
-        claims[claimBase + "message_type"] !== "LtiResourceLinkRequest" ||
-        claims[claimBase + "deployment_id"] !== deploymentId ||
-        claims[claimBase + "context"]?.id !== contextId ||
-        !nonBlank(claims.sub)) {
-      return null;
-    }
-
+    if (!matchesRegistration(claims, { issuer, clientId, deploymentId, contextId })) return null;
     const moduleId = lookup.get(claims[claimBase + "resource_link"]?.id);
     if (!moduleId) return null;
     return { moduleId, contextId, subject: claims.sub };
+  };
+}
+
+function matchesRegistration(claims, { issuer, clientId, deploymentId, contextId }) {
+  const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  return claims.iss === issuer && audience.includes(clientId) &&
+    (audience.length === 1 || claims.azp === clientId) &&
+    (claims.azp === undefined || claims.azp === clientId) &&
+    claims[claimBase + "version"] === "1.3.0" &&
+    claims[claimBase + "message_type"] === "LtiResourceLinkRequest" &&
+    claims[claimBase + "deployment_id"] === deploymentId &&
+    claims[claimBase + "context"]?.id === contextId && nonBlank(claims.sub);
+}
+
+export function createInstructorDiagnostic(config) {
+  if (![config.issuer, config.clientId, config.deploymentId, config.contextId].every(nonBlank)) {
+    throw new TypeError("Faltan datos del registro LTI de Moodle");
+  }
+  const staff = new Set([
+    "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
+    "http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator",
+    "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Administrator",
+  ]);
+  return function resolveForConfiguration(claims) {
+    if (!matchesRegistration(claims, config)) return null;
+    const roles = claims[claimBase + "roles"];
+    const resource = claims[claimBase + "resource_link"];
+    if (!Array.isArray(roles) || !roles.some(role => staff.has(role)) ||
+        !nonBlank(resource?.id) || resource.id.length > 200) return null;
+    const ags = claims["https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"];
+    let lineItem = null;
+    try {
+      const url = new URL(ags?.lineitem);
+      if (url.protocol === "https:" && url.origin === new URL(config.issuer).origin &&
+          !url.username && !url.password && !url.hash) lineItem = url.href;
+    } catch { /* No grading item provided in this launch. */ }
+    return { diagnostic: true, contextId: config.contextId, resourceId: resource.id, lineItem,
+      title: typeof resource.title === "string" ? resource.title.slice(0, 200) : null };
   };
 }
