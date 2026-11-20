@@ -60,10 +60,8 @@ async function configuredServices() {
             { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
           const sender = createAgsSender({ issuer: config.issuer, tokenUrl: config.tokenUrl,
             clientId: config.clientId, keyId: material.kid, privateKey });
-          if (moduleId === "m1") {
-            const reviewed = await dispatchReviewedPilot({ rpc, sender, activity });
-            if (reviewed) return reviewed;
-          }
+          const reviewed = await dispatchReviewedPilot({ rpc, sender, activity });
+          if (reviewed) return reviewed;
           return await checkOrDispatchGradeTest({ rpc, sender, activity, connectionTest: moduleId !== "m1" });
         } catch {
           return { autorizado: false, fase: "conexion" };
