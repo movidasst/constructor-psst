@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=guided-1">
-  <script src="assets/lti.mjs?v=guided-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=linked-1">
+  <script src="assets/lti.mjs?v=linked-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -19,7 +19,7 @@
       <div class="hero">
         <p class="eyebrow">Constructor de PSST · Módulo 1</p>
         <h1>Mesas de trabajo y descripción de procesos</h1>
-        <p>Organiza la mesa de trabajo y documenta una tarea real. Usa los aportes de los trabajadores y las evidencias de campo para preparar el levantamiento que continuarás en el Módulo 2.</p>
+        <p>Organiza la mesa, inventaría los procesos y documenta las tareas reales. Usa los aportes de los trabajadores y las evidencias de campo para preparar el levantamiento que continuarás en el Módulo 2.</p>
         <p class="workspace" id="workspace" hidden></p>
       </div>
       <p id="startup" class="startup" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
@@ -29,17 +29,22 @@
           <p id="receipt-detail"></p>
         </div>
 
-        <nav id="m1-nav" class="section-nav" aria-label="Secciones del Módulo 1" hidden>
-          <a href="#m1-mesa">Mesa y alcance</a>
-          <a href="#m1-proceso">Proceso y tarea</a>
-          <a href="#m1-participacion">Participación</a>
-          <a href="#m1-evidencias">Bitácora y evidencias</a>
-        </nav>
+        <div id="step-controls" class="step-controls" hidden>
+          <p id="step-status" role="status" aria-live="polite"></p>
+          <nav id="step-nav" aria-label="Pasos del módulo"></nav>
+        </div>
 
         <fieldset class="card module-guide" data-module="m1">
           <legend>Cómo trabajar este módulo</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Organiza el levantamiento</p>
+            <p><strong>Por qué importa.</strong> Delimitar el trabajo permite comprobar qué procesos cubre el borrador y qué falta observar.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Una mesa acuerda levantar recepción, almacenamiento y despacho en dos turnos.</p><p class="reference">NT-04-2023, arts. 7, 8 y 14.</p>
+            </details>
+          </div>
           <ol>
-            <li>Elige un proceso y prepara un recorrido con el equipo de trabajo y quienes ejecutan las tareas.</li>
+            <li>Identifica los procesos del centro y comienza por uno y prepara un recorrido con el equipo de trabajo y quienes ejecutan las tareas.</li>
             <li>Observa una tarea completa, contrasta lo observado con el relato de los trabajadores y registra las diferencias.</li>
             <li>Asigna códigos al mapa, la minuta y la bitácora. Relaciona cada evidencia con lo que respalda.</li>
           </ol>
@@ -49,6 +54,13 @@
         </fieldset>
         <fieldset id="m1-mesa" class="card" data-module="m1">
           <legend>Mesa de trabajo y alcance</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Define quiénes participan y en qué centro, áreas y turnos trabajarán.</p>
+            <p><strong>Por qué importa.</strong> El alcance y la asignación de roles orientan la cobertura y dejan trazabilidad.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Centro A · recepción y despacho · equipo de campo y trabajadores de ambos turnos.</p><p class="reference">Reglamento Parcial, art. 81. Guía, capítulos I y III.</p>
+            </details>
+          </div>
           <p class="section-guide">Delimita dónde harán el levantamiento y cómo se repartirá el trabajo.</p>
           <div class="fields">
             <label>Centro de trabajo<input name="alcance.centro" maxlength="200" placeholder="Planta principal"></label>
@@ -57,28 +69,65 @@
             <label class="wide">Integrantes, roles y acuerdos de la mesa<textarea name="mesa.organizacion" maxlength="3000" placeholder="Indica quién coordina, quién observa, quién registra y qué actividad acordaron levantar."></textarea></label>
           </div>
         </fieldset>
+        <fieldset id="m1-inventario" class="card" data-module="m1">
+          <legend>Inventario de procesos</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Agrega los procesos del centro que abarcará el PSST y usa un código distinto por proceso.</p>
+            <p><strong>Por qué importa.</strong> El inventario conecta el proceso productivo con el trabajo observado en cada área.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>P-01 Recepción de materiales. P-02 Almacenamiento. P-03 Despacho.</p><p class="reference">NT-04-2023, art. 14.1. Guía e instrumento, capítulo III.</p>
+            </details>
+          </div>
+          <div class="row-editor" data-editor="procesos"><div data-rows></div><button type="button" data-add>Agregar proceso</button></div>
+        </fieldset>
         <fieldset id="m1-proceso" class="card" data-module="m1">
-          <legend>Proceso de trabajo y tarea observada</legend>
+          <legend>Etapas y tareas</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Agrega las tareas de cada proceso y selecciona el proceso al que pertenecen.</p>
+            <p><strong>Por qué importa.</strong> El vínculo sitúa cada observación en su etapa y permite retomarla al evaluar riesgos.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>T-01 Descarga y T-02 Traslado a estantería se vinculan con P-01 Recepción.</p><p class="reference">NT-04-2023, art. 14.1 y 14.2. Guía e instrumento, capítulo III.</p>
+            </details>
+          </div>
           <p class="section-guide">Sigue el proceso desde su entrada hasta su salida y selecciona una etapa para observar en detalle.</p>
-          <div class="fields">
+                    <div class="row-editor" data-editor="tareas"><div data-rows></div><button type="button" data-add>Agregar tarea</button></div>
+          <details class="module-details">
+            <summary>Ficha de levantamiento anterior</summary>
+<div class="fields">
             <label>Proceso piloto<input name="flujo.proceso" maxlength="200" placeholder="Recepción y almacenamiento de materiales"></label>
             <label>Referencia al mapa o diagrama de flujo<input name="flujo.referencia" maxlength="500" placeholder="E01 · Diagrama de recepción"></label>
             <label class="wide">Secuencia del proceso<textarea name="flujo.secuencia" maxlength="4000" placeholder="Recepción → verificación → traslado → almacenamiento. Indica entradas, etapas y salidas según lo observado."></textarea></label>
             <label class="wide">Etapa y tarea seleccionada<input name="tarea.etapa" maxlength="200" placeholder="Traslado de materiales · movimiento hasta estantería"></label>
             <label class="wide">Cómo se ejecuta la tarea<textarea name="tarea.descripcion" maxlength="6000" placeholder="Describe los pasos reales, quién interviene, qué materiales y equipos usa y qué cambia entre turnos o situaciones."></textarea></label>
           </div>
+                  </details>
         </fieldset>
         <fieldset id="m1-participacion" class="card" data-module="m1">
           <legend>Participación de los trabajadores</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Registra cómo consultaste a quienes ejecutan las tareas y documenta la asamblea cuando corresponda.</p>
+            <p><strong>Por qué importa.</strong> La experiencia de los trabajadores permite contrastar la descripción y respaldar su validación.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>E02 · El turno nocturno indicó que también recibe materiales devueltos.</p><p class="reference">NT-04-2023, arts. 7, 8 y 14.1.3.</p>
+            </details>
+          </div>
           <p class="section-guide">Registra cómo consultaste a quienes realizan la tarea y qué información aportaron al levantamiento.</p>
           <div class="fields">
             <label>Método y fecha de participación<input name="mesa.metodo" maxlength="300" placeholder="Conversación durante el recorrido · 03/12/2026"></label>
             <label>Referencia al registro de participación<input name="mesa.referencia" maxlength="500" placeholder="E02 · Minuta o registro de aportes"></label>
+            <label class="wide">Asamblea general y evidencia de validación<textarea name="mesa.asamblea" maxlength="3000" placeholder="Fecha, referencia del acta, número de trabajadores de nómina y asistencia o aprobación registrada. Si está pendiente, indícalo."></textarea></label>
             <label class="wide">Aportes, acuerdos y puntos por verificar<textarea name="mesa.aportes" maxlength="6000" placeholder="Resume qué aclararon o corrigieron los trabajadores y qué quedó pendiente de confirmar."></textarea></label>
           </div>
         </fieldset>
         <fieldset id="m1-evidencias" class="card" data-module="m1">
           <legend>Bitácora y evidencias</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Relaciona cada hallazgo con su fuente y deja por escrito lo que aún falta verificar.</p>
+            <p><strong>Por qué importa.</strong> El equipo podrá reconstruir qué se observó y con qué respaldo.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>E03 · Recorrido del 03/12 · croquis de recepción · pendiente validar el turno nocturno.</p><p class="reference">NT-04-2023, art. 14. Guía e instrumento, capítulo III.</p>
+            </details>
+          </div>
           <p class="section-guide">Relaciona lo observado con su fuente y deja preparado lo que revisarás en el Módulo 2.</p>
           <div class="fields">
             <label>Referencia a la bitácora<input name="bitacora.referencia" maxlength="500" placeholder="E03 · Bitácora de visitas"></label>
@@ -90,6 +139,13 @@
 
         <fieldset class="card" data-module="m2" hidden disabled>
           <legend>Alcance y método</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Indica qué procesos revisarás y con qué método valorarás sus riesgos.</p>
+            <p><strong>Por qué importa.</strong> El alcance y el método permiten interpretar y comparar las valoraciones de manera consistente.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Se revisan recepción y despacho. La valoración queda pendiente si falta medir la exposición.</p><p class="reference">LOPCYMAT, art. 62. Reglamento Parcial, art. 82.</p>
+            </details>
+          </div>
           <ol>
             <li>Retoma la tarea observada en M1 e identifica las condiciones asociadas al objeto, los medios y la organización del trabajo.</li>
             <li>Registra el proceso peligroso y documenta por separado la exposición, el posible daño y los controles que observaste.</li>
@@ -106,6 +162,13 @@
         </fieldset>
         <fieldset class="card" data-module="m2" hidden disabled>
           <legend>Matriz inicial de riesgos</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Agrega cada hallazgo por separado y selecciona la tarea de M1 cuando esté disponible.</p>
+            <p><strong>Por qué importa.</strong> Así podrás justificar qué exposición se observó, qué control existe y qué acción corresponde.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>R-01 · T-02 · cruce de equipo móvil y peatones · croquis E01 · validar en segundo turno.</p><p class="reference">NT-04-2023, art. 14. Instrumento, capítulo III.</p>
+            </details>
+          </div>
           <p class="section-guide">Agrega una fila por hallazgo. Registra los controles que observaste y lo que queda pendiente de verificar.</p>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
           <details class="module-details">
@@ -117,7 +180,38 @@
         </fieldset>
 
         <fieldset class="card" data-module="m3" hidden disabled>
-          <legend>Planes de trabajo</legend>
+          <legend>Ficha del plan · Artículo 17</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Crea una ficha por plan. Declara objetivo, meta, alcance, frecuencia, responsables, procedimiento, instrumentos y recursos.</p>
+            <p><strong>Por qué importa.</strong> La ficha explica qué se hará y permite revisar si el plan responde a los procesos peligrosos identificados.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>PL-01 · Inspecciones en recepción. Meta: verificar los puntos de cruce previstos. Instrumento: lista de inspección.</p><p class="reference">NT-04-2023, art. 17.</p>
+            </details>
+          </div>
+          <div class="row-editor" data-editor="planes"><div data-rows></div><button type="button" data-add>Agregar plan</button></div>
+        </fieldset>
+        <fieldset class="card" data-module="m3" hidden disabled>
+          <legend>Cobertura de los planes · Artículo 18</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Revisa los componentes de los planes y documenta los pendientes o el sustento que corresponda.</p>
+            <p><strong>Por qué importa.</strong> Un plan prioritario puede atender varios hallazgos. La cobertura se revisa además por familia de plan.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>La ficha de inspecciones ya existe. El cronograma de atención preventiva sigue por desarrollar.</p><p class="reference">NT-04-2023, art. 18. Reglamento Parcial, art. 82. Guía e instrumento, capítulo IV.</p>
+            </details>
+          </div>
+          <p class="reference"><a class="back" href="https://www.piensosst.com/wp-content/uploads/2025/03/GO-NT-04-2023.pdf#page=8" target="_blank" rel="noopener noreferrer">Consultar la NT-04-2023, artículos 17 y 18</a></p>
+          <div id="plan-coverage"></div>
+          <label>Brechas de cobertura y sustento<textarea name="m3.cobertura" maxlength="6000" placeholder="Indica qué componentes están por desarrollar y sustenta la situación de los que requieren aclaración."></textarea></label>
+        </fieldset>
+        <fieldset class="card" data-module="m3" hidden disabled>
+          <legend>Actividades de los planes</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Selecciona el plan y el hallazgo que atiende la actividad. Asigna responsable y meses.</p>
+            <p><strong>Por qué importa.</strong> Un plan puede tener varias actividades. La relación permite seguir el hallazgo hasta su control.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>PL-01 → inspeccionar el cruce R-01 → febrero a marzo → registro de inspección.</p><p class="reference">NT-04-2023, arts. 17 y 18.</p>
+            </details>
+          </div>
           <ol>
             <li>Selecciona un hallazgo de M2. Define qué se quiere lograr y cómo se verificará.</li>
             <li>Registra alcance, frecuencia, procedimiento, responsables, instrumentos y recursos. Usa el campo de presupuesto para cuantificar los recursos cuando corresponda.</li>
@@ -130,6 +224,13 @@
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
           <legend>Carta Gantt 2027</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Verifica fechas, solapamientos, responsables y disponibilidad de recursos.</p>
+            <p><strong>Por qué importa.</strong> El cronograma ayuda a coordinar la ejecución y a comprobar avances durante el año.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Febrero: levantamiento. Marzo: verificación del hallazgo. Ambos deben verse en la fila correspondiente.</p><p class="reference">NT-04-2023, arts. 17 y 18. Guía, capítulo IV.</p>
+            </details>
+          </div>
           <p class="section-guide">El cronograma se actualiza al completar los meses de inicio y cierre de cada actividad.</p>
           <div id="gantt-view" class="gantt-view"></div>
           <details class="module-details">
@@ -144,6 +245,13 @@
 
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Primer borrador del PSST</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Comprueba las fuentes antes de redactar los capítulos. Puedes descargar una versión en cualquier momento.</p>
+            <p><strong>Por qué importa.</strong> El borrador conserva la procedencia de los datos y deja visible lo que falta completar.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>M1 y M2 tienen entrega; M3 aún usa su borrador guardado. Registra la diferencia en la revisión.</p><p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82.</p>
+            </details>
+          </div>
           <ol>
             <li>Revisa las fuentes disponibles de los módulos anteriores. El borrador exportado prioriza la última entrega registrada.</li>
             <li>Redacta cada capítulo o indica la sección que lo desarrolla. Documenta en el registro de brechas qué falta validar.</li>
@@ -156,6 +264,16 @@
           </div>
           <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
           <p class="section-guide">Integra el trabajo de los módulos anteriores. En cada capítulo puedes escribir un resumen o indicar la sección del documento que lo desarrolla.</p>
+        </fieldset>
+        <fieldset class="card" data-module="m4" hidden disabled>
+          <legend>Capítulos I a III</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Redacta generalidades, política y descripción de procesos, o remite a una sección identificable.</p>
+            <p><strong>Por qué importa.</strong> Estos capítulos explican dónde aplica el programa, quién responde por él y de qué diagnóstico parte.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>En el capítulo III vincula P-01, T-02 y R-01 con el organigrama, los diagramas y las evidencias.</p><p class="reference">Guía de Elaboración e instrumento, capítulos I a III.</p>
+            </details>
+          </div>
           <div class="chapter-grid">
             <details class="module-details" open>
               <summary>Capítulo 1 · Generalidades</summary>
@@ -169,6 +287,18 @@
               <summary>Capítulo 3 · Proceso productivo, procesos de trabajo y procesos peligrosos</summary>
               <label>Contenido o referencia del capítulo 3<textarea name="m4.cap3" maxlength="1500" placeholder="Explica el alcance del levantamiento, los procesos cubiertos y la evidencia que queda por validar."></textarea></label>
             </details>
+          </div>
+        </fieldset>
+        <fieldset class="card" data-module="m4" hidden disabled>
+          <legend>Capítulos IV a VI</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Integra planes, investigación y carta compromiso. Relaciona procedimientos y formularios.</p>
+            <p><strong>Por qué importa.</strong> Así el programa documenta cómo se ejecutan los planes y quién se compromete con su cumplimiento.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>En el capítulo IV identifica PL-01 y su cronograma; en el V referencia los formatos de investigación.</p><p class="reference">NT-04-2023, arts. 17–22. Guía e instrumento, capítulos IV a VI.</p>
+            </details>
+          </div>
+          <div class="chapter-grid">
             <details class="module-details">
               <summary>Capítulo 4 · Planes de trabajo</summary>
               <label>Contenido o referencia del capítulo 4<textarea name="m4.cap4" maxlength="1500" placeholder="Resume la cobertura de los planes, sus objetivos, responsables, recursos y seguimiento."></textarea></label>
@@ -181,6 +311,19 @@
               <summary>Capítulo 6 · Compromiso de cumplimiento</summary>
               <label>Contenido o referencia del capítulo 6<textarea name="m4.cap6" maxlength="1500" placeholder="Identifica a quien se compromete con la ejecución y remite a la carta compromiso."></textarea></label>
             </details>
+          </div>
+          <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="2000"></textarea></label>
+        </fieldset>
+        <fieldset class="card" data-module="m4" hidden disabled>
+          <legend>Capítulos VII y VIII</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Documenta las consideraciones aplicables y define cómo se evaluará el programa.</p>
+            <p><strong>Por qué importa.</strong> Los indicadores y la revisión periódica permiten reconocer brechas y ajustar acciones.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Revisión trimestral del cronograma y del cierre de hallazgos, con responsable y registro de acuerdos.</p><p class="reference">Guía e instrumento, capítulos VII y VIII.</p>
+            </details>
+          </div>
+          <div class="chapter-grid">
             <details class="module-details">
               <summary>Capítulo 7 · Otras consideraciones para la elaboración del PSST</summary>
               <label>Contenido o referencia del capítulo 7<textarea name="m4.cap7" maxlength="1500" placeholder="Describe el tratamiento de contratistas u otras situaciones aplicables a tu entidad."></textarea></label>
@@ -189,17 +332,25 @@
               <summary>Capítulo 8 · Evaluación del programa</summary>
               <label>Contenido o referencia del capítulo 8<textarea name="m4.cap8" maxlength="1500" placeholder="Define cómo, cuándo y quién evalúa el programa y da seguimiento a las mejoras."></textarea></label>
             </details>
-            <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="600"></textarea></label>
+
           </div>
         </fieldset>
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Revisión y registro de brechas</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Anota qué falta, dónde, quién lo atenderá, qué evidencia se espera y para cuándo.</p>
+            <p><strong>Por qué importa.</strong> Un borrador mejora cuando deja identificadas las decisiones y verificaciones pendientes.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Capítulo III · Falta contrastar E01 con el turno nocturno · Equipo de campo · próximo recorrido.</p><p class="reference">Guía e instrumento de revisión del PSST.</p>
+            </details>
+          </div>
           <details class="module-details"><summary>Ver ejemplo de una brecha</summary><p>Capítulo III · Falta contrastar el croquis E01 con el turno nocturno · Acción: hacer un recorrido con ese turno y actualizar el registro · Responsable: equipo de campo.</p></details>
           <p class="section-guide">Identifica qué falta verificar, quién lo atenderá y cuándo. Si en la revisión no se detectaron brechas, registra esa conclusión.</p>
           <div class="row-editor" data-editor="m4"><div data-rows></div><button type="button" data-add>Agregar brecha</button></div>
           <div class="fields module-followup">
             <label class="wide">Resultado de la revisión de brechas<textarea name="m4.resultado" maxlength="1200"></textarea></label>
             <label class="wide">Evidencias de respaldo<textarea name="m4.evidencia" maxlength="2000"></textarea></label>
+            <label class="wide">Revisión del SSST y consideración del Comité<textarea name="m4.cssl" maxlength="1800" placeholder="Registra fecha, acta, acuerdos y estado de la revisión."></textarea></label>
             <label class="wide">Participación y revisión<textarea name="m4.validacion" maxlength="2000"></textarea></label>
             <label class="wide">Acciones pendientes generales<textarea name="m4.pendientes" maxlength="2000"></textarea></label>
           </div>
@@ -210,6 +361,23 @@
           </details>
         </fieldset>
 
+        <fieldset class="card" data-module="m4" hidden disabled>
+          <legend>Contraste con los instrumentos</legend>
+          <div class="step-help">
+            <p><strong>Qué hacer.</strong> Contrasta cada criterio y deja evidencia o justificación de su estado.</p>
+            <p><strong>Por qué importa.</strong> La revisión sirve para encontrar faltantes antes de tramitar el programa ante las instancias correspondientes.</p>
+            <details><summary>Ejemplo y referencia</summary>
+              <p>Inducción · Pendiente · falta anexar calendario y facilitadores al plan PL-02.</p><p class="reference">Guía de Elaboración e instrumento de revisión del INPSASEL.</p>
+            </details>
+          </div>
+          <p class="reference"><a class="back" href="https://www.piensosst.com/wp-content/uploads/2025/03/Guia-de-Elaboracion-PSST.pdf" target="_blank" rel="noopener noreferrer">Consultar Guía de Elaboración del INPSASEL</a></p>
+          <div id="review-items"></div>
+        </fieldset>
+
+        <div id="step-actions" class="step-actions" hidden>
+          <button type="button" id="step-back">Anterior</button>
+          <button type="button" id="step-next">Siguiente</button>
+        </div>
         <div class="action-panel">
           <div class="action-copy">
             <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Puedes guardar tu avance y volver después.</p>
