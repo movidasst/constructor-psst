@@ -1,6 +1,7 @@
 import { createLaunchHandler, digest, random } from "../_shared/launch.mjs";
 import { createWorkspaceApi } from "../_shared/workspace.mjs";
 import { createPublicKeyReader } from "../_shared/jwks.mjs";
+import { createAgsSender } from "../_shared/ags.mjs";
 
 const settings = Deno.env.get("PSST_LTI_REGISTRATION");
 const supabase = Deno.env.get("SUPABASE_URL");
@@ -43,6 +44,22 @@ async function configuredServices() {
         create: async ({ state_hash, browser_hash, nonce }) =>
           rpc("psst_lti_begin", { p_state_hash: state_hash, p_browser_hash: browser_hash, p_nonce: nonce }),
         consume: async (params) => (await rpc("psst_lti_consume", params)) === true,
+      },
+      onDiagnostic: async (activity) => {
+        if (!config.resourceLinks?.m1 || activity.resourceId !== config.resourceLinks.m1 ||
+            activity.lineItem !== config.lineItems?.m1) return null;
+        try {
+          await publicKeys();
+          const material = await rpc("psst_lti_signing_material", {});
+          if (!material) return { autorizado: false, fase: "llave" };
+          const privateKey = await crypto.subtle.importKey("jwk", material.privateJwk,
+            { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+          const sender = createAgsSender({ issuer: config.issuer, tokenUrl: config.tokenUrl,
+            clientId: config.clientId, keyId: material.kid, privateKey });
+          return await sender.verifyConnection();
+        } catch {
+          return { autorizado: false, fase: "conexion" };
+        }
       },
       onVerified: async (session) => {
         const ticket = random();

@@ -41,3 +41,14 @@ test("reports a rejected token without sending a grade", async () => {
   assert.deepEqual(await send(grade), { sent: false, phase: "token", status: 403 });
   assert.equal(calls, 1);
 });
+
+test("checks grade authorization without posting a score or returning the token", async () => {
+  let calls = 0;
+  const sender = createAgsSender(config, { request: async url => {
+    calls++;
+    assert.equal(url.href, config.tokenUrl);
+    return Response.json({ access_token: "private-mock-token", token_type: "Bearer" });
+  } });
+  assert.deepEqual(await sender.verifyConnection(), { autorizado: true, fase: "token", http: 200 });
+  assert.equal(calls, 1);
+});

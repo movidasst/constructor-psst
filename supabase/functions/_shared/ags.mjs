@@ -1,12 +1,12 @@
 const scoreScope = "https://purl.imsglobal.org/spec/lti-ags/scope/score";
 const assertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 const algorithm = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" };
-const encoder = new TextEncoder();
+const agsEncoder = new TextEncoder();
 
 function base64url(bytes) {
   return btoa(String.fromCharCode(...bytes)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
-const jsonPart = value => base64url(encoder.encode(JSON.stringify(value)));
+const jsonPart = value => base64url(agsEncoder.encode(JSON.stringify(value)));
 
 function platformUrl(value, origin) {
   const url = new URL(value);
@@ -29,20 +29,12 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
     throw new TypeError("Llave o registro AGS incompleto");
   }
 
-  return async ({ lineItemUrl, subject, score, timestamp }) => {
-    const destination = platformUrl(lineItemUrl, issuer.origin);
-    if (!/\/mod\/lti\/services\.php\/[^/]+\/lineitems\/[^/]+\/lineitem\/?$/.test(destination.pathname) ||
-        typeof subject !== "string" || !subject.trim() || !Number.isInteger(score) || score < 0 || score > 100 ||
-        typeof timestamp !== "string" || !Number.isFinite(Date.parse(timestamp))) {
-      throw new TypeError("Resultado AGS inválido");
-    }
-    destination.pathname = destination.pathname.replace(/\/$/, "") + "/scores";
-
+  async function exchangeToken() {
     const epoch = Math.floor(now() / 1000);
     const payload = jsonPart({ alg: "RS256", typ: "JWT", kid: config.keyId }) + "." +
       jsonPart({ iss: config.clientId, sub: config.clientId, aud: audience,
         iat: epoch, exp: epoch + 120, jti: crypto.randomUUID() });
-    const signature = await crypto.subtle.sign(algorithm, signer, encoder.encode(payload));
+    const signature = await crypto.subtle.sign(algorithm, signer, agsEncoder.encode(payload));
     const assertion = payload + "." + base64url(new Uint8Array(signature));
     const auth = await request(tokenUrl, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(6000),
@@ -54,20 +46,40 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
       return { sent: false, phase: "token", status: auth.status };
     }
     const token = await auth.json();
-    if (typeof token.access_token !== "string" || !token.access_token || token.token_type?.toLowerCase() !== "bearer") {
+    if (typeof token.access_token !== "string" || !token.access_token || typeof token.token_type !== "string" || token.token_type.toLowerCase() !== "bearer") {
       return { sent: false, phase: "token", status: auth.status };
     }
     if (typeof token.scope === "string" && !token.scope.split(/\s+/).includes(scoreScope)) {
       return { sent: false, phase: "scope", status: 403 };
     }
 
+    return { sent: true, phase: "token", status: auth.status, accessToken: token.access_token };
+  }
+
+  async function send({ lineItemUrl, subject, score, timestamp }) {
+    const destination = platformUrl(lineItemUrl, issuer.origin);
+    if (!/\/mod\/lti\/services\.php\/[^/]+\/lineitems\/[^/]+\/lineitem\/?$/.test(destination.pathname) ||
+        typeof subject !== "string" || !subject.trim() || !Number.isInteger(score) || score < 0 || score > 100 ||
+        typeof timestamp !== "string" || !Number.isFinite(Date.parse(timestamp))) {
+      throw new TypeError("Resultado AGS inválido");
+    }
+    destination.pathname = destination.pathname.replace(/\/$/, "") + "/scores";
+
+    const token = await exchangeToken();
+    if (!token.sent) return token;
     const result = await request(destination, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(6000),
-      headers: { Authorization: "Bearer " + token.access_token, "Content-Type": "application/vnd.ims.lis.v1.score+json" },
+      headers: { Authorization: "Bearer " + token.accessToken, "Content-Type": "application/vnd.ims.lis.v1.score+json" },
       body: JSON.stringify({ userId: subject, scoreGiven: score, scoreMaximum: 100,
         timestamp: new Date(timestamp).toISOString(), activityProgress: "Completed", gradingProgress: "FullyGraded" }),
     });
     await result.body?.cancel();
     return { sent: result.ok, phase: "score", status: result.status };
+  }
+
+  send.verifyConnection = async () => {
+    const result = await exchangeToken();
+    return { autorizado: result.sent, fase: result.phase, http: result.status };
   };
+  return send;
 }

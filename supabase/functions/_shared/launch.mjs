@@ -102,7 +102,7 @@ function headers(extra = {}) {
     "X-Frame-Options": "DENY", ...extra };
 }
 
-export function createLaunchHandler(config, { stateStore, get = fetch, now = Date.now, onVerified }) {
+export function createLaunchHandler(config, { stateStore, get = fetch, now = Date.now, onVerified, onDiagnostic }) {
   https(config.issuer);
   const auth = https(config.authorizationUrl);
   const jwks = https(config.jwksUrl);
@@ -157,10 +157,11 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
         if (!used) throw new Error("Sesión vencida o usada");
         const clearCookie = cookieName + "=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0";
         if (resolved.diagnostic === true) {
+          const pruebaAGS = onDiagnostic ? await onDiagnostic(resolved) : null;
           return Response.json({
             mensaje: "Actividad del curso 154 verificada. Copia estos datos para completar el registro.",
             curso: resolved.contextId, actividad: resolved.title,
-            idActividadLTI: resolved.resourceId, itemAGS: resolved.lineItem,
+            idActividadLTI: resolved.resourceId, itemAGS: resolved.lineItem, ...(pruebaAGS ? { pruebaAGS } : {}),
           }, { headers: headers({ "Content-Type": "application/json; charset=utf-8", "Set-Cookie": clearCookie }) });
         }
         if (onVerified) {
