@@ -3,6 +3,7 @@ import { createWorkspaceApi } from "../_shared/workspace.mjs";
 import { createPublicKeyReader } from "../_shared/jwks.mjs";
 import { createAgsSender } from "../_shared/ags.mjs";
 import { checkOrDispatchGradeTest } from "../_shared/grade-test.mjs";
+import { dispatchReviewedPilot } from "../_shared/review-grade.mjs";
 
 const settings = Deno.env.get("PSST_LTI_REGISTRATION");
 const supabase = Deno.env.get("SUPABASE_URL");
@@ -57,7 +58,8 @@ async function configuredServices() {
             { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
           const sender = createAgsSender({ issuer: config.issuer, tokenUrl: config.tokenUrl,
             clientId: config.clientId, keyId: material.kid, privateKey });
-          return await checkOrDispatchGradeTest({ rpc, sender, activity });
+          const reviewed = await dispatchReviewedPilot({ rpc, sender, activity });
+          return reviewed ?? await checkOrDispatchGradeTest({ rpc, sender, activity });
         } catch {
           return { autorizado: false, fase: "conexion" };
         }
