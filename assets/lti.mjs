@@ -1,5 +1,6 @@
-import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=print-1";
+import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=chapters-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
+import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=chapters-1";
 
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
 const status = document.getElementById("status");
@@ -289,6 +290,41 @@ function renderPlanCoverage() {
   view.replaceChildren(list);
 }
 
+function setupChapterFields() {
+  if (moduleId !== "m4") return;
+  for (const container of form.querySelectorAll("[data-chapter]")) {
+    const number = Number(container.dataset.chapter);
+    const definition = chapterStructure[number - 1];
+    if (!definition) continue;
+    const fields = element("div");
+    fields.className = "fields";
+    for (const [key,title,guide] of definition[1]) {
+      const label = element("label",title);
+      label.className = "wide";
+      const control = element("textarea");
+      control.name = "m4." + chapterKey(number,key);
+      control.maxLength = 2400;
+      const help = element("small",guide);
+      help.className = "field-guide";
+      help.id = control.name.replace(".","-") + "-ayuda";
+      control.setAttribute("aria-describedby",help.id);
+      label.append(help,control);
+      fields.append(label);
+    }
+    container.append(fields);
+  }
+  const annexes = document.getElementById("chapter-annexes");
+  if (!annexes?.append) return;
+  for (const [key,title] of annexStructure) {
+    const label = element("label",title);
+    const control = element("textarea");
+    control.name = "m4.anexo_" + key;
+    control.maxLength = 1200;
+    label.append(control);
+    annexes.append(label);
+  }
+}
+
 function setupReview() {
   const container = moduleId === "m4" && document.getElementById("review-items");
   if (!container?.append) return;
@@ -574,6 +610,7 @@ async function start() {
   workspace.hidden = false;
   draft = info.draft ?? {};
   moduleId = info.moduleId;
+  setupChapterFields();
   setupReview();
   revision = info.revision;
   lastDelivery = info.delivery;
