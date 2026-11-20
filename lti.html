@@ -4,34 +4,73 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
-  <title>Constructor de PSST · Taller Moodle</title>
-  <link rel="stylesheet" href="assets/lti.css">
-  <script src="assets/lti.mjs" type="module"></script>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
+  <title>Módulo 1 · Constructor de PSST</title>
+  <link rel="stylesheet" href="assets/lti.css?v=receipt-1">
+  <script src="assets/lti.mjs?v=receipt-1" type="module"></script>
 </head>
 <body>
-  <main>
-    <p class="brand">La Movida de SST+</p>
-    <h1>Constructor de PSST</h1>
-    <p id="status" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
-    <form id="draft" hidden>
-      <h2 id="workspace"></h2>
-      <label>Centro de trabajo<input name="alcance.centro" maxlength="200"></label>
-      <label>Área y alcance<input name="alcance.area" maxlength="300"></label>
-      <label>Proceso piloto<input name="flujo.proceso" maxlength="200"></label>
-      <label>Referencia al mapa y flujo<input name="flujo.referencia" maxlength="500"></label>
-      <label>Etapa de la tarea<input name="tarea.etapa" maxlength="200"></label>
-      <label>Descripción de la tarea<textarea name="tarea.descripcion" maxlength="6000"></textarea></label>
-      <label>Aportes de la mesa de trabajo<textarea name="mesa.aportes" maxlength="6000"></textarea></label>
-      <label>Referencia al registro de participación<input name="mesa.referencia" maxlength="500"></label>
-      <label>Referencia a la bitácora<input name="bitacora.referencia" maxlength="500"></label>
-      <label>Horas de trabajo documentadas<input name="bitacora.horas" type="number" min="0" step="any"></label>
-      <div class="actions">
-        <button type="submit">Guardar borrador</button>
-        <button type="button" id="deliver">Entregar para revisión</button>
+  <div class="shell">
+    <header class="masthead">
+      <img class="brand" src="assets/lti-logo.jpg" alt="La Movida de SST+" width="220" height="73">
+      <a class="back" href="https://movidasst.org/course/view.php?id=154">← Volver a Moodle</a>
+    </header>
+    <main>
+      <div class="hero">
+        <p class="eyebrow">Constructor de PSST · Módulo 1</p>
+        <h1>Mesas de trabajo y descripción de procesos</h1>
+        <p>Describe el proceso piloto, documenta los aportes de los trabajadores y organiza tus evidencias para la primera entrega.</p>
+        <p class="workspace" id="workspace" hidden></p>
       </div>
-    </form>
-    <p><a href="https://movidasst.org/course/view.php?id=154">Volver al curso en Moodle</a></p>
-  </main>
+      <p id="startup" class="startup" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
+      <form id="draft" hidden>
+        <div class="receipt" id="receipt" hidden aria-live="polite">
+          <p class="receipt-title" id="receipt-title"></p>
+          <p id="receipt-detail"></p>
+        </div>
+
+        <fieldset class="card">
+          <legend><span>01</span> Alcance del levantamiento</legend>
+          <div class="fields">
+            <label>Centro de trabajo<input name="alcance.centro" maxlength="200" placeholder="Ej. Planta principal"></label>
+            <label>Área y alcance<input name="alcance.area" maxlength="300" placeholder="Ej. Recepción, turno diurno"></label>
+          </div>
+        </fieldset>
+        <fieldset class="card">
+          <legend><span>02</span> Proceso y tarea observada</legend>
+          <div class="fields">
+            <label>Proceso piloto<input name="flujo.proceso" maxlength="200"></label>
+            <label>Referencia al mapa y flujo<input name="flujo.referencia" maxlength="500" placeholder="Ej. E01 · Diagrama de flujo"></label>
+            <label class="wide">Etapa de la tarea<input name="tarea.etapa" maxlength="200"></label>
+            <label class="wide">Descripción de la tarea<textarea name="tarea.descripcion" maxlength="6000" placeholder="Explica cómo se realiza en la práctica, quién interviene y qué medios usa."></textarea></label>
+          </div>
+        </fieldset>
+        <fieldset class="card">
+          <legend><span>03</span> Participación de los trabajadores</legend>
+          <div class="fields">
+            <label class="wide">Aportes de la mesa de trabajo<textarea name="mesa.aportes" maxlength="6000" placeholder="Registra los aportes, acuerdos y asuntos por verificar."></textarea></label>
+            <label class="wide">Referencia al registro de participación<input name="mesa.referencia" maxlength="500"></label>
+          </div>
+        </fieldset>
+        <fieldset class="card">
+          <legend><span>04</span> Bitácora y evidencias</legend>
+          <div class="fields">
+            <label>Referencia a la bitácora<input name="bitacora.referencia" maxlength="500"></label>
+            <label>Horas de trabajo documentadas<input name="bitacora.horas" type="number" min="0" step="any"></label>
+          </div>
+        </fieldset>
+
+        <div class="action-panel">
+          <div class="action-copy">
+            <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Puedes guardar tu avance y volver después.</p>
+          </div>
+          <div class="actions">
+            <button type="submit">Guardar borrador</button>
+            <button type="button" id="deliver">Entregar para revisión</button>
+          </div>
+        </div>
+      </form>
+    </main>
+  </div>
 </body>
 </html>
