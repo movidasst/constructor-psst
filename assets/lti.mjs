@@ -1,4 +1,4 @@
-import { buildPsstDocument } from "./psst-document.mjs?v=linked-1";
+import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=print-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
@@ -119,7 +119,7 @@ function refreshLinks() {
 function redrawGantt() {
   if (moduleId !== "m3") return;
   const view = document.getElementById("gantt-view");
-  const rows = rowValues("m3").filter(row => row.actividad && Number(row.inicio) >= 1 && Number(row.fin) >= Number(row.inicio));
+  const rows = scheduledActivities(rowValues("m3"));
   if (!rows.length) {
     view.replaceChildren(element("p", "Agrega una actividad y elige sus meses para ver el cronograma."));
     return;
@@ -490,6 +490,34 @@ deliver.addEventListener("click", () => {
   });
 });
 
+function downloadHtml(documentText, filename) {
+  const url = URL.createObjectURL(new Blob([documentText], { type: "text/html;charset=utf-8" }));
+  const link = element("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function setupGanttDownload(info) {
+  if (info.moduleId !== "m3") return;
+  document.getElementById("export-gantt").addEventListener("click", () => {
+    if (busy) return;
+    const documentText = buildGanttDocument({
+      label: info.label, activities: rowValues("m3"), plans: rowValues("planes"),
+      legacyReference: form.elements.namedItem("m3.gantt").value.trim(),
+    });
+    if (!documentText) {
+      tell("Registra una actividad con los meses de inicio y cierre antes de descargar.", "error");
+      return;
+    }
+    downloadHtml(documentText, "Carta_Gantt_2027.html");
+    tell("Carta Gantt preparada. Ábrela para imprimirla o guardarla como PDF.", "success");
+  });
+}
+
 function setupDocument(info) {
   if (info.moduleId !== "m4") return;
   projectLabel = info.label;
@@ -507,14 +535,7 @@ function setupDocument(info) {
   button.addEventListener("click", () => void update("Preparando el borrador…", async () => {
     await saveIfChanged();
     const documentText = buildPsstDocument({ label: projectLabel, inputs: integrationInputs, draft });
-    const url = URL.createObjectURL(new Blob([documentText], { type: "text/html;charset=utf-8" }));
-    const link = element("a");
-    link.href = url;
-    link.download = "Borrador_PSST.html";
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    downloadHtml(documentText, "Borrador_PSST.html");
     tell("Borrador preparado. Ábrelo en tu navegador para revisarlo o guardarlo como PDF.", "success");
   }));
 }
@@ -563,6 +584,7 @@ async function start() {
   }
   setupRows(info);
   setupDocument(info);
+  setupGanttDownload(info);
   setupSteps();
   savedValues = draftFingerprint();
   if (lastDelivery?.revision === revision) {

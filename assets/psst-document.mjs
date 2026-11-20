@@ -20,6 +20,41 @@ const rows = value => Array.isArray(value) ? value.filter(row => row && Object.v
 const facts = entries => table([["Dato","label"],["Registro","value"]],
   entries.filter(([,value]) => hasValue(value)).map(([label,value]) => ({label,value})));
 
+export function scheduledActivities(activities) {
+  return rows(activities).filter(row => hasValue(row.actividad)
+    && /^(?:[1-9]|1[0-2])$/.test(row.inicio)
+    && /^(?:[1-9]|1[0-2])$/.test(row.fin) && Number(row.inicio) <= Number(row.fin));
+}
+
+function ganttTable(scheduled, includeDetails = false) {
+  const columns = includeDetails
+    ? [["Plan","plan"],["Actividad","actividad"],["Responsable","responsable"]]
+    : [["Actividad","actividad"]];
+  return table([...columns,...months.map((month,index)=>[month,index+1])],
+    scheduled.map(row=>({...row,...Object.fromEntries(months.map((_,index)=>
+      [index+1,index+1>=Number(row.inicio) && index+1<=Number(row.fin) ? "●" : ""]))})));
+}
+
+export function buildGanttDocument({ label, activities, plans = [], legacyReference }) {
+  const scheduled = scheduledActivities(activities).map(row => {
+    const plan = plans.find(item=>item.id===row.planRef);
+    return {...row,plan:plan ? [plan.codigo,plan.nombre].filter(Boolean).join(" · ") : row.plan};
+  });
+  const incomplete = rows(activities).filter(row=>hasValue(row.actividad)).length - scheduled.length;
+  if (!scheduled.length && !hasValue(legacyReference)) return "";
+  const chart = ganttTable(scheduled,true);
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Carta Gantt 2027</title>
+<style>@page{size:A4 landscape;margin:12mm}body{font:14px system-ui,sans-serif;color:#183047;max-width:1150px;margin:1.5rem auto;padding:0 1rem}
+header{border-top:5px solid #007b85;padding:.65rem 0}h1{color:#00205b;margin:.4rem 0}.note{white-space:pre-wrap;overflow-wrap:anywhere}.calendar{overflow-x:auto}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
+th,td{padding:5px;border:1px solid #bbced2;text-align:center;overflow-wrap:anywhere;vertical-align:top}th{background:#e3f1f1}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}th:nth-child(1){width:13%}th:nth-child(2){width:23%}th:nth-child(3){width:14%}td:nth-child(n+4){color:#005861;font-weight:700}
+@media print{body{max-width:none;margin:0;padding:0}.calendar{overflow:visible}table{font-size:8.5pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>
+<body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>Carta Gantt 2027</h1><p>${escape(label)} · Cronograma de los planes de trabajo</p></header>
+${chart ? '<p>● Mes de ejecución programado</p><div class="calendar">'+chart+'</div>' : ""}
+${incomplete ? "<p>Actividades con fechas pendientes o inválidas: "+incomplete+".</p>" : ""}
+${hasValue(legacyReference) ? "<h2>Referencia al cronograma anterior</h2>"+note(legacyReference) : ""}
+</body></html>`;
+}
+
 export function buildPsstDocument({ label, inputs = {}, draft = {} }) {
   const one = inputs.m1?.data ?? {};
   const two = inputs.m2?.data?.m2 ?? {};
@@ -35,11 +70,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {} }) {
     hallazgo:labelFor(riskRows,row.riesgoRef) || row.hallazgo}));
   const reviews = reviewGroups.flatMap(([chapter,criteria]) => criteria.map(([key,label]) =>
     ({chapter,label,state:four["estado_"+key] || "Por revisar",note:four["nota_"+key]})));
-  const scheduled = activities.filter(r => r.actividad && /^[1-9]$|^1[0-2]$/.test(r.inicio)
-    && /^[1-9]$|^1[0-2]$/.test(r.fin) && Number(r.inicio) <= Number(r.fin));
-  const gantt = table([["Actividad","actividad"],...months.map((month,index) => [month,index + 1])],
-    scheduled.map(r => Object.assign({ actividad:r.actividad }, Object.fromEntries(months.map((_,index) =>
-      [index+1,index+1 >= Number(r.inicio) && index+1 <= Number(r.fin) ? "●" : ""])))));
+  const gantt = ganttTable(scheduledActivities(activities));
   const process = facts([
     ["Centro",one.alcance?.centro],["Área, turno y alcance",one.alcance?.area],
     ["Organigrama y estructura del SSST",one.alcance?.organigrama],
