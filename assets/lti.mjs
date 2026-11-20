@@ -127,9 +127,20 @@ async function start() {
   const auth = await api("exchange", { ticket });
   session = auth.session;
   const info = await api("workspace");
-  if (info.moduleId !== "m1") {
+  if (!["m1", "m2"].includes(info.moduleId)) {
     startup.textContent = "Tu proyecto está vinculado. Este módulo se habilitará cuando su entrega esté lista.";
     return;
+  }
+  if (info.moduleId === "m2") {
+    document.title = "Módulo 2 · Constructor de PSST";
+    document.querySelector(".hero .eyebrow").textContent = "Constructor de PSST · Módulo 2";
+    document.querySelector(".hero h1").textContent = "Procesos peligrosos y evaluación de riesgos";
+    document.querySelector(".hero h1 + p").textContent =
+      "Registra lo observado en campo y entrega la matriz inicial de riesgos para revisión.";
+  }
+  for (const section of form.querySelectorAll("[data-module]")) {
+    section.hidden = section.dataset.module !== info.moduleId;
+    section.disabled = section.hidden;
   }
   const workspace = document.getElementById("workspace");
   workspace.textContent = "Proyecto · " + info.label;
