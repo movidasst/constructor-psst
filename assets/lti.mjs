@@ -1,15 +1,24 @@
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
 const status = document.getElementById("status");
+const startup = document.getElementById("startup");
 const form = document.getElementById("draft");
 const deliver = document.getElementById("deliver");
+const receipt = document.getElementById("receipt");
 const ticket = new URLSearchParams(location.hash.slice(1)).get("ticket");
 if (location.hash) history.replaceState(null, "", location.pathname + location.search);
 
 let session;
 let revision;
 let draft;
+let savedValues;
+let lastDelivery;
 let pending;
-const tell = message => { status.textContent = message; };
+let busy = false;
+
+function tell(message, state = "") {
+  status.textContent = message;
+  status.dataset.state = state;
+}
 
 async function api(path, body) {
   const headers = {};
@@ -25,53 +34,91 @@ async function api(path, body) {
   return data;
 }
 
-function currentDraft() {
-  const next = structuredClone(draft);
-  for (const [path, value] of new FormData(form)) {
-    const [group, key] = path.split(".");
-    if (!next[group] || typeof next[group] !== "object" || Array.isArray(next[group])) next[group] = {};
-    next[group][key] = path === "bitacora.horas" ? (value.trim() ? Number(value) : null) : value.trim();
-  }
-  return next;
+function formValues() {
+  return [...new FormData(form)].map(([path, value]) => [path, value.trim()]);
+}
+
+function refreshDelivery() {
+  const dirty = JSON.stringify(formValues()) !== savedValues;
+  const current = lastDelivery?.revision === revision && !dirty;
+  deliver.disabled = busy || current;
+  deliver.textContent = current ? "Entrega registrada" : "Entregar para revisión";
+  if (!lastDelivery) return;
+
+  const date = new Date(lastDelivery.submittedAt);
+  const when = Number.isNaN(date.valueOf()) ? "" :
+    new Intl.DateTimeFormat("es-VE", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Caracas" }).format(date);
+  receipt.hidden = false;
+  document.getElementById("receipt-title").textContent = current ? "✓ Entrega registrada" : "✓ Última entrega registrada";
+  document.getElementById("receipt-detail").textContent =
+    (when ? when + " · Hora de Venezuela. " : "") +
+    "Comprobación automática: " + lastDelivery.automaticPoints + " de 60 puntos. Pendiente de revisión técnica." +
+    (current ? "" : " Tienes un borrador más reciente que aún no has entregado.");
 }
 
 async function saveIfChanged() {
-  const next = currentDraft();
-  if (JSON.stringify(next) === JSON.stringify(draft)) return;
+  const values = formValues();
+  const fingerprint = JSON.stringify(values);
+  if (fingerprint === savedValues) return;
+  const next = structuredClone(draft);
+  for (const [path, value] of values) {
+    const [group, key] = path.split(".");
+    if (!next[group] || typeof next[group] !== "object" || Array.isArray(next[group])) next[group] = {};
+    next[group][key] = path === "bitacora.horas" ? (value ? Number(value) : null) : value;
+  }
   const saved = await api("draft", { revision, draft: next });
   draft = next;
   revision = saved.revision;
+  savedValues = fingerprint;
   pending = undefined;
 }
 
-async function update(action) {
-  const buttons = [...form.querySelectorAll("button")];
-  buttons.forEach(button => { button.disabled = true; });
+async function update(message, action) {
+  if (busy) return;
+  busy = true;
+  const save = form.querySelector('button[type="submit"]');
+  const inputs = [...form.querySelectorAll("input, textarea")];
+  save.disabled = true;
+  refreshDelivery();
+  tell(message);
+  inputs.forEach(input => { input.readOnly = true; });
   try {
     await action();
   } catch (error) {
-    tell(error.message);
+    tell(error.message, "error");
   } finally {
-    buttons.forEach(button => { button.disabled = false; });
+    inputs.forEach(input => { input.readOnly = false; });
+    busy = false;
+    save.disabled = false;
+    refreshDelivery();
   }
 }
 
+form.addEventListener("input", () => {
+  tell("Tienes cambios en el borrador.");
+  refreshDelivery();
+});
+
 form.addEventListener("submit", event => {
   event.preventDefault();
-  void update(async () => {
+  void update("Guardando el borrador…", async () => {
     await saveIfChanged();
-    tell("Borrador guardado.");
+    tell("✓ Borrador guardado.", "success");
   });
 });
 
 deliver.addEventListener("click", () => {
-  if (!form.reportValidity()) return;
-  void update(async () => {
+  if (busy || deliver.disabled) return;
+  if (!form.reportValidity()) {
+    tell("Corrige el campo marcado antes de entregar.", "error");
+    return;
+  }
+  void update("Enviando la entrega…", async () => {
     await saveIfChanged();
     pending ??= crypto.randomUUID();
-    const result = await api("submit", { revision, requestId: pending });
+    lastDelivery = await api("submit", { revision, requestId: pending });
     pending = undefined;
-    tell("Entrega registrada. Comprobación automática: " + result.automaticPoints + " de 60. Falta la revisión técnica.");
+    tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. Pendiente de revisión.", "success");
   });
 });
 
@@ -81,19 +128,32 @@ async function start() {
   session = auth.session;
   const info = await api("workspace");
   if (info.moduleId !== "m1") {
-    tell("Tu proyecto está vinculado. Este módulo se habilitará cuando su entrega esté lista.");
+    startup.textContent = "Tu proyecto está vinculado. Este módulo se habilitará cuando su entrega esté lista.";
     return;
   }
-  document.getElementById("workspace").textContent = "Módulo 1 · " + info.label;
+  const workspace = document.getElementById("workspace");
+  workspace.textContent = "Proyecto · " + info.label;
+  workspace.hidden = false;
   draft = info.draft;
   revision = info.revision;
+  lastDelivery = info.delivery;
   for (const input of form.querySelectorAll("[name]")) {
     const [group, key] = input.name.split(".");
     const value = draft[group]?.[key];
     input.value = typeof value === "string" || typeof value === "number" ? value : "";
   }
+  savedValues = JSON.stringify(formValues());
+  if (lastDelivery?.revision === revision) {
+    tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. Pendiente de revisión.", "success");
+  } else {
+    tell("Guarda tu avance o entrega una versión para revisión.");
+  }
+  startup.hidden = true;
   form.hidden = false;
-  tell("Completa la ficha, guarda tu borrador o envía una versión para revisión.");
+  refreshDelivery();
 }
 
-start().catch(error => tell(error.message));
+start().catch(error => {
+  startup.textContent = error.message;
+  startup.dataset.state = "error";
+});
