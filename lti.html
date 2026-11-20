@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=receipt-1">
-  <script src="assets/lti.mjs?v=all-modules-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=m1-campo-1">
+  <script src="assets/lti.mjs?v=m1-campo-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -19,7 +19,7 @@
       <div class="hero">
         <p class="eyebrow">Constructor de PSST · Módulo 1</p>
         <h1>Mesas de trabajo y descripción de procesos</h1>
-        <p>Describe el proceso piloto, documenta los aportes de los trabajadores y organiza tus evidencias para la primera entrega.</p>
+        <p>Organiza la mesa de trabajo y documenta una tarea real. Usa los aportes de los trabajadores y las evidencias de campo para preparar el levantamiento que continuarás en el Módulo 2.</p>
         <p class="workspace" id="workspace" hidden></p>
       </div>
       <p id="startup" class="startup" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
@@ -29,34 +29,50 @@
           <p id="receipt-detail"></p>
         </div>
 
-        <fieldset class="card" data-module="m1">
-          <legend><span>01</span> Alcance del levantamiento</legend>
+        <nav id="m1-nav" class="section-nav" aria-label="Secciones del Módulo 1" hidden>
+          <a href="#m1-mesa">Mesa y alcance</a>
+          <a href="#m1-proceso">Proceso y tarea</a>
+          <a href="#m1-participacion">Participación</a>
+          <a href="#m1-evidencias">Bitácora y evidencias</a>
+        </nav>
+
+        <fieldset id="m1-mesa" class="card" data-module="m1">
+          <legend>Mesa de trabajo y alcance</legend>
+          <p class="section-guide">Delimita dónde harán el levantamiento y cómo se repartirá el trabajo.</p>
           <div class="fields">
-            <label>Centro de trabajo<input name="alcance.centro" maxlength="200" placeholder="Ej. Planta principal"></label>
-            <label>Área y alcance<input name="alcance.area" maxlength="300" placeholder="Ej. Recepción, turno diurno"></label>
+            <label>Centro de trabajo<input name="alcance.centro" maxlength="200" placeholder="Planta principal"></label>
+            <label>Área, turno y alcance<input name="alcance.area" maxlength="300" placeholder="Recepción de materiales · turno diurno"></label>
+            <label class="wide">Integrantes, roles y acuerdos de la mesa<textarea name="mesa.organizacion" maxlength="3000" placeholder="Indica quién coordina, quién observa, quién registra y qué actividad acordaron levantar."></textarea></label>
           </div>
         </fieldset>
-        <fieldset class="card" data-module="m1">
-          <legend><span>02</span> Proceso y tarea observada</legend>
+        <fieldset id="m1-proceso" class="card" data-module="m1">
+          <legend>Proceso de trabajo y tarea observada</legend>
+          <p class="section-guide">Sigue el proceso desde su entrada hasta su salida y selecciona una etapa para observar en detalle.</p>
           <div class="fields">
-            <label>Proceso piloto<input name="flujo.proceso" maxlength="200"></label>
-            <label>Referencia al mapa y flujo<input name="flujo.referencia" maxlength="500" placeholder="Ej. E01 · Diagrama de flujo"></label>
-            <label class="wide">Etapa de la tarea<input name="tarea.etapa" maxlength="200"></label>
-            <label class="wide">Descripción de la tarea<textarea name="tarea.descripcion" maxlength="6000" placeholder="Explica cómo se realiza en la práctica, quién interviene y qué medios usa."></textarea></label>
+            <label>Proceso piloto<input name="flujo.proceso" maxlength="200" placeholder="Recepción y almacenamiento de materiales"></label>
+            <label>Referencia al mapa o diagrama de flujo<input name="flujo.referencia" maxlength="500" placeholder="E01 · Diagrama de recepción"></label>
+            <label class="wide">Secuencia del proceso<textarea name="flujo.secuencia" maxlength="4000" placeholder="Recepción → verificación → traslado → almacenamiento. Indica entradas, etapas y salidas según lo observado."></textarea></label>
+            <label class="wide">Etapa y tarea seleccionada<input name="tarea.etapa" maxlength="200" placeholder="Traslado de materiales · movimiento hasta estantería"></label>
+            <label class="wide">Cómo se ejecuta la tarea<textarea name="tarea.descripcion" maxlength="6000" placeholder="Describe los pasos reales, quién interviene, qué materiales y equipos usa y qué cambia entre turnos o situaciones."></textarea></label>
           </div>
         </fieldset>
-        <fieldset class="card" data-module="m1">
-          <legend><span>03</span> Participación de los trabajadores</legend>
+        <fieldset id="m1-participacion" class="card" data-module="m1">
+          <legend>Participación de los trabajadores</legend>
+          <p class="section-guide">Registra cómo consultaste a quienes realizan la tarea y qué información aportaron al levantamiento.</p>
           <div class="fields">
-            <label class="wide">Aportes de la mesa de trabajo<textarea name="mesa.aportes" maxlength="6000" placeholder="Registra los aportes, acuerdos y asuntos por verificar."></textarea></label>
-            <label class="wide">Referencia al registro de participación<input name="mesa.referencia" maxlength="500"></label>
+            <label>Método y fecha de participación<input name="mesa.metodo" maxlength="300" placeholder="Conversación durante el recorrido · 03/12/2026"></label>
+            <label>Referencia al registro de participación<input name="mesa.referencia" maxlength="500" placeholder="E02 · Minuta o registro de aportes"></label>
+            <label class="wide">Aportes, acuerdos y puntos por verificar<textarea name="mesa.aportes" maxlength="6000" placeholder="Resume qué aclararon o corrigieron los trabajadores y qué quedó pendiente de confirmar."></textarea></label>
           </div>
         </fieldset>
-        <fieldset class="card" data-module="m1">
-          <legend><span>04</span> Bitácora y evidencias</legend>
+        <fieldset id="m1-evidencias" class="card" data-module="m1">
+          <legend>Bitácora y evidencias</legend>
+          <p class="section-guide">Relaciona lo observado con su fuente y deja preparado lo que revisarás en el Módulo 2.</p>
           <div class="fields">
-            <label>Referencia a la bitácora<input name="bitacora.referencia" maxlength="500"></label>
+            <label>Referencia a la bitácora<input name="bitacora.referencia" maxlength="500" placeholder="E03 · Bitácora de visitas"></label>
             <label>Horas de trabajo documentadas<input name="bitacora.horas" type="number" min="0" step="any"></label>
+            <label class="wide">Registro de evidencias<textarea name="bitacora.evidencias" maxlength="4500" placeholder="Código, fecha, fuente y qué respalda. Puedes referenciar observaciones, minutas, croquis o videos del proceso de trabajo."></textarea></label>
+            <label class="wide">Pendientes para el Módulo 2<textarea name="bitacora.pendientes" maxlength="3000" placeholder="Indica qué etapa, condición o información queda por revisar y cómo planeas verificarla."></textarea></label>
           </div>
         </fieldset>
 

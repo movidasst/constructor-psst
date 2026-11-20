@@ -135,6 +135,7 @@ async function start() {
     m4: ["Integración y revisión final del PSST",
       "Entrega el primer borrador integrado junto con las brechas y evidencias de revisión."],
   };
+  document.getElementById("m1-nav").hidden = info.moduleId !== "m1";
   const content = moduleContent[info.moduleId];
   if (info.moduleId !== "m1" && !content) {
     startup.textContent = "Esta actividad no está disponible.";
