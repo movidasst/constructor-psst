@@ -31,7 +31,7 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
 
   return async ({ lineItemUrl, subject, score, timestamp }) => {
     const destination = platformUrl(lineItemUrl, issuer.origin);
-    if (!/\/lineitems\/[^/]+\/?$/.test(destination.pathname) ||
+    if (!/\/mod\/lti\/services\.php\/[^/]+\/lineitems\/[^/]+\/lineitem\/?$/.test(destination.pathname) ||
         typeof subject !== "string" || !subject.trim() || !Number.isInteger(score) || score < 0 || score > 100 ||
         typeof timestamp !== "string" || !Number.isFinite(Date.parse(timestamp))) {
       throw new TypeError("Resultado AGS inválido");

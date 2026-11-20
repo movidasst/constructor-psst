@@ -6,7 +6,7 @@ const algorithm = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256", publicExponent: 
 const key = await crypto.subtle.generateKey(algorithm, false, ["sign","verify"]);
 const config = { issuer: "https://moodle.example", tokenUrl: "https://moodle.example/mod/lti/token.php",
   clientId: "client", keyId: "test-key", privateKey: key.privateKey };
-const grade = { lineItemUrl: "https://moodle.example/mod/lti/services.php/154/lineitems/28?type_id=7",
+const grade = { lineItemUrl: "https://moodle.example/mod/lti/services.php/154/lineitems/444/lineitem?type_id=1",
   subject: "moodle-user", score: 95, timestamp: "2026-11-20T20:42:00.000Z" };
 
 test("exchanges a signed client assertion and sends the grade to the configured line item", async () => {
@@ -22,8 +22,8 @@ test("exchanges a signed client assertion and sends the grade to the configured 
       assert.equal(await crypto.subtle.verify(algorithm, key.publicKey, Buffer.from(signature, "base64url"), Buffer.from(header + "." + claims)), true);
       return Response.json({ access_token: "mock-token", token_type: "Bearer" });
     }
-    assert.equal(url.pathname, "/mod/lti/services.php/154/lineitems/28/scores");
-    assert.equal(url.search, "?type_id=7");
+    assert.equal(url.pathname, "/mod/lti/services.php/154/lineitems/444/lineitem/scores");
+    assert.equal(url.search, "?type_id=1");
     assert.deepEqual(JSON.parse(params.body), { userId: grade.subject, scoreGiven: 95, scoreMaximum: 100,
       timestamp: grade.timestamp, activityProgress: "Completed", gradingProgress: "FullyGraded" });
     return new Response(null, { status: 204 });
@@ -31,6 +31,7 @@ test("exchanges a signed client assertion and sends the grade to the configured 
   assert.deepEqual(await send(grade), { sent: true, phase: "score", status: 204 });
   assert.equal(calls, 2);
   await assert.rejects(send({ ...grade, lineItemUrl: "https://other.example/lineitems/28" }));
+  await assert.rejects(send({ ...grade, lineItemUrl: "https://moodle.example/mod/lti/services.php/154/lineitems/444" }));
   assert.equal(calls, 2);
 });
 
