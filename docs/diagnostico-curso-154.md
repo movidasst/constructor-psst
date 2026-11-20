@@ -1,0 +1,5 @@
+# Comprobación de actividades del curso 154
+
+El registro real se guarda en Supabase en psst_pilot.lti_registration y se consulta mediante un RPC reservado al servidor. En modo diagnóstico se comprueba un lanzamiento firmado de Moodle y se muestran únicamente los identificadores del curso, de la actividad y su ítem AGS si está presente. El contexto se limita a 154 y el lanzamiento requiere rol docente o de administración. Este modo no concede acceso a proyectos y no envía calificaciones.
+
+En el curso 154 crea inicialmente la actividad de herramienta externa Módulo 1 con calificación numérica y el Constructor de PSST preconfigurado. Déjala oculta, ábrela con cuenta docente y registra los valores que muestra. Después se registran las demás actividades, se asocian sus identificadores y se habilita el acceso a los proyectos. Si el ítem AGS llega vacío, verificar que la actividad esté configurada para calificar y que la herramienta tenga habilitada la sincronización. La herramienta de diagnóstico no necesita ni muestra credenciales del estudiante.
