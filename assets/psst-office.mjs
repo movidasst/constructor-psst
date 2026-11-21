@@ -1,4 +1,5 @@
-import { operationalSchedule, recordsOf, technicalChecks } from "./psst-builder.mjs?v=constructor-1";
+import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
+import { operationalSchedule, recordsOf, technicalChecks } from "./psst-builder.mjs?v=exposicion-1";
 import { schedule } from "./psst-program.mjs?v=coach-1";
 import { activityRows } from "./psst-project.mjs?v=project-2";
 
@@ -104,11 +105,12 @@ function ganttRows(activities,plans){
   })];
 }
 
-function sheetXml(rows,gantt){
+function sheetXml(rows,gantt,numberColumns=[]){
   const ns="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
   const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const data=rows.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((value,j)=>{
     const ref=letters[j]+(i+1);
+    if(i>0 && numberColumns.includes(j) && typeof value==="number") return '<c r="'+ref+'"><v>'+value+'</v></c>';
     if(gantt && value===1 && j>=12) return '<c r="'+ref+'" s="2"><v>1</v></c>';
     return '<c r="'+ref+'" s="'+(i===0?1:0)+'" t="inlineStr"><is><t xml:space="preserve">'+xml(value)+'</t></is></c>';
   }).join("")+"</row>").join("");
@@ -129,10 +131,10 @@ function excelBook(sheets){
     '<Relationship Id="rId'+(sheets.length+1)+'" Type="'+offns+'/styles" Target="styles.xml"/></Relationships>';
   const types={"xl/workbook.xml":"spreadsheetml.sheet.main+xml","xl/styles.xml":"spreadsheetml.styles+xml"};
   const files={"xl/workbook.xml":work,"xl/styles.xml":styles,"xl/_rels/workbook.xml.rels":rel};
-  sheets.forEach(([,rows,gantt],i)=>{
+  sheets.forEach(([,rows,gantt,numberColumns],i)=>{
     const path="xl/worksheets/sheet"+(i+1)+".xml";
     types[path]="spreadsheetml.worksheet+xml";
-    files[path]=sheetXml(rows,gantt);
+    files[path]=sheetXml(rows,gantt,numberColumns);
   });
   return packageOffice(files,"xl/workbook.xml",types,"spreadsheetml.sheet");
 }
@@ -144,9 +146,11 @@ export function workbookForPSST({inputs={},draft={}}){
   const name=(records,id)=>records.find(row=>row.id===id)?.codigo??"";
   return excelBook([
     ["Carta Gantt 2027",ganttRows(three.filas,plans),true],
-    ["Matriz de riesgos",[["Código","Tarea","Condición","Daño posible","Personas expuestas","Controles existentes","Valoración","Prioridad","Evidencia","Dato pendiente","Estado","Responsable","Fecha prevista","Control propuesto"],
-      ...recordsOf(two.filas).map(row=>[row.codigo,name(tasks,row.tareaRef),row.peligro,row.riesgo,row.expuestos,row.controles,row.valoracion,
+    ["Matriz de riesgos",[["Código","Tarea","Condición","Daño posible","Situación de trabajo","Puestos y personas expuestas","Controles existentes","Valoración","Prioridad","Evidencia","Dato pendiente","Estado","Responsable","Fecha prevista","Control propuesto"],
+      ...recordsOf(two.filas).map(row=>[row.codigo,name(tasks,row.tareaRef),row.peligro,row.riesgo,row.situacion,exposureSummary(row,two),row.controles,row.valoracion,
         row.prioridad,row.evidencia,row.pendiente,row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,row.controlPropuesto])]],
+    ["Exposición por puesto",[["Hallazgo","Tarea","Puesto","Área o zona","Turno","Tipo de personal","Personas expuestas","Frecuencia","Duración","Fuente"],
+      ...exposureRows(two,tasks).map(row=>[row.hallazgo,row.tarea,row.puesto,row.area,row.turno,row.grupo,row.cantidadVisible,row.frecuencia,row.duracion,row.fuente])],false,[6]],
     ["Seguimiento",[["Plan","Actividad","Responsable","Estado","Inicio previsto","Cierre previsto","Inicio real","Cierre real","Nuevo inicio","Nuevo cierre","Motivo",
       "Evidencia esperada","Evidencia de ejecución","Criterio de eficacia","Resultado de eficacia","Fecha de verificación","Nota de eficacia"],
       ...recordsOf(three.filas).filter(row=>row.actividad).map(row=>[name(plans,row.planRef)||row.plan,row.actividad,row.responsable,row.estado||"Pendiente",
