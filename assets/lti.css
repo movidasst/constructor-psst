@@ -117,3 +117,6 @@ button#deliver{background:var(--teal);color:white}
 @media(max-width:450px){.project-panel{padding:.8rem}.project-grid{grid-template-columns:1fr 1fr}.project-tile{padding:.52rem}}
 
 #coach-response{white-space:pre-wrap;overflow-wrap:anywhere}.consent{display:flex;align-items:center;gap:.5rem}.consent input{width:auto}
+
+#gantt-filters select,#gemini-panel select{display:block;width:100%;min-height:42px;margin-top:.35rem;padding:.64rem .72rem;border:1px solid #9dafbd;border-radius:8px;background:#fbfdff;color:#253951;font:inherit}
+#trace-table td{white-space:pre-line}
