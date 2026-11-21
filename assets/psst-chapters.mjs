@@ -30,12 +30,14 @@ export const chapterStructure = [
   ["Investigación de accidentes de trabajo y enfermedades ocupacionales", [
     ["accidentes","Investigación de accidentes de trabajo","Describe activación, responsables, recolección de hechos, análisis de causas, medidas y registro. Identifica el procedimiento."],
     ["enfermedades","Investigación de enfermedades ocupacionales","Indica responsables, información requerida, remisión al procedimiento y formato aplicable."],
+    ["activacion","Activación, funciones y comunicación","Identifica quién recibe el aviso, activa cada procedimiento y coordina la revisión. Indica los canales y formatos aplicables."],
     ["registros","Formatos y registros","Identifica las versiones de los formatos y dónde se resguardan los registros."],
     ["seguimiento","Seguimiento de medidas","Define cómo se verificará el cierre de las acciones y quién revisará su eficacia."],
   ]],
   ["Compromiso de cumplimiento", [
     ["responsable","Entidad y responsable del compromiso","Identifica la entidad, su representante o figura aplicable y quién pone en ejecución los planes."],
     ["compromisos","Compromisos de ejecución","Describe los compromisos de recursos, ejecución, información, participación y revisión."],
+    ["recursos","Recursos y compromisos de participación","Identifica cómo se asignan recursos, tiempo y medios para la ejecución y revisión del programa."],
     ["carta","Modelo y estado de la carta compromiso","Indica qué modelo de la Guía corresponde, dónde está el borrador y el estado de su validación o firma."],
   ]],
   ["Otras consideraciones para la elaboración del PSST", [

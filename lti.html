@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=chapters-1">
-  <script src="assets/lti.mjs?v=chapters-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=program-1">
+  <script src="assets/lti.mjs?v=program-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -54,6 +54,7 @@
         </fieldset>
         <fieldset id="m1-mesa" class="card" data-module="m1">
           <legend>Mesa de trabajo y alcance</legend>
+          <div id="project-fields" class="fields"></div>
           <div class="step-help">
             <p><strong>Qué hacer.</strong> Define quiénes participan y en qué centro, áreas y turnos trabajarán.</p>
             <p><strong>Por qué importa.</strong> El alcance y la asignación de roles orientan la cobertura y dejan trazabilidad.</p>
@@ -70,7 +71,9 @@
           </div>
         </fieldset>
         <fieldset id="m1-inventario" class="card" data-module="m1">
-          <legend>Inventario de procesos</legend>
+          <legend>Mapa productivo e inventario del trabajo</legend>
+          <p class="section-guide">Primero registra el flujo del bien o servicio. Después agrega los procesos de trabajo que forman parte de ese flujo.</p>
+          <div class="row-editor" data-editor="productivos"><div data-rows></div><button type="button" data-add>Agregar flujo productivo o de servicio</button></div>
           <div class="step-help">
             <p><strong>Qué hacer.</strong> Agrega los procesos del centro que abarcará el PSST y usa un código distinto por proceso.</p>
             <p><strong>Por qué importa.</strong> El inventario conecta el proceso productivo con el trabajo observado en cada área.</p>
@@ -233,7 +236,9 @@
           </div>
           <p class="section-guide">El cronograma se actualiza al completar los meses de inicio y cierre de cada actividad.</p>
           <div id="gantt-view" class="gantt-view"></div>
-          <p><button id="export-gantt" type="button">Descargar carta Gantt para imprimir</button></p>
+          <p>La carta se genera con las fechas previstas, incluso para actividades pendientes. Registra quién se encargará y actualiza el estado a medida que avance.</p>
+          <div class="actions"><button id="export-gantt" type="button">Descargar carta Gantt</button>
+          <button id="export-plans-gantt" type="button">Descargar planes y carta Gantt</button></div>
           <details class="module-details">
             <summary>Planes y cronograma de una versión anterior</summary>
             <label>Planes prioritarios<textarea name="m3.planes" maxlength="8000"></textarea></label>
@@ -261,6 +266,7 @@
           <div class="integration-panel">
             <h2>Fuentes y documento de trabajo</h2>
             <div id="integration-sources"></div>
+          <h2>Avance de los capítulos</h2><div id="chapter-readiness"></div>
             <button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
           </div>
           <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
@@ -280,11 +286,13 @@
             <details class="module-details" open>
               <summary>Capítulo 1 · Generalidades</summary>
               <div data-chapter="1"></div>
+              <div class="row-editor" data-editor="objetivos"><div data-rows></div><button type="button" data-add>Agregar objetivo específico</button></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap1" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
               <div data-chapter="2"></div>
+              <p><button id="compose-policy" type="button">Preparar un borrador de política</button></p>
               <label>Notas generales o referencia adicional<textarea name="m4.cap2" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
@@ -317,6 +325,7 @@
             <details class="module-details">
               <summary>Capítulo 6 · Compromiso de cumplimiento</summary>
               <div data-chapter="6"></div>
+              <p><button id="compose-letter" type="button">Preparar un borrador de carta compromiso</button></p>
               <label>Notas generales o referencia adicional<textarea name="m4.cap6" maxlength="1500"></textarea></label>
             </details>
           </div>
@@ -335,11 +344,13 @@
             <details class="module-details">
               <summary>Capítulo 7 · Otras consideraciones para la elaboración del PSST</summary>
               <div data-chapter="7"></div>
+              <div class="row-editor" data-editor="contratistas"><div data-rows></div><button type="button" data-add>Agregar obra o servicio</button></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap7" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
               <summary>Capítulo 8 · Evaluación del programa</summary>
               <div data-chapter="8"></div>
+              <div class="row-editor" data-editor="indicadores"><div data-rows></div><button type="button" data-add>Agregar indicador</button></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap8" maxlength="1500"></textarea></label>
             </details>
 
@@ -385,6 +396,7 @@
             <summary>Índice de anexos y soportes</summary>
             <p>Indica el código, nombre y ubicación de cada soporte. Usa referencias a los formatos y evidencias de tu equipo.</p>
             <div id="chapter-annexes" class="fields"></div>
+            <div class="row-editor" data-editor="anexos"><div data-rows></div><button type="button" data-add>Agregar anexo o soporte</button></div>
           </details>
           <div id="review-items"></div>
         </fieldset>
