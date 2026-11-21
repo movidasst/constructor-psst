@@ -1,4 +1,4 @@
-import { createCoachingService } from "../_shared/coach-api.mjs";
+import { createCoachingService, defaultCoachingModel } from "../_shared/coach-api.mjs";
 import { createTeacherApi } from "../_shared/teacher-api.mjs";
 import { course } from "../_shared/course-154.mjs";
 import { createLaunchHandler, digest, random } from "../_shared/launch.mjs";
@@ -89,7 +89,7 @@ async function configuredServices() {
     });
     return { launch, workspace: createWorkspaceApi({ origin: app.origin, rpc,
       coach:createCoachingService({rpc,key:Deno.env.get("PSST_GEMINI_KEY")??Deno.env.get("GEMINI_API_KEY"),
-        model:Deno.env.get("PSST_GEMINI_MODEL")??"gemini-2.5-flash"}) }),
+        model:Deno.env.get("PSST_GEMINI_MODEL")||defaultCoachingModel}) }),
       teacher:createTeacherApi({origin:app.origin,rpc,getSender}) };
   } catch {
     return null;
