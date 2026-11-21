@@ -43,6 +43,7 @@ export const tutorials = {
       ["Registra y revisa los hallazgos",[
         "Pulsa Agregar riesgo. Selecciona la tarea de M1 y asigna un código al hallazgo.",
         "Separa la condición observada, quién se expone, qué daño podría ocurrir y el control que viste. Sustenta la valoración con el método elegido o registra lo que queda pendiente.",
+        "Pulsa Registrar puestos expuestos en el hallazgo. Registra cada puesto por área y turno, cuántas personas se exponen, cuánto dura la exposición y la fuente del dato.",
         "Si falta verificar una tarea, abre Estado de las tareas evaluadas y registra su situación, fuente, responsable y fecha cuando corresponda. Guarda y entrega la matriz.",
       ],"R-01 vinculado a T-01. Condición: cruce de rutas. Personas expuestas: quienes cruzan en despacho. Posible daño: golpe por carga en movimiento. Evidencia: E-01. Falta observar el relevo.","Cada hallazgo tiene tarea y evidencia. Las evaluaciones pendientes tienen una acción de verificación."],
     ],

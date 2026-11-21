@@ -1,4 +1,5 @@
-import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=constructor-1";
+import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
+import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=exposicion-1";
 import { coherenceIssues, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
@@ -117,7 +118,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   const planRows = rows(three.planesDetallados);
   const riskRows = rows(two.filas);
   const labelFor = (records,ref) => records.find(record=>record.id===ref)?.codigo || (ref ? "Referencia por verificar" : "");
-  const matrix = riskRows.map(row => ({...row,tareaCodigo:labelFor(taskRows,row.tareaRef)}));
+  const matrix = riskRows.map(row => ({...row,tareaCodigo:labelFor(taskRows,row.tareaRef),exposicionResumen:exposureSummary(row,two)}));
   const activities = rows(three.filas).map(row => ({...row,plan:labelFor(planRows,row.planRef) || row.plan,
     hallazgo:labelFor(riskRows,row.riesgoRef) || row.hallazgo}));
   const reviews = reviewGroups.flatMap(([chapter,criteria]) => criteria.map(([key,label]) =>
@@ -133,9 +134,11 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   ]);
   const risks = table([
     ["ID","codigo"],["Tarea","tareaCodigo"],["Etapa","etapa"],["Proceso peligroso","proceso"],["Peligro","peligro"],["Riesgo / daño","riesgo"],
-    ["Exposición","expuestos"],["Controles","controles"],["Valoración","valoracion"],
+    ["Situación","situacion"],["Puestos y personas expuestas","exposicionResumen"],["Controles","controles"],["Valoración","valoracion"],
     ["Evidencia","evidencia"],["Por evaluar","pendiente"],
   ],matrix);
+  const exposureDetail=table([["Hallazgo","hallazgo"],["Tarea","tarea"],["Puesto","puesto"],["Área o zona","area"],["Turno","turno"],
+    ["Personal","grupo"],["Personas expuestas","cantidadVisible"],["Frecuencia","frecuencia"],["Duración","duracion"],["Fuente del conteo","fuente"]],exposureRows(two,taskRows));
   const plans = table([
     ["Plan","plan"],["Actividad","actividad"],["Hallazgo","hallazgo"],["Objetivo / meta","objetivo"],
     ["Frecuencia","frecuencia"],["Procedimiento / instrumento","procedimiento"],["Responsable","responsable"],
@@ -181,7 +184,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     0: objectives,
     2: process + diagramSections(one) + (productionMap ? "<h3>Mapa productivo o de servicio</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos</h3>"+inventory : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
-      (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
+      (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
     3: (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + plans +
       (evaluationCriteria ? "<h3>Enfoques y evidencias de las actividades</h3>"+evaluationCriteria : "") +

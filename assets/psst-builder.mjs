@@ -1,3 +1,4 @@
+import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 
 const list = records => Array.isArray(records) ? records.filter(row=>row && typeof row==="object") : [];
@@ -53,11 +54,21 @@ export function technicalChecks({one={},two={},three={},four={}}) {
   const add=(target,id,message,action)=>issues.push({target,id,message,action});
   const tasks=list(one.tarea?.actividades), risks=list(two.filas), plans=list(three.planesDetallados), activities=list(three.filas);
   const riskIds=new Set(risks.map(row=>row.id));
+  const exposure=exposureRows(two,tasks);
   for(const row of organizationTree(one.alcance?.estructura)){
     if(row.cycle||row.orphan) add("estructura",row.id,row.nombre+" tiene una dependencia "+(row.cycle?"circular.":"sin identificar."),"Elige la jefatura correcta.");
   }
   for(const risk of risks){
     const label=risk.codigo||"Hallazgo";
+    const groups=exposure.filter(group=>group.hallazgoRef===risk.id&&group.puesto);
+    if(!groups.length) add("m2",risk.id,label+" aún no tiene puestos expuestos desglosados.","Pulsa Registrar puestos expuestos y registra las cantidades por puesto, área y turno.");
+    const seen=new Set();
+    for(const group of groups){
+      const key=[group.puesto,group.area,group.turno,group.grupo].map(v=>String(v??"").trim().toLocaleLowerCase("es")).join("|");
+      if(seen.has(key)) add("expuestos",group.id,label+" · "+group.puesto+" aparece repetido en el mismo grupo, área y turno.","Revisa si ambas filas cuentan a las mismas personas.");
+      seen.add(key);
+      if(!group.cantidadValida) add("expuestos",group.id,label+" · "+group.puesto+" tiene el conteo pendiente.","Confirma la cantidad y documenta la fuente.");
+    }
     if(!risk.tareaRef||!tasks.some(task=>task.id===risk.tareaRef))
       add("m2",risk.id,label+" no tiene una tarea de origen disponible.","Selecciona la tarea observada o revisa el inventario de Módulo 1.");
     if(risk.prioridad==="Inmediata"&&!plans.some(plan=>recordRefs(plan).includes(risk.id)))

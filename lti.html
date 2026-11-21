@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=constructor-1">
-  <script src="assets/lti.mjs?v=constructor-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=exposicion-1">
+  <script src="assets/lti.mjs?v=exposicion-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -217,6 +217,20 @@
           <div id="risk-help"></div>
           <div id="incoming-tasks" class="builder-panel"></div>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
+          <section class="builder-panel" id="exposure-panel" aria-labelledby="exposure-title">
+            <h2 id="exposure-title">Puestos de trabajo y personas expuestas</h2>
+            <p>Registra una fila por hallazgo, puesto, área y turno. Distingue personal propio, contratistas, visitantes u otros grupos cuando corresponda.</p>
+            <details class="field-workshop">
+              <summary>Cómo contar a las personas expuestas</summary>
+              <ol><li>Abre la tarea de origen y confirma qué puestos realizan el trabajo o pueden estar expuestos en esa zona.</li>
+                <li>Confirma cuántas personas hay por puesto y turno con el responsable, el reparto de turnos o la observación. Si falta el dato, deja la cantidad pendiente y registra a quién consultar.</li>
+                <li>Describe con qué frecuencia y por cuánto tiempo ocurre la exposición. Una persona puede figurar en más de un hallazgo, así que estas cantidades no se suman como dotación general.</li></ol>
+              <p><strong>Ejemplo.</strong> R-01 · Despacho · Relevo. Preparadores de pedidos: 4 personas del turno de mañana. Transportistas contratistas: 2 personas durante el relevo. Registra ambos grupos en filas distintas y documenta la fuente.</p>
+              <p><a href="https://www.iso.org/es/contents/data/standard/07/66/76619.html" target="_blank" rel="noopener noreferrer">ISO 45002:2023 · Orientación</a> ·
+              <a href="https://tugacetaoficial.com/leyes/resolucion-n-648-norma-tecnica-programa-de-seguridad-y-salud-en-el-trabajo-nt04-2023/" target="_blank" rel="noopener noreferrer">NT-04-2023 · Artículo 14</a></p>
+            </details>
+            <div class="row-editor" data-editor="expuestos"><div data-rows></div><button type="button" data-add>Agregar puesto o grupo expuesto</button></div>
+          </section>
           <details class="module-details">
             <summary>Matriz de una versión anterior o archivo de referencia</summary>
             <label>Referencia o matriz previa<textarea name="m2.matriz" maxlength="8000"></textarea></label>

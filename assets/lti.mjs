@@ -1,12 +1,13 @@
+import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
-import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks, workRoutes } from "./psst-builder.mjs?v=constructor-1";
+import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks, workRoutes } from "./psst-builder.mjs?v=exposicion-1";
 import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=ayuda-1";
-import { tutorials, glossary } from "./psst-tutorial.mjs?v=tutorial-1";
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=exposicion-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=constructor-1";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=exposicion-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=constructor-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=exposicion-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
 
@@ -102,12 +103,20 @@ const rowSchemas = {
     ["procedimiento","Procedimiento de ejecución",true], ["instrumentos","Formularios e instrumentos",true],
     ["recursos","Recursos y presupuesto",true], ["seguimiento","Indicador o evidencia",true],
   ] },
+  expuestos: {group:"m2",key:"gruposExpuestos",singular:"Puesto o grupo expuesto",fields:[
+    ["hallazgoRef","Hallazgo de la matriz",true,"riesgosPropios"],["puesto","Puesto de trabajo o función",true],
+    ["area","Área o zona de exposición",true],["turno","Turno o franja de exposición",true],
+    ["grupo","Tipo de personal",true,"personasExpuestas"],["cantidad","Cantidad de personas expuestas",false,"headcount"],
+    ["frecuencia","Frecuencia de exposición"],["duracion","Duración aproximada de la exposición"],
+    ["fuente","Fuente del conteo o cómo se confirmará",true],
+  ]},
   m2: { group:"m2", key:"filas", singular: "Riesgo", fields: [
     ["codigo","Código del hallazgo (p. ej., R-01)",true], ["tareaRef","Tarea registrada en M1",false,"tareas"],
     ["proceso","Proceso peligroso asociado"],
     ["prioridad","Prioridad de actuación",false,"prioridades"],
     ["etapa","Etapa o tarea",true], ["peligro","Peligro o condición observada",true],
-    ["riesgo","Riesgo y posible consecuencia",true], ["expuestos","Personas o puestos expuestos"],
+    ["riesgo","Riesgo y posible consecuencia",true], ["situacion","Situación de trabajo",false,"situacionesTrabajo"],
+    ["expuestos","Nota sobre personas expuestas o registro anterior"],
     ["controles","Controles existentes"], ["valoracion","Valoración según el método elegido"],
     ["evidencia","Referencia de la evidencia"], ["pendiente","Dato o medición que falta"],
     ["estadoEvaluacion","Estado de la evaluación",false,"evaluaciones"], ["responsableEvaluacion","Responsable de verificar"],
@@ -153,6 +162,8 @@ const optionLists = {
   familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
   enfoques:Object.keys(approaches), evaluaciones:["En evaluación","Valorada","Pendiente de medición"],
   resultadoEficacia:followupLabels,
+  personasExpuestas:["Personal propio","Contratistas","Visitantes","Otro personal"],
+  situacionesTrabajo:["Rutinaria","No rutinaria","Emergencia previsible"],
   tiposEvidencia:["Observación directa","Entrevista o consulta","Medición","Fotografía","Video","Revisión documental","Croquis"],
   estadosTarea:["Por observar","Evaluada","Pendiente de medición","Hallazgo registrado"],
   soportes:["Formato en preparación","Formato disponible","Evidencia existente","Pendiente de obtener"],
@@ -177,6 +188,7 @@ function choices(type) {
   const data = ["procesos","planes","productivos","indicadores"].includes(type) ? rowValues(type)
     : type==="cargos" ? rowValues("estructura")
     : type==="etapasMapa" ? rowValues("mapa")
+    : type==="riesgosPropios" ? rowValues("m2")
     : type === "planesEntregados" ? (integrationInputs.m3?.data?.m3?.planesDetallados ?? [])
     : type === "tareasPropias" ? rowValues("tareas")
     : type === "tareas" ? (integrationInputs.m1?.data?.tarea?.actividades ?? [])
@@ -314,7 +326,7 @@ function rowChanged(event) {
     const stage = event.target.closest(".row-card")?.querySelector('[data-key="etapa"]');
     if (task && stage) stage.value = task.etapa ?? "";
   }
-  if (!event || key === "codigo" || key === "nombre") refreshLinks();
+  if (!event || key === "codigo" || key === "nombre" || key === "riesgo") refreshLinks();
   renderBuilder();
   if (!event || ["actividad","centro","planRef","inicio","fin","fechaInicio","fechaFin","nuevoInicio","nuevoFin","responsable","estado"].includes(key)) redrawGantt();
   if (key === "familia" || key === "enfoque") showRowHelp(event.target.closest(".row-card"));
@@ -335,18 +347,27 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   fields.className = "fields";
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
     const wrapper = element("label", label);
-    const isInput = !type || ["date","verification-date","hours"].includes(type);
+    const isInput = !type || ["date","verification-date","hours","headcount"].includes(type);
     const long = ["detalleFamilia","detalleEnfoque","observacion","consulta","contraste","controlPropuesto","justificacionControl"].includes(key);
     const field = element(long ? "textarea" : isInput ? "input" : "select");
     const value = key==="riesgoRefs" ? recordRefs(values)
       : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
-      : typeof values?.[key] === "string" ? values[key] : "";
+      : typeof values?.[key] === "string" ? values[key] : type==="headcount" && Number.isSafeInteger(values[key]) ? String(values[key]) : "";
     if (type === "month") {
       field.add(new Option("Elige un mes", ""));
       months.forEach((month,index) => field.add(new Option(month, String(index + 1))));
     } else if (type === "date" || type === "verification-date") {
       field.type = "date";
       if (type==="date") { field.min = "2027-01-01"; field.max = "2027-12-31"; }
+    } else if (type === "headcount") {
+      field.type = "number";
+      field.min = "1";
+      field.max = String(Number.MAX_SAFE_INTEGER);
+      field.step = "1";
+      field.placeholder = "Pendiente si queda en blanco";
+      field.addEventListener("input",()=>{
+        field.setCustomValidity(field.value && !/^[1-9][0-9]*$/.test(field.value) ? "Escribe un número entero en cifras." : "");
+      });
     } else if (type === "hours") {
       field.type = "number";
       field.min = "0";
@@ -418,6 +439,22 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   updateRowLabels(editorKey, editor);
   if (editorKey==="mapa") addStageOrder(row,editor);
   if (editorKey==="planes") addPlanActivity(row);
+  if (editorKey==="m2" && document.getElementById("exposure-panel")?.tagName==="SECTION") {
+    const report=element("p");
+    report.dataset.exposureSummary="";
+    row.append(report,actionButton("Registrar puestos expuestos",()=>{
+      const item=rowValues("m2").find(entry=>entry.id===row.dataset.id);
+      if(!item?.codigo||!item.riesgo){
+        tell("Registra el código y el posible daño del hallazgo antes de vincular los puestos.","error");
+        focusRecord("m2",row.dataset.id);
+        return;
+      }
+      const task=integrationInputs?.m1?.data?.tarea?.actividades?.find(entry=>entry.id===item.tareaRef);
+      const process=integrationInputs?.m1?.data?.flujo?.procesos?.find(entry=>entry.id===task?.procesoRef);
+      newLinkedRow("expuestos",{hallazgoRef:item.id,area:process?.area||""});
+      if(task?.puestos) tell("Puestos anotados en la tarea del Módulo 1: "+task.puestos+". Verifica cada puesto y su cantidad.");
+    }));
+  }
   if (focus) fields.querySelector("[data-key]").focus();
   return row;
 }
@@ -425,7 +462,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
 function setupRows(info) {
   moduleId = info.moduleId;
   integrationInputs = info.inputs ?? {};
-  const keys = {m1:["estructura","productivos","mapa","procesos","tareas","campo"],m2:["verificacion","m2"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
+  const keys = {m1:["estructura","productivos","mapa","procesos","tareas","campo"],m2:["verificacion","m2","expuestos"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
   for (const key of keys[moduleId] ?? []) {
     const editor = form.querySelector('[data-editor="' + key + '"]');
     if (!editor) continue;
@@ -579,7 +616,7 @@ function showCoherence() {
   let one=integrationInputs?.m1?.data ?? {},two=integrationInputs?.m2?.data?.m2 ?? {};
   let three=integrationInputs?.m3?.data?.m3 ?? {},four={};
   if (moduleId==="m1") one={flujo:{procesos:rowValues("procesos")},tarea:{actividades:rowValues("tareas")}};
-  if (moduleId==="m2") two={filas:rowValues("m2"),verificaciones:rowValues("verificacion")};
+  if (moduleId==="m2") two={filas:rowValues("m2"),verificaciones:rowValues("verificacion"),gruposExpuestos:rowValues("expuestos")};
   if (moduleId==="m3") three={planesDetallados:rowValues("planes"),filas:rowValues("m3"),gruposFormacion:formValues().find(([key])=>key==="m3.gruposFormacion")?.[1]};
   if (moduleId==="m4") {
     four=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
@@ -1550,13 +1587,23 @@ function renderBuilder(){
   if(!projectInfo?.projectKey||!draft) return;
   if(moduleId==="m1") renderDiagrams();
   if(moduleId==="m3") renderExecution();
+  if(moduleId==="m2"){
+    const groups=exposureRows({filas:rowValues("m2"),gruposExpuestos:rowValues("expuestos")});
+    for(const row of editors.get("m2")?.querySelectorAll(".row-card")??[]){
+      const summary=row.querySelector("[data-exposure-summary]");
+      if(!summary) continue;
+      const linked=groups.filter(group=>group.hallazgoRef===row.dataset.id&&group.puesto);
+      summary.textContent=linked.length?linked.map(group=>group.puesto+": "+group.cantidadVisible).join(" · "):
+        "Completa el desglose de puestos y personas expuestas.";
+    }
+  }
   const target=document.getElementById("builder-checks");
   if(!target?.replaceChildren) return;
   const data=caseDraft();
   const current=collectDraft();
   const notices=technicalChecks({...data,four:current.m4}).filter(item=>
     moduleId==="m4"||({
-      m1:["estructura"],m2:["m2"],m3:["planes","m3"],
+      m1:["estructura"],m2:["m2","expuestos"],m3:["planes","m3"],
     }[moduleId]??[]).includes(item.target));
   target.replaceChildren();
   if(!notices.length) return;
