@@ -142,3 +142,30 @@ button#deliver{background:var(--teal);color:white}
 .workshop-example{white-space:pre-line;overflow-wrap:anywhere;background:#fff;border:1px solid #d5e7e6;border-radius:7px;padding:.6rem .73rem;margin:.35rem 0 .65rem}
 .workshop-actions{margin-top:.7rem}
 .field-workshop a{color:#075c63}
+
+.builder-panel{min-width:0;margin:.7rem 0 1rem}
+.builder-panel h2,.builder-panel h3{color:#174e53}
+.builder-panel nav a{padding:.42rem .6rem;border:1px solid #a4cbce;border-radius:7px;color:#075d63;text-decoration:none}
+.builder-list{padding:0;list-style:none;display:grid;gap:.65rem}
+.builder-list li{padding:.75rem;border:1px solid #cde0e6;border-radius:8px;background:#f7fbfc}
+.builder-list p{margin:.3rem 0 .5rem}
+.builder-list select{display:inline-block;max-width:100%;margin:.45rem .45rem .45rem 0}
+.flow-sequence{display:flex;gap:1.4rem;flex-wrap:wrap;padding-left:1.45rem;counter-reset:stage}
+.flow-sequence li{position:relative;min-width:9rem;max-width:18rem;padding:.65rem;border:1px solid #a8d7d3;border-radius:9px;background:#f0faf8}
+.flow-sequence p{margin:.25rem 0}
+.org-tree,.org-tree ul{list-style:none;margin:.5rem 0;padding-left:1.2rem}
+.org-tree ul{border-left:1px solid #83b8bd}
+.org-tree span{display:inline-block;border:1px solid #a8d7d3;border-radius:8px;background:#f0faf8;padding:.45rem .7rem}
+.org-tree li{margin:.45rem 0;overflow-wrap:anywhere}
+#psst-preview{width:min(900px,95vw);max-height:90vh;padding:1.1rem;border:1px solid #a8cbd0;border-radius:14px;color:#233744}
+#psst-preview::backdrop{background:#183041a8}
+.preview-bar{display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap}
+.preview-bar h2{margin:0;color:#124b53}
+#preview-chapter,#dossier-fields select{display:block;max-width:100%;margin:.4rem 0 .7rem;padding:.5rem;border:1px solid #a8c1c7;border-radius:7px;background:white}
+#preview-content{overflow:auto;max-height:63vh;padding:.65rem .2rem}
+#preview-content table{border-collapse:collapse;min-width:30rem;width:100%;font-size:.84rem}
+#preview-content td,#preview-content th{border:1px solid #c7dbdf;padding:.35rem;vertical-align:top;text-align:left}
+#preview-content th{background:#e1f2ef}
+#preview-content .note{white-space:pre-wrap}
+#preview-content p{overflow-wrap:anywhere}
+#builder-checks p{margin:.3rem 0}

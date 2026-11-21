@@ -1,3 +1,4 @@
+import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=constructor-1";
 import { coherenceIssues, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
@@ -28,8 +29,9 @@ function ganttTable(scheduled, includeDetails = false) {
     : [["Actividad","actividad"],["Responsable","responsable"],["Estado","estado"]];
   return table([...columns,...months.map((month,index)=>[month,index+1])],scheduled.map(row=>{
     const planned=schedule(row);
+    const current=operationalSchedule(row);
     return {...row,inicioPrevisto:planned.from,finPrevisto:planned.to,estado:row.estado || "Pendiente",
-      ...Object.fromEntries(months.map((_,index)=>[index+1,index+1>=planned.start && index+1<=planned.end ? "●" : ""]))};
+      ...Object.fromEntries(months.map((_,index)=>[index+1,index+1>=current.start && index+1<=current.end ? "●" : ""]))};
   }));
 }
 
@@ -83,6 +85,25 @@ ${chart ? '<p>● Mes de ejecución programado</p><div class="calendar">'+chart+
 ${pendingList ? "<h2>Actividades pendientes de fechar</h2>"+pendingList : ""}
 ${hasValue(legacyReference) ? "<h2>Referencia al cronograma anterior</h2>"+note(legacyReference) : ""}
 </body></html>`;
+}
+
+function diagramSections(data,kind){
+  const organization=organizationTree(data.alcance?.estructura);
+  const org=kind!=="flow"&&table([["Nivel","nivel"],["Cargo o área","nombre"],["Reporta a","jefatura"],["Función o coordinación","observacion"]],
+    organization.map(row=>({...row,nivel:row.cycle||row.orphan?"Por verificar":row.level+1,jefatura:row.parent?.nombre??""})));
+  const flows=kind!=="org"?orderedFlows(data).filter(flow=>flow.stages.length).map(flow=>"<h3>"+escape(flow.nombre)+"</h3>"+
+    table([["Orden","orden"],["Etapa","nombre"],["Área","area"],["Entrada","entradas"],["Salida","salidas"],["Desvío o devolución","excepcion"]],
+      flow.stages.map((row,i)=>({...row,orden:i+1})))).join(""):"";
+  const fallback=kind!=="flow"&&!org ? note(data.alcance?.organigrama) : "";
+  return (org||fallback?"<h3>Organigrama del centro</h3>"+(org||fallback):"")+
+    (flows?"<h3>Mapa de etapas del proceso productivo</h3>"+flows:"");
+}
+
+export function buildDiagramDocument({label,inputs={}},kind){
+  const body=diagramSections(inputs.m1?.data??{},kind);
+  const heading=kind==="org"?"Organigrama del centro":kind==="flow"?"Mapa del proceso productivo":"Organigrama y mapa del proceso productivo";
+  return '<!doctype html><html lang="es"><meta charset="utf-8"><title>'+heading+'</title><body><h1>'+heading+'</h1><p>'+
+    escape(label)+'</p>'+(body||"<p>Diagrama pendiente de elaborar en el Módulo 1.</p>")+'</body></html>';
 }
 
 export function buildPsstDocument({ label, inputs = {}, draft = {}, version, submittedAt }) {
@@ -147,7 +168,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Justificación","justificacionControl"],["Responsable de verificar","responsableEvaluacion"],["Fecha prevista","fechaEvaluacion"]],pendingRiskEntries);
   const evaluationCriteria=activityEvidence(activities);
   const education=educationSchedule(activities,planRows,three.gruposFormacion);
-  const issues=coherenceIssues({one,two,three,four});
+  const issues=[...coherenceIssues({one,two,three,four}),...technicalChecks({one,two,three,four})];
   const annexTable = table([["Código","codigo"],["Soporte","nombre"],["Capítulo","capitulo"],["Versión","version"],
     ["Ubicación","ubicacion"],["Estado","estado"],["Responsable","responsable"],["Custodio y acceso","custodio"],["Revisión de acceso","revisionAcceso"]],rows(four.soportes));
   const verification=table([["Tarea","tarea"],["Estado","estado"],["Fuente","evidencia"],["Justificación","justificacion"],["Responsable","responsable"],["Verificación prevista","fecha"]],
@@ -158,7 +179,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Cierre real","cierreReal"],["Estado","estado"],["Responsable","responsable"],["Recursos","recursos"]],activities);
   const extras = {
     0: objectives,
-    2: process + (productionMap ? "<h3>Mapa productivo o de servicio</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos</h3>"+inventory : "") +
+    2: process + diagramSections(one) + (productionMap ? "<h3>Mapa productivo o de servicio</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos</h3>"+inventory : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
       (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
@@ -170,6 +191,12 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     6: contractorTable,
     7: indicators + (evaluationCriteria ? "<h3>Criterios de eficacia a verificar</h3>"+evaluationCriteria : ""),
   };
+  const actuals=table([["Actividad","actividad"],["Estado","estado"],["Inicio real","inicioReal"],["Cierre real","cierreReal"],
+    ["Nueva fecha inicial","nuevoInicio"],["Nuevo cierre","nuevoFin"],["Motivo del cambio","motivoReprogramacion"],
+    ["Evidencia","evidenciaReal"],["Eficacia","resultadoEficacia"],["Verificada","verificacionEficacia"],["Observación","notaEficacia"]],
+    activities.filter(row=>row.inicioReal||row.cierreReal||row.evidenciaReal||row.resultadoEficacia||row.nuevoInicio||row.estado==="Ejecutada"||row.estado==="Reprogramada"));
+  if(actuals) extras[7]+="<h3>Seguimiento de ejecución y eficacia</h3>"+actuals;
+  const stage=statusLabels[four.estadoExpediente]??statusLabels.borrador;
   const recovered = {
     cap3_organigrama: hasValue(one.alcance?.organigrama),
     cap3_diagramas: hasValue(one.flujo?.referencia) || processRows.some(row=>hasValue(row.evidencia)),
@@ -193,7 +220,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
         : "Pendiente de completar o indicar su referencia.";
       return "<h3>"+escape(section)+"</h3>"+(note(four[field]) || '<p class="pending">'+placeholder+'</p>');
     }).join("");
-    return "<section><h2>Capítulo "+number+" · "+escape(title)+"</h2>"+
+    return '<section data-chapter-preview="'+number+'" id="capitulo-'+number+'"><h2>Capítulo '+number+" · "+escape(title)+"</h2>"+
       (legacy ? "<h3>Notas generales o referencia adicional</h3>"+legacy : "")+content+(extras[index]??"")+"</section>";
   }).join("");
   const annexIndex = table([["Apartado","label"],["Referencia","value"]],annexStructure.map(([key,label])=>({
@@ -201,8 +228,9 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   })));
   return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Borrador del PSST</title>
 <style>body{font:15px system-ui,sans-serif;max-width:1020px;margin:2rem auto;padding:0 1.2rem;color:#183047}h1,h2,h3{color:#00205b}h2{border-bottom:1px solid #bad9d9;padding-bottom:.35rem}header{border-top:5px solid #007b85;padding-top:.8rem}.note,td{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:.86rem;margin:1rem 0}th,td{border:1px solid #d1e2e7;padding:.35rem;text-align:left;vertical-align:top}th{background:#e3f1f1}.pending{color:#6d4b08}@page{size:A4 landscape;margin:12mm}@media print{body{margin:0;padding:0;max-width:none}table{font-size:8pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>
-<body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>Borrador del Programa de Seguridad y Salud en el Trabajo</h1><p>${escape(label)} · Borrador para revisión${version!==undefined ? " · Revisión " + escape(version) : ""}${submittedAt ? " · Entrega " + escape(submittedAt) : ""}</p>${profile}</header>
-<h2>Índice</h2><ol>${chapterStructure.map(([title])=>"<li>"+escape(title)+"</li>").join("")}<li>Anexos y evidencias</li></ol>
+<body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>Borrador del Programa de Seguridad y Salud en el Trabajo</h1><p>${escape(label)} · ${escape(stage)}${version!==undefined ? " · Revisión " + escape(version) : ""}${submittedAt ? " · Entrega " + escape(submittedAt) : ""}</p>${profile}</header>
+<h2>Índice</h2><ol>${chapterStructure.map(([title],i)=>'<li><a href="#capitulo-'+(i+1)+'">'+escape(title)+'</a></li>').join("")}<li><a href="#anexos">Anexos y evidencias</a></li></ol>
+${facts([["Estado del expediente",stage],["Responsable, fecha y soportes de revisión",four.referenciaExpediente]])}
 <h2>Introducción</h2>${note(four.introduccion) || '<p class="pending">Pendiente de redactar la introducción.</p>'}
 <h2>Fuentes del taller</h2>${facts([1,2,3].map(n => {
   const source = inputs["m"+n];
@@ -210,7 +238,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
 }))}
 <h2>Avance de elaboración</h2>${readiness}
 ${chapterSections}
-<h2>Índice de anexos y soportes</h2>${annexIndex}${annexTable}
+<h2 id="anexos">Índice de anexos y soportes</h2>${annexIndex}${annexTable}
 ${issues.length ? "<h2>Revisión de coherencia</h2><ul>"+issues.map(item=>"<li>"+escape(item.message)+"</li>").join("")+"</ul>" : ""}
 <h2>Anexo · Evidencias y brechas</h2>
 ${fieldLog}
