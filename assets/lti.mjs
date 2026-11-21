@@ -660,6 +660,13 @@ function draftFingerprint(values = formValues()) {
   return JSON.stringify([values, [...editors.keys()].map(rowValues)]);
 }
 
+function deliveryStatus(delivery) {
+  return delivery.review
+    ? "Nota publicada en Moodle: " + delivery.review.score + " de 100 puntos. Revisión técnica: " +
+      delivery.review.technicalPoints + " de 40 puntos. Retroalimentación: " + delivery.review.feedback
+    : "Pendiente de revisión técnica.";
+}
+
 function refreshDelivery() {
   const dirty = draftFingerprint() !== savedValues;
   const current = lastDelivery?.revision === revision && !dirty;
@@ -674,7 +681,7 @@ function refreshDelivery() {
   document.getElementById("receipt-title").textContent = current ? "✓ Entrega registrada" : "✓ Última entrega registrada";
   document.getElementById("receipt-detail").textContent =
     (when ? when + " · Hora de Venezuela. " : "") +
-    "Comprobación automática: " + lastDelivery.automaticPoints + " de 60 puntos. Pendiente de revisión técnica." +
+    "Comprobación automática: " + lastDelivery.automaticPoints + " de 60 puntos. " + deliveryStatus(lastDelivery) +
     (current ? "" : " Tienes un borrador más reciente que aún no has entregado.");
 }
 
@@ -761,7 +768,7 @@ deliver.addEventListener("click", () => {
     pending ??= crypto.randomUUID();
     lastDelivery = await api("submit", { revision, requestId: pending });
     pending = undefined;
-    tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. Pendiente de revisión.", "success");
+    tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. " + deliveryStatus(lastDelivery), "success");
   });
 });
 
@@ -890,7 +897,7 @@ async function start() {
   showCoherence();
   savedValues = draftFingerprint();
   if (lastDelivery?.revision === revision) {
-    tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. Pendiente de revisión.", "success");
+    tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. " + deliveryStatus(lastDelivery), "success");
   } else {
     tell("Guarda tu avance o entrega una versión para revisión.");
   }
