@@ -134,3 +134,11 @@ button#deliver{background:var(--teal);color:white}
 .tutorial-step .tutorial-check{margin-top:.8rem;border-left:3px solid #70ad47;padding-left:.65rem}
 .tutorial-step .tutorial-next{margin-top:.65rem}
 .step-actions button{white-space:normal}
+
+.field-workshop{margin:.55rem 0 1rem;border:1px solid #c4dfde;border-left:4px solid #007b85;border-radius:9px;background:#f4faf9;padding:.72rem .86rem;line-height:1.5}
+.field-workshop summary{color:#174e53;font-weight:800;cursor:pointer}
+.field-workshop ol{padding-left:1.4rem;margin:.75rem 0}
+.field-workshop li+li{margin-top:.4rem}
+.workshop-example{white-space:pre-line;overflow-wrap:anywhere;background:#fff;border:1px solid #d5e7e6;border-radius:7px;padding:.6rem .73rem;margin:.35rem 0 .65rem}
+.workshop-actions{margin-top:.7rem}
+.field-workshop a{color:#075c63}

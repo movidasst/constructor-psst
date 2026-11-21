@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=tutorial-1">
-  <script src="assets/lti.mjs?v=tutorial-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=ayuda-1">
+  <script src="assets/lti.mjs?v=ayuda-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -75,13 +75,15 @@
           <div class="fields">
             <label>Centro de trabajo<input name="alcance.centro" maxlength="200" placeholder="Planta principal"></label>
             <label>Área, turno y alcance<input name="alcance.area" maxlength="300" placeholder="Recepción de materiales · turno diurno"></label>
-            <label class="wide">Organigrama y estructura del SSST<input name="alcance.organigrama" maxlength="500" placeholder="E00 · Organigrama y referencia a la estructura del SSST"></label>
+            <label class="wide">Organigrama y estructura del SSST<textarea name="alcance.organigrama" maxlength="500" placeholder="E00 · Organigrama y referencia a la estructura del SSST"></textarea></label>
+            <div class="wide" id="organigrama-help"></div>
             <label class="wide">Integrantes, roles y acuerdos de la mesa<textarea name="mesa.organizacion" maxlength="3000" placeholder="Indica quién coordina, quién observa, quién registra y qué actividad acordaron levantar."></textarea></label>
           </div>
         </fieldset>
         <fieldset id="m1-inventario" class="card" data-module="m1">
           <legend>Mapa productivo e inventario del trabajo</legend>
           <p class="section-guide">Primero registra el flujo del bien o servicio. Después agrega los procesos de trabajo que forman parte de ese flujo.</p>
+          <div id="production-help"></div>
           <div class="row-editor" data-editor="productivos"><div data-rows></div><button type="button" data-add>Agregar flujo productivo o de servicio</button></div>
           <div class="step-help">
             <p><strong>Qué hacer.</strong> Agrega los procesos del centro que abarcará el PSST y usa un código distinto por proceso.</p>
@@ -190,6 +192,7 @@
             <p>Registra qué tareas ya revisaste y qué falta verificar. Usa códigos de evidencia y evita datos personales en las referencias.</p>
             <div class="row-editor" data-editor="verificacion"><div data-rows></div><button type="button" data-add>Agregar revisión de tarea</button></div>
           </details>
+          <div id="risk-help"></div>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
           <details class="module-details">
             <summary>Matriz de una versión anterior o archivo de referencia</summary>
@@ -235,6 +238,7 @@
           <p><strong>Entregable.</strong> Planes vinculados con los hallazgos y cronograma 2027.</p>
           <p class="reference">Reglamento Parcial, art. 82. NT-04-2023, arts. 17 y 18. Instrumento de revisión, capítulo IV.</p>
           <p><strong>Formación.</strong> Para revisar las horas por persona, usa el mismo nombre de grupo e indica las horas de cada actividad. Si una actividad abarca varios trimestres, consigna las horas por persona en cada trimestre.</p>
+          <div id="action-help"></div>
           <div class="row-editor" data-editor="m3"><div data-rows></div><button type="button" data-add>Agregar actividad</button></div>
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
@@ -306,7 +310,6 @@
             <details class="module-details">
               <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
               <div data-chapter="2"></div>
-              <p><button id="compose-policy" type="button">Preparar un borrador de política</button></p>
               <label>Notas generales o referencia adicional<textarea name="m4.cap2" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
