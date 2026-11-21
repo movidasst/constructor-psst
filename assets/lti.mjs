@@ -831,7 +831,9 @@ async function update(message, action) {
   }
 }
 
-form.addEventListener("input", rowChanged);
+form.addEventListener("input",event=>{
+  if(event.target.name || event.target.dataset.key) rowChanged(event);
+});
 
 form.addEventListener("submit", event => {
   event.preventDefault();
@@ -855,6 +857,14 @@ deliver.addEventListener("click", () => {
     const missing = draftReadiness(recorded,integrationInputs ?? {}).filter(([,ready])=>!ready);
     if (missing.length) {
       tell("Antes de entregar, desarrolla o referencia estos capítulos: "+missing.map(([title])=>title).join(", ")+".", "error");
+      return;
+    }
+    const summary=form.elements.namedItem("m4.resultado");
+    const previous=form.elements.namedItem("m4.brechas");
+    if(summary && !summary.value.trim() && !previous?.value.trim() && !rowValues("m4").some(row=>row.brecha)){
+      revealControl(summary);
+      summary.focus();
+      tell("Registra el resultado de la revisión o agrega una brecha antes de entregar.","error");
       return;
     }
   }
