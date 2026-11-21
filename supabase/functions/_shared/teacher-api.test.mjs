@@ -55,3 +55,19 @@ test("publishing uses the database grade and activity and records failed and suc
     { p_dispatch: "qa2", p_sent: false, p_http: 503 },
   ]);
 });
+
+test("teacher exchange requires the browser proof and selects the teacher grant",async()=>{
+  const proof="f".repeat(64);
+  let calls=0;
+  const api=createTeacherApi({origin,rpc:async(name,args)=>{
+    calls++;
+    assert.equal(name,"psst_lti_exchange_bound");
+    assert.equal(args.p_teacher,true);
+    assert.equal(args.p_challenge,await digest(proof));
+    return true;
+  }});
+  assert.equal((await api("teacher-exchange",request({ticket:session}))).status,400);
+  assert.equal(calls,0);
+  assert.equal((await api("teacher-exchange",request({ticket:session,proof}))).status,200);
+  assert.equal(calls,1);
+});

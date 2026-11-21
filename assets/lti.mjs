@@ -1,3 +1,4 @@
+import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
 import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks, workRoutes } from "./psst-builder.mjs?v=exposicion-1";
@@ -17,7 +18,8 @@ const startup = document.getElementById("startup");
 const form = document.getElementById("draft");
 const deliver = document.getElementById("deliver");
 const receipt = document.getElementById("receipt");
-const ticket = new URLSearchParams(location.hash.slice(1)).get("ticket");
+const grant = new URLSearchParams(location.hash.slice(1));
+const ticket = grant.get("ticket");
 if (location.hash) history.replaceState(null, "", location.pathname + location.search);
 
 let session;
@@ -1811,7 +1813,11 @@ async function start() {
       if(entry) entry.hidden=false;
       throw new Error("Abre la actividad desde Moodle para trabajar con tu empresa o entra al caso de práctica.");
     }
-    const auth = await api("exchange", { ticket });
+    const binding=grant.get("binding");
+    const proof=binding ? readProof(binding) : undefined;
+    if(binding && !proof) throw new Error("Abre la actividad desde Moodle en esta pestaña. Este enlace pertenece a otra sesión del navegador.");
+    const auth = await api("exchange", { ticket, proof });
+    clearProof(binding);
     session = auth.session;
     info = await api("workspace");
   }

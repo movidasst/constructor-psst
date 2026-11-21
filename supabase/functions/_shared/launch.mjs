@@ -108,6 +108,8 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
   const jwks = https(config.jwksUrl);
   const launchUrl = https(config.launchUrl);
   const loginUrl = https(config.loginUrl);
+  const bootstrapUrl = https(config.bootstrapUrl);
+  const continueUrl = new URL("./continue",loginUrl);
   if (!launchUrl.pathname.endsWith("/launch") || !loginUrl.pathname.endsWith("/login") || loginUrl.origin !== launchUrl.origin ||
       loginUrl.search || launchUrl.search) throw new TypeError("URLs de inicio y retorno incompatibles");
   const route = createPilotRouter(config);
@@ -115,8 +117,11 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
   return async function handle(req) {
     const path = new URL(req.url).pathname;
     try {
-      if (path === loginUrl.pathname) {
-        const p = await requestParams(req, limits.login, true);
+      if (path === loginUrl.pathname || path === continueUrl.pathname) {
+        const continuing=path===continueUrl.pathname;
+        if(continuing && (req.method!=="POST" || req.headers.get("Origin")!==bootstrapUrl.origin))
+          return new Response("Abre la actividad desde Moodle.",{status:403,headers:headers()});
+        const p = await requestParams(req, limits.login, !continuing);
         const clientId = value(p, "client_id", 256, true);
         const deployment = value(p, "lti_deployment_id", 256, true);
         if (value(p, "iss", 1024) !== config.issuer || (clientId && clientId !== config.clientId) ||
@@ -126,10 +131,20 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
         }
         const hint = value(p, "login_hint");
         const messageHint = value(p, "lti_message_hint", 8192, true);
+        if(!continuing){
+          const target=new URL(bootstrapUrl);
+          const params=new URLSearchParams({iss:config.issuer,client_id:config.clientId,target_link_uri:launchUrl.href,
+            lti_deployment_id:config.deploymentId,login_hint:hint});
+          if(messageHint) params.set("lti_message_hint",messageHint);
+          target.hash=params.toString();
+          return new Response(null,{status:303,headers:headers({Location:target.href})});
+        }
+        const challenge=value(p,"psst_challenge",64);
+        if(!opaque.test(challenge)) throw new Error("Comprobación del navegador inválida");
         const state = random();
         const browser = random();
         const nonce = random();
-        await stateStore.create({ state_hash: await digest(state), browser_hash: await digest(browser), nonce });
+        await stateStore.create({ state_hash: await digest(state), browser_hash: await digest(browser), nonce, challenge });
         const redirect = new URL(auth);
         const parameters = { scope: "openid", response_type: "id_token", response_mode: "form_post",
           prompt: "none", client_id: config.clientId, redirect_uri: launchUrl.href, login_hint: hint, state, nonce };
@@ -151,10 +166,10 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
             typeof claims.nonce !== "string" || !opaque.test(claims.nonce)) {
           throw new Error("Actividad inválida");
         }
-        const used = await stateStore.consume({
+        const challenge = await stateStore.consume({
           p_state_hash: await digest(state), p_browser_hash: await digest(browser), p_nonce: claims.nonce,
         });
-        if (!used) throw new Error("Sesión vencida o usada");
+        if (typeof challenge!=="string" || !opaque.test(challenge)) throw new Error("Sesión vencida o usada");
         const clearCookie = cookieName + "=; Path=/; Secure; HttpOnly; SameSite=None; Max-Age=0";
         if (resolved.diagnostic === true) {
           const pruebaAGS = onDiagnostic ? await onDiagnostic(resolved) : null;
@@ -165,7 +180,7 @@ export function createLaunchHandler(config, { stateStore, get = fetch, now = Dat
           }, { headers: headers({ "Content-Type": "application/json; charset=utf-8", "Set-Cookie": clearCookie }) });
         }
         if (onVerified) {
-          const location = await onVerified({ ...resolved, resourceId: claims[claim + "resource_link"].id });
+          const location = await onVerified({ ...resolved, resourceId: claims[claim + "resource_link"].id, challenge });
           if (!location) return new Response("Tu cuenta todavía no tiene un equipo asignado para este curso.", {
             status: 403, headers: headers({ "Set-Cookie": clearCookie }),
           });

@@ -23,7 +23,7 @@ async function rpc(name, body) {
     const problem = await response.json().catch(() => null);
     throw new Error(["P0001", "22023"].includes(problem?.code) ? problem.code : "Datos LTI no disponibles");
   }
-  if (name === "psst_lti_begin") {
+  if (name === "psst_lti_begin_bound") {
     await response.body?.cancel();
     return null;
   }
@@ -51,12 +51,13 @@ async function configuredServices() {
     const launch = createLaunchHandler({
       ...config,
       loginUrl: new URL("login", serviceBase).href,
+      bootstrapUrl: new URL("./lti-access.html",app).href,
       launchUrl: new URL("launch", serviceBase).href,
     }, {
       stateStore: {
-        create: async ({ state_hash, browser_hash, nonce }) =>
-          rpc("psst_lti_begin", { p_state_hash: state_hash, p_browser_hash: browser_hash, p_nonce: nonce }),
-        consume: async (params) => (await rpc("psst_lti_consume", params)) === true,
+        create: async ({ state_hash, browser_hash, nonce, challenge }) =>
+          rpc("psst_lti_begin_bound", { p_state_hash: state_hash, p_browser_hash: browser_hash, p_nonce: nonce, p_challenge: challenge }),
+        consume: (params) => rpc("psst_lti_consume_bound", params),
       },
       onDiagnostic: async (activity) => {
         const moduleId = Object.keys(course.modules).find(id =>
@@ -73,16 +74,16 @@ async function configuredServices() {
       },
       onVerified: async (session) => {
         const ticket = random();
-        const allowed = await rpc(session.teacher ? "psst_lti_teacher_ticket"
-          : session.enroll ? "psst_lti_enroll" : "psst_lti_ticket", {
-          p_hash: await digest(ticket), p_issuer: config.issuer, p_client: config.clientId,
+        const allowed = await rpc("psst_lti_issue_bound", {
+          p_hash: await digest(ticket), p_challenge:session.challenge, p_teacher:session.teacher===true, p_enroll:session.enroll===true,
+          p_issuer: config.issuer, p_client: config.clientId,
           p_deployment: config.deploymentId, p_context: session.contextId, p_subject: session.subject,
           p_module: session.moduleId, p_resource: session.resourceId,
           ...(session.teacher ? { p_line_item:session.lineItem } : {}),
         });
         if (allowed !== true) return null;
         const url = session.teacher ? new URL("./lti-teacher.html",app) : new URL(app);
-        url.hash = new URLSearchParams({ ticket }).toString();
+        url.hash = new URLSearchParams({ ticket, binding:session.challenge }).toString();
         return url.href;
       },
     });
@@ -106,7 +107,7 @@ function servicesForRequest() {
 }
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|archive|draft|submit|teacher-exchange|teacher)$/)?.[1];
+  const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|continue|launch|jwks|exchange|workspace|archive|draft|submit|teacher-exchange|teacher)$/)?.[1];
   if (route === "jwks" && req.method === "GET") {
     try {
       if (!supabase || !secret) throw new Error("Servicio no configurado");
@@ -123,7 +124,7 @@ Deno.serve(async (req) => {
       status: 503, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
-  if (route === "login" || route === "launch") {
+  if (route === "login" || route === "continue" || route === "launch") {
     const canonical = new URL(route, serviceBase);
     canonical.search = url.search;
     return services.launch(url.pathname === canonical.pathname ? req : new Request(canonical.href, req));

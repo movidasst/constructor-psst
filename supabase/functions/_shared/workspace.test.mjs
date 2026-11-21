@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { digest } from "./launch.mjs";
 import { createWorkspaceApi } from "./workspace.mjs";
 
 const origin = "https://constructor.movidasst.com";
@@ -8,19 +9,25 @@ test("keeps the capability private and denies a foreign origin", async () => {
   const calls = [];
   const api = createWorkspaceApi({ origin, rpc: async (name, args) => { calls.push([name, args]); return true; } });
   const ticket = "a".repeat(64);
-  const request = (urlOrigin) => new Request(origin, {
+  const proof="b".repeat(64);
+  const request = (urlOrigin, browserProof) => new Request(origin, {
     method: "POST", headers: { Origin: urlOrigin, "Content-Type": "application/json" },
-    body: JSON.stringify({ ticket, workspace: "other" }),
+    body: JSON.stringify({ ticket, proof:browserProof, workspace: "other" }),
   });
   assert.equal((await api("exchange", request("https://other.example"))).status, 403);
   assert.equal(calls.length, 0);
-  const response = await api("exchange", request(origin));
+  assert.equal((await api("exchange",request(origin))).status,400);
+  assert.equal(calls.length,0);
+  const response = await api("exchange", request(origin,proof));
   assert.equal(response.status, 200);
   const { session } = await response.json();
   assert.match(session, /^[a-f0-9]{64}$/);
   assert.notEqual(calls[0][1].p_ticket_hash, ticket);
   assert.notEqual(calls[0][1].p_session_hash, session);
-  assert.deepEqual(Object.keys(calls[0][1]).sort(), ["p_session_hash", "p_ticket_hash"]);
+  assert.equal(calls[0][0],"psst_lti_exchange_bound");
+  assert.equal(calls[0][1].p_challenge,await digest(proof));
+  assert.equal(calls[0][1].p_teacher,false);
+  assert.deepEqual(Object.keys(calls[0][1]).sort(), ["p_challenge","p_session_hash","p_teacher","p_ticket_hash"]);
 });
 
 test("passes only the session and revision to the database when submitting", async () => {

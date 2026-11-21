@@ -20,9 +20,11 @@ export function createTeacherApi({ origin, rpc, getSender }) {
     if (!body || typeof body!=="object" || Array.isArray(body)) return json({error:"Solicitud inválida."},400);
     try {
       if (route==="teacher-exchange") {
-        if (typeof body.ticket!=="string" || !teacherToken.test(body.ticket)) return json({error:"Acceso docente inválido."},400);
+        if (typeof body.ticket!=="string" || !teacherToken.test(body.ticket) ||
+            typeof body.proof!=="string" || !teacherToken.test(body.proof)) return json({error:"Vuelve a abrir el módulo docente en esta pestaña."},400);
         const session=random();
-        const ok=await rpc("psst_lti_teacher_exchange",{p_ticket_hash:await digest(body.ticket),p_session_hash:await digest(session)});
+        const ok=await rpc("psst_lti_exchange_bound",{p_ticket_hash:await digest(body.ticket),p_challenge:await digest(body.proof),
+          p_session_hash:await digest(session),p_teacher:true});
         return ok ? json({session}) : json({error:"Vuelve a abrir el módulo como docente en Moodle."},401);
       }
       const session=request.headers.get("Authorization")?.match(/^Bearer ([0-9a-f]{64})$/)?.[1];

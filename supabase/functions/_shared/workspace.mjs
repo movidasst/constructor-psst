@@ -32,9 +32,11 @@ export function createWorkspaceApi({ origin, rpc }) {
     }
     try {
       if (operation === "exchange") {
-        if (typeof body.ticket !== "string" || !tokenPattern.test(body.ticket)) return json({ error: "Ingreso inválido." }, 400);
+        if (typeof body.ticket !== "string" || !tokenPattern.test(body.ticket) ||
+            typeof body.proof!=="string" || !tokenPattern.test(body.proof)) return json({ error: "Vuelve a abrir la actividad en Moodle desde esta pestaña." }, 400);
         const session = random();
-        const success = await rpc("psst_lti_exchange", { p_ticket_hash: await digest(body.ticket), p_session_hash: await digest(session) });
+        const success = await rpc("psst_lti_exchange_bound", { p_ticket_hash: await digest(body.ticket), p_challenge: await digest(body.proof),
+          p_session_hash: await digest(session), p_teacher:false });
         return success === true ? json({ session }) : json({ error: "Vuelve a abrir la actividad en Moodle." }, 401);
       }
 

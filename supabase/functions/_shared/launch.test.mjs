@@ -6,6 +6,7 @@ const prefix = "https://purl.imsglobal.org/spec/lti/claim/";
 const config = {
   issuer: "https://moodle.example", authorizationUrl: "https://moodle.example/auth",
   jwksUrl: "https://moodle.example/jwks", loginUrl: "https://tool.example/login",
+  bootstrapUrl:"https://app.example/lti-access.html",
   launchUrl: "https://tool.example/launch", clientId: "client", deploymentId: "deployment",
   contextId: "course-154-context", resourceLinks: { m1: "r1", m2: "r2", m3: "r3", m4: "r4" },
 };
@@ -37,14 +38,26 @@ async function fixture() {
       async consume(args) {
         const row = states.get(args.p_state_hash);
         if (row?.nonce !== args.p_nonce || row?.browser_hash !== args.p_browser_hash) return false;
-        return states.delete(args.p_state_hash);
+        states.delete(args.p_state_hash);
+        return row.challenge;
       },
     },
   });
   const q = new URLSearchParams({ iss: config.issuer, login_hint: "login", target_link_uri: config.launchUrl });
-  const start = await handle(new Request(config.loginUrl + "?" + q));
+  const first = await handle(new Request(config.loginUrl + "?" + q));
+  assert.equal(first.status,303);
+  const selfLink=new URL(first.headers.get("Location"));
+  assert.equal(selfLink.origin,"https://app.example");
+  assert.equal(new URLSearchParams(selfLink.hash.slice(1)).get("login_hint"),"login");
+  const origin=new URL(config.bootstrapUrl).origin;
+  q.set("psst_challenge","a".repeat(64));
+  const continueUrl=new URL("./continue",config.loginUrl);
+  const foreign=await handle(new Request(continueUrl,{method:"POST",headers:{Origin:"https://other.example"},body:q}));
+  assert.equal(foreign.status,403);
+  const start = await handle(new Request(continueUrl,{method:"POST",headers:{Origin:origin},body:q}));
   assert.equal(start.status, 303);
   const redirect = new URL(start.headers.get("Location"));
+  assert.equal(redirect.searchParams.has("psst_challenge"),false);
   const cookie = start.headers.get("Set-Cookie").split(";")[0];
   assert.equal(redirect.searchParams.get("response_mode"), "form_post");
   const claims = { ...baseClaims, nonce: redirect.searchParams.get("nonce") };
