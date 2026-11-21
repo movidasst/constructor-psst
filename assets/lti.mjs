@@ -1,6 +1,8 @@
-import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=coach-1";
+import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
+import { excelGantt, wordFromReport } from "./psst-office.mjs?v=project-2";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=coach-1";
+import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=project-2";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
 
@@ -20,6 +22,12 @@ let savedValues;
 let lastDelivery;
 let pending;
 let busy = false;
+let projectInfo;
+let recoveryKey;
+let autosaveTimer;
+let conflict = false;
+let deliveredArchive;
+let rememberedRisks;
 
 const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const rowSchemas = {
@@ -46,13 +54,24 @@ const rowSchemas = {
   anexos: {group:"m4",key:"soportes",singular:"Anexo",fields:[
     ["codigo","Código",true],["nombre","Documento o evidencia",true],["capitulo","Capítulo o código al que respalda"],
     ["version","Versión y fecha"],["ubicacion","Ubicación o referencia"],["estado","Estado del soporte",false,"soportes"],
-    ["responsable","Responsable de completarlo"],
+    ["responsable","Responsable de completarlo"],["custodio","Custodio y personas autorizadas"],
+    ["revisionAcceso","Fecha de revisión del acceso",false,"verification-date"],
   ]},
   procesos: { group:"flujo", key:"procesos", singular:"Proceso", fields:[
     ["codigo","Código (p. ej., P-01)",true], ["nombre","Nombre del proceso de trabajo",true],
     ["productivoRef","Flujo productivo o de servicio",true,"productivos"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
     ["secuencia","Etapas y organización del trabajo"], ["salidas","Productos, residuos y disposición"],
     ["contratistas","Contratistas e interacciones"], ["evidencia","Diagrama, croquis u otra evidencia"],
+  ] },
+  campo: { group:"bitacora", key:"registros", singular:"Actividad de campo", fields:[
+    ["fecha","Fecha",true,"verification-date"],["actividad","Actividad realizada",true],["horas","Horas registradas",true,"hours"],
+    ["tareaRef","Tarea observada",false,"tareasPropias"],["tipo","Fuente o método",false,"tiposEvidencia"],
+    ["evidencia","Código o referencia privada de la evidencia",true],
+  ] },
+  verificacion: { group:"m2", key:"verificaciones", singular:"Revisión de tarea", fields:[
+    ["tareaRef","Tarea inventariada",true,"tareas"],["estado","Estado de la tarea",true,"estadosTarea"],
+    ["evidencia","Fuente o referencia privada"],["justificacion","Justificación y alcance de la revisión",true],
+    ["responsable","Responsable de verificar"],["fecha","Fecha prevista",false,"verification-date"],
   ] },
   tareas: { group:"tarea", key:"actividades", singular:"Tarea", fields:[
     ["codigo","Código (p. ej., T-01)",true], ["procesoRef","Proceso del inventario",true,"procesos"],
@@ -85,12 +104,12 @@ const rowSchemas = {
   m3: { group:"m3", key:"filas", singular: "Actividad", fields: [
     ["planRef","Plan de trabajo",true,"planes"], ["plan","Nombre del plan en una versión anterior"],
     ["actividad","Actividad preventiva",true], ["riesgoRef","Hallazgo de M2",false,"riesgos"], ["hallazgo","Referencia complementaria del hallazgo"], ["responsable","Responsable",true],
-    ["fechaInicio","Fecha prevista de inicio",false,"date"], ["fechaFin","Fecha prevista de cierre",false,"date"],
-    ["estado","Estado de ejecución",false,"estados"], ["inicio","Mes de inicio guardado",false,"month"], ["fin","Mes de cierre guardado",false,"month"],
+    ["centro","Centro de trabajo"],["fechaInicio","Fecha prevista de inicio",false,"date"], ["fechaFin","Fecha prevista de cierre",false,"date"],
+    ["inicioReal","Fecha real de inicio",false,"verification-date"],["cierreReal","Fecha real de cierre",false,"verification-date"],["estado","Estado de ejecución",false,"estados"], ["inicio","Mes de inicio guardado",false,"month"], ["fin","Mes de cierre guardado",false,"month"],
     ["enfoque","Enfoque de la actividad",false,"enfoques"], ["detalleEnfoque","Procedimiento y criterio según el enfoque"],
     ["evidenciaEsperada","Evidencia esperada"], ["eficacia","Criterio de eficacia"], ["evidenciaReal","Evidencia de ejecución"],
     ["grupo","Grupo de formación (si aplica)"], ["horasPersona","Horas de formación por persona (si aplica)",false,"hours"],
-    ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
+    ...Array.from({length:4},(_,i)=>["horasT"+(i+1),"Horas por persona en trimestre "+(i+1)+" (si cruza trimestres)",false,"hours"]), ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
     ["procedimiento","Procedimiento e instrumento"], ["recursos","Recursos y presupuesto"],
     ["seguimiento","Indicador o evidencia de ejecución"],
   ] },
@@ -117,6 +136,8 @@ const families = Object.keys(planGuides);
 const optionLists = {
   familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
   enfoques:Object.keys(approaches), evaluaciones:["En evaluación","Valorada","Pendiente de medición"],
+  tiposEvidencia:["Observación directa","Entrevista o consulta","Medición","Fotografía","Video","Revisión documental","Croquis"],
+  estadosTarea:["Por observar","Evaluada","Pendiente de medición","Hallazgo registrado"],
   soportes:["Formato en preparación","Formato disponible","Evidencia existente","Pendiente de obtener"],
 };
 
@@ -138,6 +159,7 @@ function choices(type) {
   if (optionLists[type]) return optionLists[type].map(name=>[name,name]);
   const data = ["procesos","planes","productivos","indicadores"].includes(type) ? rowValues(type)
     : type === "planesEntregados" ? (integrationInputs.m3?.data?.m3?.planesDetallados ?? [])
+    : type === "tareasPropias" ? rowValues("tareas")
     : type === "tareas" ? (integrationInputs.m1?.data?.tarea?.actividades ?? [])
     : (integrationInputs.m2?.data?.m2?.filas ?? []);
   return (Array.isArray(data) ? data : []).filter(row => row.id && (row.nombre || row.riesgo))
@@ -164,10 +186,28 @@ function refreshLinks() {
   }
 }
 
+function filteredActivities(){
+  const filters=[["filter-center","centro"],["filter-plan","planRef"],["filter-owner","responsable"]];
+  return rowValues("m3").filter(row=>filters.every(([id,key])=>{
+    const value=document.getElementById(id)?.value;
+    return !value || row[key]===value;
+  }));
+}
+
 function redrawGantt() {
   if (moduleId !== "m3") return;
   const view = document.getElementById("gantt-view");
-  const rows = scheduledActivities(rowValues("m3"));
+  const all=rowValues("m3");
+  for(const [id,key,caption] of [["filter-center","centro","Todos los centros"],["filter-plan","planRef","Todos los planes"],["filter-owner","responsable","Todos los responsables"]]){
+    const input=document.getElementById(id);
+    if(!input?.add) continue;
+    const before=input.value;
+    const options=[...new Set(all.map(row=>row[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+    const label=value=>key==="planRef" ? (rowValues("planes").find(plan=>plan.id===value)?.nombre||value) : value;
+    input.replaceChildren(new Option(caption,""),...options.map(value=>new Option(label(value),value)));
+    if(options.includes(before)) input.value=before;
+  }
+  const rows = scheduledActivities(filteredActivities());
   if (!rows.length) {
     view.replaceChildren(element("p", "Agrega una actividad con fechas previstas para ver el cronograma."));
     return;
@@ -256,13 +296,15 @@ function rowChanged(event) {
     if (task && stage) stage.value = task.etapa ?? "";
   }
   if (!event || key === "codigo" || key === "nombre") refreshLinks();
-  if (!event || ["actividad","inicio","fin","fechaInicio","fechaFin","responsable","estado"].includes(key)) redrawGantt();
+  if (!event || ["actividad","centro","planRef","inicio","fin","fechaInicio","fechaFin","responsable","estado"].includes(key)) redrawGantt();
   if (key === "familia" || key === "enfoque") showRowHelp(event.target.closest(".row-card"));
   if (["m1","m2","m3","m4"].includes(moduleId)) showCoherence();
   if (!event || moduleId === "m3") renderPlanCoverage();
   if (!event || moduleId === "m4") showReadiness();
   tell("Tienes cambios en el borrador.");
   refreshDelivery();
+  renderProjectDetails();
+  queueAutosave();
 }
 
 function appendRow(editorKey, editor, values = {}, focus = false) {
@@ -295,6 +337,11 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
       fillSelect(field,choices(type),value);
     } else {
       field.maxLength = 800;
+    }
+    if(key==="evidencia"||key==="ubicacion"){
+      const help=element("small","Usa un código o una referencia a un repositorio con acceso autorizado. Registra la fecha o condición de revisión del acceso cuando corresponda.");
+      help.className="field-guide";
+      wrapper.append(help);
     }
     field.dataset.key = key;
     field.required = Boolean(required) && !(key === "planRef" && values.plan && !values.planRef)
@@ -355,7 +402,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
 function setupRows(info) {
   moduleId = info.moduleId;
   integrationInputs = info.inputs ?? {};
-  const keys = {m1:["productivos","procesos","tareas"],m2:["m2"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
+  const keys = {m1:["productivos","procesos","tareas","campo"],m2:["verificacion","m2"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
   for (const key of keys[moduleId] ?? []) {
     const editor = form.querySelector('[data-editor="' + key + '"]');
     if (!editor) continue;
@@ -392,7 +439,9 @@ function setupSteps() {
   document.getElementById("step-next").addEventListener("click",() => showStep(currentStep + 1,true));
   document.getElementById("step-controls").hidden = false;
   document.getElementById("step-actions").hidden = false;
-  showStep(0,false);
+  let resumed=0;
+  try { resumed=Number(sessionStorage.getItem(recoveryKey+":step"))||0; } catch {}
+  showStep(steps[resumed]?resumed:0,false);
 }
 
 function showStep(index, focus) {
@@ -406,6 +455,7 @@ function showStep(index, focus) {
   document.getElementById("step-status").textContent = "Paso " + (index + 1) + " de " + steps.length;
   document.getElementById("step-back").disabled = index === 0;
   document.getElementById("step-next").hidden = index === steps.length - 1;
+  if(recoveryKey) try { sessionStorage.setItem(recoveryKey+":step",String(index)); } catch {}
   if (focus) {
     steps[index].querySelector("legend").focus({preventScroll:true});
     steps[index].scrollIntoView({block:"start"});
@@ -436,8 +486,8 @@ function showCoherence() {
   let one=integrationInputs?.m1?.data ?? {},two=integrationInputs?.m2?.data?.m2 ?? {};
   let three=integrationInputs?.m3?.data?.m3 ?? {},four={};
   if (moduleId==="m1") one={flujo:{procesos:rowValues("procesos")},tarea:{actividades:rowValues("tareas")}};
-  if (moduleId==="m2") two={filas:rowValues("m2")};
-  if (moduleId==="m3") three={planesDetallados:rowValues("planes"),filas:rowValues("m3")};
+  if (moduleId==="m2") two={filas:rowValues("m2"),verificaciones:rowValues("verificacion")};
+  if (moduleId==="m3") three={planesDetallados:rowValues("planes"),filas:rowValues("m3"),gruposFormacion:formValues().find(([key])=>key==="m3.gruposFormacion")?.[1]};
   if (moduleId==="m4") {
     four=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
     four.soportes=rowValues("anexos");
@@ -464,7 +514,7 @@ function showCoherence() {
     panel.replaceChildren(list);
   }
   if (moduleId==="m3") {
-    const hours=trainingHours(three.filas,three.planesDetallados);
+    const hours=trainingHours(three.filas,three.planesDetallados,three.gruposFormacion);
     if (hours.length>0) panel.append(element("p","Horas programadas por persona: "+
       hours.map(({group,quarters})=>group+" ("+quarters.map((h,i)=>"T"+(i+1)+" "+h+" h").join(", ")+")").join(" · ")+"."));
   }
@@ -559,10 +609,16 @@ function setupChapterFields() {
 function setupReview() {
   const container = moduleId === "m4" && document.getElementById("review-items");
   if (!container?.append) return;
-  for (const [title, criteria] of reviewGroups) {
+  for (const [index,[title,criteria]] of reviewGroups.entries()) {
+    const chapter=index+1;
+    const definitions=chapterStructure[index][1];
+    const template=chapterTemplates[chapter];
     const section = element("details");
     section.className = "module-details";
     section.append(element("summary",title));
+    const source=element("p","Instrumento de revisión · Capítulo "+chapter+" · ");
+    source.append(reference(template.clause,(chapter===1?sources.guia:sources.nt)+"#page="+template.page));
+    section.append(source);
     for (const [key, label] of criteria) {
       const group = element("fieldset");
       group.className = "review-item";
@@ -582,7 +638,23 @@ function setupReview() {
       const noteLabel = element("label","Evidencia, pendiente o justificación");
       noteLabel.append(observation);
       controls.append(stateLabel,noteLabel);
-      group.append(controls);
+      const targets={
+        objetivos:"objetivo_general",legal:"basamento",roles:"responsabilidades",direccion:"suscripcion",
+        prevencion:"principios",consulta:"difusion",inventario:"proceso_productivo",etapas:"diagramas",metodo:"validacion",
+        exposicion:"riesgos",asamblea:"validacion",medidas:"prioridades",rendimiento:"compromisos",participacion:"compromisos",
+        medios:"recursos",compras:"contratacion",contratistas:"coordinacion",subcontratos:"coordinacion",
+        evaluacion:"criterios",ajustes:"mejora",anexos:"criterios",expediente:"criterios",
+      };
+      const fieldKey=definitions.some(([name])=>name===key)?key:targets[key]??(chapter===4?"estructura":definitions[0][0]);
+      const edit=element("button","Ir al campo del borrador");
+      edit.type="button";
+      edit.addEventListener("click",()=>{
+        const input=form.elements.namedItem("m4."+chapterKey(chapter,fieldKey));
+        if(!input) return;
+        revealControl(input);
+        input.focus();
+      });
+      group.append(controls,edit);
       section.append(group);
     }
     container.append(section);
@@ -648,7 +720,11 @@ async function api(path, body) {
     referrerPolicy: "no-referrer", cache: "no-store",
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok || !data) throw new Error(data?.error ?? "No se pudo contactar al Constructor. Vuelve a abrirlo desde Moodle.");
+  if (!response.ok || !data) {
+    const error=new Error(data?.error ?? "No se pudo contactar al Constructor. Vuelve a abrirlo desde Moodle.");
+    error.http=response.status;
+    throw error;
+  }
   return data;
 }
 
@@ -657,7 +733,7 @@ function formValues() {
 }
 
 function draftFingerprint(values = formValues()) {
-  return JSON.stringify([values, [...editors.keys()].map(rowValues)]);
+  return JSON.stringify([values, [...editors.keys()].map(rowValues), rememberedRisks??draft?.m3?.referenciasRevisadas]);
 }
 
 function deliveryStatus(delivery) {
@@ -673,6 +749,8 @@ function refreshDelivery() {
   deliver.disabled = busy || current;
   deliver.textContent = current ? "Entrega registrada" : "Entregar para revisión";
   if (!lastDelivery) return;
+  const download=document.getElementById("export-archive");
+  if(download) download.hidden=moduleId!=="m4" || !lastDelivery.hasArchive;
 
   const date = new Date(lastDelivery.submittedAt);
   const when = Number.isNaN(date.valueOf()) ? "" :
@@ -685,10 +763,7 @@ function refreshDelivery() {
     (current ? "" : " Tienes un borrador más reciente que aún no has entregado.");
 }
 
-async function saveIfChanged() {
-  const values = formValues();
-  const fingerprint = draftFingerprint(values);
-  if (fingerprint === savedValues) return;
+function collectDraft(values = formValues()) {
   const next = structuredClone(draft);
   for (const [path, value] of values) {
     const [group, key] = path.split(".");
@@ -700,6 +775,18 @@ async function saveIfChanged() {
     next[schema.group] ??= {};
     next[schema.group][schema.key] = rowValues(key);
   }
+  if(moduleId==="m3" && rememberedRisks) {
+    next.m3 ??={};
+    next.m3.referenciasRevisadas=rememberedRisks;
+  }
+  return next;
+}
+
+async function saveIfChanged() {
+  const values=formValues(),fingerprint=draftFingerprint(values);
+  if(fingerprint===savedValues) return;
+  if(conflict) throw new Error("Conserva una copia y vuelve a abrir el módulo para comparar las dos versiones.");
+  const next=collectDraft(values);
   if (new TextEncoder().encode(JSON.stringify(next)).length > 230000) {
     throw new Error("El borrador supera el tamaño disponible. Usa referencias para el material extenso.");
   }
@@ -707,6 +794,13 @@ async function saveIfChanged() {
   draft = next;
   revision = saved.revision;
   savedValues = fingerprint;
+  recordSaved(new Date().toISOString());
+  if(projectInfo?.progress?.[moduleId]){
+    projectInfo.progress[moduleId].revision=revision;
+    renderProgress();
+  }
+  if(draftFingerprint()===savedValues) clearRecovery();
+  else stashRecovery();
   pending = undefined;
 }
 
@@ -725,7 +819,7 @@ async function update(message, action) {
   try {
     await action();
   } catch (error) {
-    tell(error.message, "error");
+    handleSaveError(error);
   } finally {
     inputs.forEach(input => { input.readOnly = false; });
     busy = false;
@@ -733,6 +827,7 @@ async function update(message, action) {
     disabledDuringSave.forEach(control => { control.disabled = false; });
     for (const [key, editor] of editors) updateRowLabels(key,editor);
     refreshDelivery();
+    if(draftFingerprint()!==savedValues) queueAutosave();
   }
 }
 
@@ -767,13 +862,23 @@ deliver.addEventListener("click", () => {
     await saveIfChanged();
     pending ??= crypto.randomUUID();
     lastDelivery = await api("submit", { revision, requestId: pending });
+    if(moduleId==="m4") deliveredArchive=undefined;
+    if(projectInfo?.progress?.[moduleId]){
+      projectInfo.progress[moduleId].submittedRevision=revision;
+      projectInfo.progress[moduleId].published=Boolean(lastDelivery.review);
+      renderProgress();
+    }
+    if(moduleId==="m4"||!lastDelivery.checks) {
+      try { lastDelivery=(await api("workspace")).delivery??lastDelivery; } catch {}
+    }
+    renderChecklist();
     pending = undefined;
     tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. " + deliveryStatus(lastDelivery), "success");
   });
 });
 
-function downloadHtml(documentText, filename) {
-  const url = URL.createObjectURL(new Blob([documentText], { type: "text/html;charset=utf-8" }));
+function downloadBlob(blob,filename) {
+  const url = URL.createObjectURL(blob);
   const link = element("a");
   link.href = url;
   link.download = filename;
@@ -783,13 +888,17 @@ function downloadHtml(documentText, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
+function downloadHtml(documentText,filename){
+  downloadBlob(new Blob([documentText],{type:"text/html;charset=utf-8"}),filename);
+}
+
 function setupGanttDownload(info) {
   if (info.moduleId !== "m3") return;
   function downloadSchedule(includePlans) {
     if (busy) return;
     const documentText = buildGanttDocument({
-      label: info.label, activities: rowValues("m3"), plans: rowValues("planes"), includePlans,
-      riskRows: info.inputs?.m2?.data?.m2?.filas,
+      label: info.label, activities: filteredActivities(), plans: rowValues("planes"), includePlans,
+      riskRows: info.inputs?.m2?.data?.m2?.filas, declaredGroups:formValues().find(([key])=>key==="m3.gruposFormacion")?.[1],
       legacyReference: form.elements.namedItem("m3.gantt").value.trim(),
     });
     if (!documentText) {
@@ -800,6 +909,11 @@ function setupGanttDownload(info) {
     tell("Documento preparado. Ábrelo para imprimirlo o guardarlo como PDF.", "success");
   }
   document.getElementById("export-gantt").addEventListener("click",()=>downloadSchedule(false));
+  document.getElementById("export-excel")?.addEventListener("click",()=>{
+    if (!scheduledActivities(filteredActivities()).length) { tell("Registra una actividad con fechas o cambia los filtros.","error"); return; }
+    downloadBlob(excelGantt(filteredActivities(),rowValues("planes")),"Carta_Gantt_2027.xlsx");
+  });
+  for(const id of ["filter-center","filter-plan","filter-owner"]) document.getElementById(id)?.addEventListener("change",redrawGantt);
   document.getElementById("export-plans-gantt").addEventListener("click",()=>downloadSchedule(true));
 }
 
@@ -845,11 +959,274 @@ function setupDocument(info) {
   }));
 }
 
+function renderProgress(){
+  const view=document.getElementById("project-progress");
+  if(!projectInfo?.progress||!view?.replaceChildren) return;
+  view.replaceChildren(...modules.map(([id,name,n])=>{
+    const tile=element("div");
+    tile.className="project-tile";
+    if(id===moduleId) tile.setAttribute("aria-current","step");
+    tile.append(element("strong",n+" · "+name),element("span",projectState(projectInfo.progress,id)));
+    return tile;
+  }));
+}
+
+function renderChecklist(){
+  const view=document.getElementById("learner-checks");
+  if(!view?.replaceChildren) return;
+  const checks=lastDelivery?.checks;
+  view.replaceChildren(element("p",checks ? "Comprobaciones de la última entrega" : "Cada comprobación registrada aporta 12 puntos, hasta 60. La revisión técnica aporta hasta 40."));
+  if(!checks) return;
+  const list=element("ul");
+  for(const [id,has] of Object.entries(checks)) list.append(element("li",(checksLabels[id]||id)+" · "+(has?"12/12":"0/12")));
+  view.append(list);
+}
+
+function recordSaved(value){
+  const node=document.getElementById("saved-time");
+  if(!node) return;
+  node.textContent=value ? "Guardado "+new Intl.DateTimeFormat("es-VE",{dateStyle:"short",timeStyle:"short",timeZone:"America/Caracas"}).format(new Date(value))+" (VE)" : "Pendiente de guardar";
+}
+
+function recoveryRecord(){
+  if(!recoveryKey) return null;
+  try {
+    const item=JSON.parse(sessionStorage.getItem(recoveryKey));
+    return item?.draft && Number.isInteger(item.revision) && Date.now()-item.at<2*60*60*1000 ? item : null;
+  } catch { return null; }
+}
+
+function stashRecovery(){
+  if(!recoveryKey||!moduleId||!savedValues||draftFingerprint()===savedValues) return;
+  try { sessionStorage.setItem(recoveryKey,JSON.stringify({draft:collectDraft(),revision,at:Date.now()})); } catch {}
+}
+function clearRecovery(){
+  if(!recoveryKey) return;
+  try { sessionStorage.removeItem(recoveryKey); } catch {}
+}
+function queueAutosave(){
+  if(!recoveryKey||!savedValues||draftFingerprint()===savedValues) return;
+  stashRecovery();
+  clearTimeout(autosaveTimer);
+  if(conflict) return;
+  autosaveTimer=setTimeout(async()=>{
+    if(busy || conflict || navigator.onLine===false) return;
+    busy=true;
+    try { await saveIfChanged(); tell("Borrador guardado automáticamente.","success"); }
+    catch(error){ handleSaveError(error); }
+    finally { busy=false; refreshDelivery(); }
+  },1200);
+}
+function handleSaveError(error){
+  tell(error.message,"error");
+  stashRecovery();
+  if([401,403,409].includes(error.http)){
+    conflict=true;
+    const marker=document.getElementById("draft-conflict");
+    marker.hidden=false;
+    marker.textContent=error.http===409 ? "Existe una versión más reciente. Puedes descargar tus cambios y volver a abrir el módulo para compararlos." :
+      "La sesión terminó. Vuelve a abrir el módulo en esta pestaña desde Moodle o descarga una copia de tus cambios.";
+    document.getElementById("copy-recovery").hidden=false;
+  }
+}
+
+function restoreRecovery(item){
+  for(const input of form.querySelectorAll("[name]")){
+    const [group,key]=input.name.split(".");
+    input.value=item.draft[group]?.[key]??"";
+  }
+  for(const [key,editor] of editors){
+    const schema=rowSchemas[key];
+    editor.querySelector("[data-rows]").replaceChildren();
+    for(const row of item.draft[schema.group]?.[schema.key]??[]) appendRow(key,editor,row);
+  }
+  refreshLinks();
+  document.getElementById("restore-recovery").hidden=true;
+  document.getElementById("draft-conflict").hidden=true;
+  rowChanged();
+}
+
+function caseDraft(){
+  const now=moduleId ? collectDraft() : {};
+  return {
+    one:moduleId==="m1" ? now : integrationInputs?.m1?.data??{},
+    two:moduleId==="m2" ? now.m2 : integrationInputs?.m2?.data?.m2??{},
+    three:moduleId==="m3" ? now.m3 : integrationInputs?.m3?.data?.m3??{},
+  };
+}
+
+function riskBaseline(risks){
+  return (risks??[]).map(risk=>[risk.id,risk.codigo,risk.tareaRef,risk.riesgo,risk.prioridad,risk.valoracion,risk.controlPropuesto]);
+}
+
+function renderProjectDetails(){
+  const view=document.getElementById("trace-table");
+  if(!projectInfo?.projectKey || !view?.replaceChildren || !moduleId) return;
+  const inputs=caseDraft();
+  const paths=workTrace(inputs.one,inputs.two,inputs.three);
+  view.replaceChildren();
+  if(!paths.length) view.append(element("p",moduleId==="m3"?"Las tareas completas y sus vínculos se consultan en el módulo 4.":"Registra las tareas en el módulo 1 para construir la trazabilidad."));
+  else {
+    const table=element("table");
+    table.setAttribute("aria-label","Trazabilidad de tareas");
+    const row=table.createTHead().insertRow();
+    for(const title of ["Flujo productivo","Proceso de trabajo","Tarea","Hallazgos","Planes","Actividades y evidencia"]){
+      const cell=element("th",title);cell.scope="col";row.append(cell);
+    }
+    const body=table.createTBody();
+    const summarize=(rows,key)=>rows.map(item=>[item.codigo,item[key]].filter(Boolean).join(" · ")).join("\n")||"—";
+    for(const path of paths){
+      const line=body.insertRow();
+      for(const value of [path.flow?.nombre,path.process?.nombre,summarize([path.task],"nombre"),
+        summarize(path.findings,"riesgo"),summarize(path.plans,"nombre"),
+        path.activities.map(item=>[item.actividad,item.evidenciaReal||item.evidenciaEsperada].filter(Boolean).join(" · ")).join("\n")]){
+        line.insertCell().textContent=value||"—";
+      }
+    }
+    view.append(table);
+  }
+  const questionView=document.getElementById("technical-prompts");
+  const prompts=technicalPrompts(inputs);
+  questionView.replaceChildren();
+  if(prompts.length){
+    const list=element("ul");
+    for(const prompt of prompts) list.append(element("li",prompt));
+    questionView.append(list);
+  } else questionView.append(element("p","Verifica si las fuentes permiten explicar el trabajo real y si cada medida tiene un criterio de eficacia."));
+  const marker=document.getElementById("source-impact");
+  const ack=document.getElementById("ack-source");
+  let message="";
+  if(moduleId==="m3"){
+    const before=rememberedRisks??draft?.m3?.referenciasRevisadas;
+    const after=riskBaseline(inputs.two.filas);
+    const old=new Map((before??[]).map(row=>[row[0],JSON.stringify(row)]));
+    const now=new Map(after.map(row=>[row[0],JSON.stringify(row)]));
+    const changed=[...new Set([...old.keys(),...now.keys()])].filter(id=>old.get(id)!==now.get(id));
+    const affected=(inputs.three?.planesDetallados??[]).filter(plan=>recordRefs(plan).some(id=>changed.includes(id)));
+    if(before && changed.length) message="Hay cambios en los hallazgos del módulo 2. "+(affected.length ?
+      "Revisa primero estos planes: "+affected.map(plan=>plan.codigo||plan.nombre).join(", ")+".":"Revisa si los hallazgos nuevos requieren vincularse a un plan.");
+    ack.hidden=!message;
+  }
+  if(moduleId==="m4" && deliveredArchive){
+    const changes=changedSources(deliveredArchive.inputs,integrationInputs);
+    if(changes.length) message="Hay cambios posteriores a la entrega en: "+changes.map(id=>"Módulo "+id.slice(1)).join(", ")+". Revisa los capítulos III y IV y los anexos antes de entregar otra versión.";
+  }
+  marker.hidden=!message;
+  marker.textContent=message;
+  const fieldHours=document.getElementById("field-hours");
+  if(moduleId==="m1"&&fieldHours) {
+    const complete=rowValues("campo").filter(row=>row.fecha&&row.actividad&&row.evidencia&&Number(row.horas)>0);
+    fieldHours.textContent=complete.reduce((total,row)=>total+Number(row.horas),0)+" de 32 horas respaldadas con registros de campo.";
+  }
+}
+
+async function exportArchive(){
+  try {
+    deliveredArchive=deliveredArchive??await api("archive");
+    renderProjectDetails();
+    downloadBlob(wordFromReport(buildPsstDocument(deliveredArchive)),"PSST_Entrega_R"+deliveredArchive.version+".docx");
+  } catch(error){ tell(error.message,"error"); }
+}
+
+function setupProjectPanel(info){
+  if(!info.projectKey) return;
+  const panel=document.getElementById("project-panel");
+  if(!panel) return;
+  panel.hidden=false;
+  renderProgress();
+  recordSaved(info.savedAt);
+  const item=recoveryRecord();
+  const restore=document.getElementById("restore-recovery");
+  const copy=document.getElementById("copy-recovery");
+  const marker=document.getElementById("draft-conflict");
+  if(item) {
+    if(JSON.stringify(item.draft)===JSON.stringify(info.draft)) clearRecovery();
+    else {
+      marker.hidden=false;
+      copy.hidden=false;
+      restore.hidden=item.revision!==revision;
+      marker.textContent=restore.hidden?"La copia de esta pestaña y el borrador guardado tienen revisiones distintas. Descarga la copia para comparar.":"Hay cambios de esta pestaña disponibles para recuperar.";
+      restore.addEventListener("click",()=>restoreRecovery(item));
+    }
+  }
+  copy.addEventListener("click",()=>{
+    const data=recoveryRecord();
+    if(!data){ tell("No hay una copia de recuperación en esta pestaña.","error");return; }
+    downloadBlob(new Blob([JSON.stringify(data.draft,null,2)],{type:"application/json"}),"PSST_"+moduleId+"_recuperacion.json");
+  });
+  document.getElementById("resume-step").addEventListener("click",()=>showStep(currentStep,true));
+  window.addEventListener("pagehide",stashRecovery);
+  window.addEventListener("online",queueAutosave);
+  const rubric=document.getElementById("learner-rubric");
+  const list=element("ol");
+  for(const [name,guide] of rubrics[moduleId]){
+    const item=element("li");
+    item.append(element("strong",name),element("p",guide));
+    list.append(item);
+  }
+  rubric.replaceChildren(element("p","Rúbrica técnica · 4 criterios de 10 puntos"),list);
+  renderChecklist();
+  const coachButton=document.getElementById("coach-request");
+  coachButton.addEventListener("click",async()=>{
+    const feedback=document.getElementById("coach-response");
+    const consent=document.getElementById("coach-consent").checked;
+    if(!consent){ feedback.textContent="Autoriza el envío para solicitar una sugerencia.";return;}
+    coachButton.disabled=true;
+    feedback.textContent="Preparando sugerencias…";
+    try {
+      const result=await api("coach",{mode:document.getElementById("coach-mode").value,
+        text:document.getElementById("coach-text").value,consent});
+      feedback.textContent=result.suggestion+"\n\nRevisa la sugerencia antes de incorporarla a tu PSST.";
+    } catch(error){ feedback.textContent=error.message; }
+    finally { coachButton.disabled=false; }
+  });
+  if(moduleId==="m3"){
+    if(!draft.m3?.referenciasRevisadas) {
+      rememberedRisks=riskBaseline(integrationInputs?.m2?.data?.m2?.filas);
+      savedValues=draftFingerprint();
+    }
+    document.getElementById("ack-source").addEventListener("click",()=>{
+      rememberedRisks=riskBaseline(caseDraft().two.filas);
+      rowChanged();
+    });
+  }
+  if(moduleId!=="m4") return;
+  document.getElementById("export-archive").addEventListener("click",()=>void exportArchive());
+  if(info.delivery?.hasArchive) void api("archive").then(data=>{deliveredArchive=data;renderProjectDetails();}).catch(()=>{});
+  document.getElementById("export-word").addEventListener("click",()=>void update("Preparando la versión editable…",async()=>{
+    await saveIfChanged();
+    downloadBlob(wordFromReport(buildPsstDocument({label:info.label,inputs:integrationInputs,draft,version:revision})),"Borrador_PSST_R"+revision+".docx");
+    tell("Borrador Word preparado.","success");
+  }));
+  document.getElementById("export-pdf").addEventListener("click",()=>{
+    const report=buildPsstDocument({label:info.label,inputs:integrationInputs,draft:collectDraft(),version:revision});
+    const tab=window.open("","_blank");
+    if(!tab){downloadHtml(report,"Vista_impresion_PSST.html");tell("Abre el archivo y usa Imprimir para guardarlo como PDF.");return;}
+    tab.opener=null;
+    tab.document.open();
+    const parsed=new DOMParser().parseFromString(report,"text/html");
+    const styles=parsed.querySelector("style")?.textContent??"";
+    parsed.querySelector("style")?.remove();
+    tab.document.write("<!doctype html>"+parsed.documentElement.outerHTML);
+    tab.document.close();
+    if(styles && typeof tab.CSSStyleSheet==="function"){
+      const sheet=new tab.CSSStyleSheet();
+      sheet.replaceSync(styles);
+      tab.document.adoptedStyleSheets=[sheet];
+    }
+    tab.focus();
+    tab.print();
+  });
+}
+
+
 async function start() {
   if (!ticket) throw new Error("Abre la actividad desde el curso en Moodle.");
   const auth = await api("exchange", { ticket });
   session = auth.session;
   const info = await api("workspace");
+  projectInfo=info;
+  recoveryKey=info.projectKey ? "psst154:"+info.projectKey+":"+info.moduleId : undefined;
   const moduleContent = {
     m2: ["Identificación de procesos peligrosos y evaluación de riesgos",
       "Registra lo observado en campo y entrega la matriz inicial de riesgos para revisión."],
@@ -896,6 +1273,8 @@ async function start() {
   setupSteps();
   showCoherence();
   savedValues = draftFingerprint();
+  setupProjectPanel(info);
+  renderProjectDetails();
   if (lastDelivery?.revision === revision) {
     tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. " + deliveryStatus(lastDelivery), "success");
   } else {

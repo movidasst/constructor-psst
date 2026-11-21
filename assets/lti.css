@@ -96,3 +96,24 @@ button#deliver{background:var(--teal);color:white}
 .teacher-card dt{font-weight:750;color:#23435d}
 .teacher-card dd{margin:0 0 .55rem .65rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .teacher-card form>label{margin-top:1rem}
+
+.project-panel{margin:0 0 1.1rem;border:1px solid #b5d9d8;background:#f4fbfa;border-radius:18px;padding:1rem 1.2rem}
+.project-heading{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;flex-wrap:wrap}
+.project-heading h2{font-size:1.35rem;margin:.15rem 0 .65rem;color:#08393d}
+.project-heading span{font-size:.92rem;color:#36575b}
+.project-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));gap:.65rem}
+.project-tile{background:#fff;border:1px solid #c9e2e2;border-radius:11px;padding:.75rem;display:grid;gap:.35rem}
+.project-tile[aria-current]{border-color:#007b85;box-shadow:inset 0 3px #007b85}
+.project-tile strong{line-height:1.25;color:#0f383d}.project-tile span{font-size:.86rem;color:#34545b}
+.project-actions{display:flex;align-items:center;margin-top:.8rem;flex-wrap:wrap;gap:.65rem}
+#draft-conflict,#source-impact{border-left:4px solid #bd8700;background:#fff6dc;padding:.7rem .85rem}
+#learner-checks ul,#technical-prompts ul{padding-left:1.25rem}
+#receipt-detail{white-space:pre-wrap;overflow-wrap:anywhere}
+.table-scroll{overflow:auto;max-width:100%}.table-scroll table{min-width:46rem}
+#trace-table th,#trace-table td{white-space:normal;text-align:left;padding:.55rem .65rem;vertical-align:top}
+:focus-visible{outline:3px solid #007b85;outline-offset:3px}
+.teacher-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.7rem}
+.teacher-metrics{margin:.7rem 0;color:#25575a;font-weight:700}
+@media(max-width:450px){.project-panel{padding:.8rem}.project-grid{grid-template-columns:1fr 1fr}.project-tile{padding:.52rem}}
+
+#coach-response{white-space:pre-wrap;overflow-wrap:anywhere}.consent{display:flex;align-items:center;gap:.5rem}.consent input{width:auto}

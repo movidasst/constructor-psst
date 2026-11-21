@@ -1,3 +1,4 @@
+const resultScope = "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly";
 const scoreScope = "https://purl.imsglobal.org/spec/lti-ags/scope/score";
 const assertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 const algorithm = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" };
@@ -29,7 +30,7 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
     throw new TypeError("Llave o registro AGS incompleto");
   }
 
-  async function exchangeToken() {
+  async function exchangeToken(scope=scoreScope) {
     const epoch = Math.floor(now() / 1000);
     const payload = jsonPart({ alg: "RS256", typ: "JWT", kid: config.keyId }) + "." +
       jsonPart({ iss: config.clientId, sub: config.clientId, aud: audience,
@@ -39,7 +40,7 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
     const auth = await request(tokenUrl, {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(6000),
       body: new URLSearchParams({ grant_type: "client_credentials", client_assertion_type: assertionType,
-        client_assertion: assertion, scope: scoreScope }),
+        client_assertion: assertion, scope }),
     });
     if (!auth.ok) {
       await auth.body?.cancel();
@@ -49,7 +50,7 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
     if (typeof token.access_token !== "string" || !token.access_token || typeof token.token_type !== "string" || token.token_type.toLowerCase() !== "bearer") {
       return { sent: false, phase: "token", status: auth.status };
     }
-    if (typeof token.scope === "string" && !token.scope.split(/\s+/).includes(scoreScope)) {
+    if (typeof token.scope === "string" && !token.scope.split(/\s+/).includes(scope)) {
       return { sent: false, phase: "scope", status: 403 };
     }
 
@@ -76,6 +77,24 @@ export function createAgsSender(config, { request = fetch, now = Date.now } = {}
     await result.body?.cancel();
     return { sent: result.ok, phase: "score", status: result.status };
   }
+
+  send.readResult=async ({lineItemUrl,subject,score})=>{
+    const destination=platformUrl(lineItemUrl,issuer.origin);
+    if(!/\/mod\/lti\/services\.php\/[^/]+\/lineitems\/[^/]+\/lineitem\/?$/.test(destination.pathname))
+      throw new TypeError("Columna de Moodle inválida");
+    destination.pathname=destination.pathname.replace(/\/$/,"")+"/results";
+    destination.searchParams.set("user_id",subject);
+    const token=await exchangeToken(resultScope);
+    if(!token.sent) return "unavailable";
+    const response=await request(destination,{headers:{Authorization:"Bearer "+token.accessToken,
+      Accept:"application/vnd.ims.lis.v2.resultcontainer+json"},redirect:"error",signal:AbortSignal.timeout(6000)});
+    if(!response.ok){ await response.body?.cancel();return "unavailable"; }
+    const payload=await response.json();
+    const row=Array.isArray(payload)?payload.find(item=>item.userId===subject):null;
+    if(!row || typeof row.resultScore!=="number") return "missing";
+    const percent=100*row.resultScore/(row.resultMaximum??1);
+    return Math.abs(percent-score)<0.005?"matched":"different";
+  };
 
   send.verifyConnection = async () => {
     const result = await exchangeToken();

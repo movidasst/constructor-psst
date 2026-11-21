@@ -1,3 +1,4 @@
+import { createCoachingService } from "../_shared/coach-api.mjs";
 import { createTeacherApi } from "../_shared/teacher-api.mjs";
 import { course } from "../_shared/course-154.mjs";
 import { createLaunchHandler, digest, random } from "../_shared/launch.mjs";
@@ -86,7 +87,9 @@ async function configuredServices() {
         return url.href;
       },
     });
-    return { launch, workspace: createWorkspaceApi({ origin: app.origin, rpc }),
+    return { launch, workspace: createWorkspaceApi({ origin: app.origin, rpc,
+      coach:createCoachingService({rpc,key:Deno.env.get("PSST_GEMINI_KEY")??Deno.env.get("GEMINI_API_KEY"),
+        model:Deno.env.get("PSST_GEMINI_MODEL")??"gemini-2.5-flash"}) }),
       teacher:createTeacherApi({origin:app.origin,rpc,getSender}) };
   } catch {
     return null;
@@ -106,7 +109,7 @@ function servicesForRequest() {
 }
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|draft|submit|teacher-exchange|teacher)$/)?.[1];
+  const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|archive|draft|submit|coach|teacher-exchange|teacher)$/)?.[1];
   if (route === "jwks" && req.method === "GET") {
     try {
       if (!supabase || !secret) throw new Error("Servicio no configurado");

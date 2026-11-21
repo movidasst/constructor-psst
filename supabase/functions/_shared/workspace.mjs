@@ -2,9 +2,9 @@ import { digest, random, readText } from "./launch.mjs";
 
 const tokenPattern = /^[a-f0-9]{64}$/;
 const requestPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-const operations = new Set(["exchange", "workspace", "draft", "submit"]);
+const operations = new Set(["exchange", "workspace", "archive", "draft", "submit", "coach"]);
 
-export function createWorkspaceApi({ origin, rpc }) {
+export function createWorkspaceApi({ origin, rpc, coach }) {
   return async function workspaceApi(operation, request) {
     if (!operations.has(operation)) return new Response(null, { status: 404 });
     if (request.headers.get("Origin") !== origin) return new Response(null, { status: 403 });
@@ -15,7 +15,7 @@ export function createWorkspaceApi({ origin, rpc }) {
       "Access-Control-Allow-Headers": "Authorization, Content-Type", "Access-Control-Max-Age": "600",
     } });
 
-    if (request.method !== (operation === "workspace" ? "GET" : "POST")) {
+    if (request.method !== (["workspace", "archive"].includes(operation) ? "GET" : "POST")) {
       return json({ error: "Método no permitido." }, 405);
     }
     let body;
@@ -41,9 +41,15 @@ export function createWorkspaceApi({ origin, rpc }) {
       const token = request.headers.get("Authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
       if (!token) return json({ error: "Vuelve a abrir la actividad en Moodle." }, 401);
       const p_hash = await digest(token);
+      if(operation==="coach"){
+        if(body.consent!==true) return json({error:"Confirma que autorizas el envío del resumen anónimo a Gemini."},422);
+        if(!coach) return json({error:"Gemini aún no está habilitado en este curso."},503);
+        const answer=await coach({p_hash,mode:body.mode,text:body.text});
+        return answer.error?json({error:answer.error},answer.status):json(answer);
+      }
       let result;
-      if (operation === "workspace") {
-        result = await rpc("psst_lti_workspace", { p_hash });
+      if (["workspace", "archive"].includes(operation)) {
+        result = await rpc("psst_lti_" + operation, { p_hash });
       } else {
         if (!Number.isSafeInteger(body.revision) || body.revision < 0 || body.revision > 2147483647) {
           return json({ error: "Revisión inválida." }, 400);

@@ -2,7 +2,7 @@ import { digest, random, readText } from "./launch.mjs";
 
 const teacherToken = /^[a-f0-9]{64}$/;
 const deliveryId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const teacherActions = new Set(["list","detail","save","publish"]);
+const teacherActions = new Set(["list","detail","save","publish","verify"]);
 
 export function createTeacherApi({ origin, rpc, getSender }) {
   return async function teacherApi(route, request) {
@@ -35,11 +35,20 @@ export function createTeacherApi({ origin, rpc, getSender }) {
         typeof feedback!=="string" || !feedback.trim() || feedback.trim().length>4000))
         return json({error:"Completa los cuatro criterios de 0 a 10 y la retroalimentación."},422);
 
-      const params={p_hash:await digest(session),p_action:action==="publish"?"claim":action};
+      const params={p_hash:await digest(session),p_action:action==="publish"?"claim":action==="verify"?"read_results":action};
       if (action!=="list") params.p_delivery=id;
       if (action==="save") Object.assign(params,{p_scores:scores,p_feedback:feedback.trim()});
       const result=await rpc("psst_lti_teacher",params);
       if (!result) return json({error:"Sesión docente vencida o entrega fuera de esta actividad."},403);
+      if(action==="verify"){
+        const sender=await getSender();
+        const reported=await Promise.all(result.grades.map(async grade=>{
+          try { return await sender.readResult({lineItemUrl:result.lineItem,subject:grade.subject,score:grade.score}); }
+          catch { return "unavailable"; }
+        }));
+        return json({matched:reported.filter(s=>s==="matched").length,missing:reported.filter(s=>s==="missing").length,
+          different:reported.filter(s=>s==="different").length,unavailable:reported.filter(s=>s==="unavailable").length});
+      }
       if (action!=="publish") return json(result);
 
       if (result.grades.length) {

@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=teacher-1">
-  <script src="assets/lti.mjs?v=teacher-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=project-2">
+  <script src="assets/lti.mjs?v=project-2" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -27,7 +27,21 @@
         <div class="receipt" id="receipt" hidden aria-live="polite">
           <p class="receipt-title" id="receipt-title"></p>
           <p id="receipt-detail"></p>
+          <button type="button" id="export-archive" hidden>Descargar la versión entregada</button>
         </div>
+
+        <section class="project-panel" id="project-panel" hidden aria-labelledby="project-heading">
+          <div class="project-heading"><h2 id="project-heading">Mi PSST</h2><span id="saved-time" role="status"></span></div>
+          <div id="project-progress" class="project-grid"></div>
+          <div class="actions project-actions"><button type="button" id="resume-step">Continuar donde quedé</button>
+            <a href="https://movidasst.org/course/view.php?id=154" class="back">Abrir otro módulo en Moodle</a></div>
+          <p id="draft-conflict" hidden></p>
+          <div class="actions"><button type="button" id="copy-recovery" hidden>Descargar copia de recuperación</button>
+            <button type="button" id="restore-recovery" hidden>Recuperar cambios de esta pestaña</button></div>
+        </section>
+        <details class="card module-details" id="rubric-panel">
+          <summary>Rúbrica y comprobaciones</summary><div id="learner-rubric"></div><div id="learner-checks"></div>
+        </details>
 
         <div id="step-controls" class="step-controls" hidden>
           <p id="step-status" role="status" aria-live="polite"></p>
@@ -142,6 +156,8 @@
             <label class="wide">Registro de evidencias<textarea name="bitacora.evidencias" maxlength="4500" placeholder="Código, fecha, fuente y qué respalda. Puedes referenciar observaciones, minutas, croquis o videos del proceso de trabajo."></textarea></label>
             <label class="wide">Pendientes para el Módulo 2<textarea name="bitacora.pendientes" maxlength="3000" placeholder="Indica qué etapa, condición o información queda por revisar y cómo planeas verificarla."></textarea></label>
           </div>
+          <div class="row-editor" data-editor="campo"><div data-rows></div><button type="button" data-add>Agregar registro de campo</button></div>
+          <p id="field-hours" class="reference" aria-live="polite"></p>
         </fieldset>
 
         <fieldset class="card" data-module="m2" hidden disabled>
@@ -180,6 +196,10 @@
           <details class="module-details"><summary>Ficha de evaluación</summary>
             <p>Registra la tarea, la condición observada y las personas expuestas. Identifica los controles, sustenta la valoración y documenta qué queda por medir. Al elegir una medida, considera primero el control en la fuente.</p>
             <a href="https://medicinalaboraldevenezuela.com.ve/archivo/LOPCYMAT.pdf#page=32" target="_blank" rel="noopener noreferrer">Consultar LOPCYMAT, art. 62</a>
+          </details>
+          <details class="module-details"><summary>Estado de las tareas evaluadas</summary>
+            <p>Registra qué tareas ya revisaste y qué falta verificar. Usa códigos de evidencia y evita datos personales en las referencias.</p>
+            <div class="row-editor" data-editor="verificacion"><div data-rows></div><button type="button" data-add>Agregar revisión de tarea</button></div>
           </details>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
           <details class="module-details">
@@ -231,7 +251,7 @@
           <p><strong>Entregable.</strong> Planes vinculados con los hallazgos y cronograma 2027.</p>
           <details class="module-details"><summary>Ver ejemplo de recepción de materiales</summary><p>R-01 · Revisar la circulación en recepción · Responsable: equipo del área · Inicio y cierre: febrero a marzo · Evidencia: recorrido verificado y plano actualizado.</p></details>
           <p class="reference">Reglamento Parcial, art. 82. NT-04-2023, arts. 17 y 18. Instrumento de revisión, capítulo IV.</p>
-          <p><strong>Formación.</strong> Para revisar las horas por persona, usa el mismo nombre de grupo e indica las horas de cada actividad. Si una actividad abarca dos trimestres, registra sus sesiones por separado.</p>
+          <p><strong>Formación.</strong> Para revisar las horas por persona, usa el mismo nombre de grupo e indica las horas de cada actividad. Si una actividad abarca varios trimestres, consigna las horas por persona en cada trimestre.</p>
           <div class="row-editor" data-editor="m3"><div data-rows></div><button type="button" data-add>Agregar actividad</button></div>
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
@@ -246,7 +266,12 @@
           <p class="section-guide">El cronograma se actualiza al completar los meses de inicio y cierre de cada actividad.</p>
           <div id="gantt-view" class="gantt-view"></div>
           <p>La carta se genera con las fechas previstas, incluso para actividades pendientes. Registra quién se encargará y actualiza el estado a medida que avance.</p>
-          <div class="actions"><button id="export-gantt" type="button">Descargar carta Gantt</button>
+          <div class="fields"><label class="wide">Grupos de formación previstos (uno por línea)<textarea name="m3.gruposFormacion" maxlength="2000"></textarea></label></div>
+          <div id="gantt-filters" class="fields">
+            <label>Centro<select id="filter-center"></select></label><label>Plan<select id="filter-plan"></select></label>
+            <label>Responsable<select id="filter-owner"></select></label>
+          </div>
+          <div class="actions"><button id="export-gantt" type="button">Descargar carta Gantt (HTML)</button><button id="export-excel" type="button">Descargar Excel</button>
           <button id="export-plans-gantt" type="button">Descargar planes y carta Gantt</button></div>
           <details class="module-details">
             <summary>Planes y cronograma de una versión anterior</summary>
@@ -277,6 +302,8 @@
             <div id="integration-sources"></div>
           <h2>Avance de los capítulos</h2><div id="chapter-readiness"></div>
             <button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
+            <button id="export-word" type="button">Descargar Word</button>
+            <button id="export-pdf" type="button">Imprimir o guardar PDF</button>
           </div>
           <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
           <p class="section-guide">Completa cada apartado con un texto breve o una referencia precisa al documento que lo desarrolla. Lo que quede vacío aparecerá como pendiente en la descarga.</p>
@@ -410,6 +437,28 @@
           <div id="review-items"></div>
         </fieldset>
 
+        <details class="card module-details" id="trace-panel">
+          <summary>Trazabilidad de tareas, hallazgos y planes</summary>
+          <div class="table-scroll" id="trace-table"></div>
+          <p id="source-impact" hidden></p>
+          <button type="button" id="ack-source" hidden>Confirmar revisión de las referencias</button>
+        </details>
+        <details class="card module-details" id="question-panel">
+          <summary>Preguntas para orientar la revisión</summary>
+          <div id="technical-prompts"></div>
+          <details class="module-details" id="gemini-panel"><summary>Consulta opcional a Gemini</summary>
+            <p>Describe el caso sin nombres, enlaces, datos clínicos ni información confidencial. Gemini recibirá solo el texto que escribas aquí.</p>
+            <div class="fields">
+              <label>Tipo de ayuda<select id="coach-mode">
+                <option value="campo">Preparar preguntas de campo</option><option value="revision">Revisar incoherencias</option>
+                <option value="redaccion">Proponer redacción</option></select></label>
+              <label class="wide">Resumen anónimo del caso<textarea id="coach-text" maxlength="1600"></textarea></label>
+              <label class="wide consent"><input type="checkbox" id="coach-consent"> Autorizo el envío de este resumen a Gemini.</label>
+            </div>
+            <button type="button" id="coach-request">Solicitar sugerencia</button>
+            <p id="coach-response" role="status" aria-live="polite"></p>
+          </details>
+        </details>
         <details class="card module-details" id="coherence-panel">
           <summary>Revisar pendientes</summary>
           <div id="coherence"></div>

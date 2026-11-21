@@ -52,3 +52,16 @@ test("checks grade authorization without posting a score or returning the token"
   assert.deepEqual(await sender.verifyConnection(), { autorizado: true, fase: "token", http: 200 });
   assert.equal(calls, 1);
 });
+
+test("reads a signed result for the exact subject and normalizes the Moodle grade scale", async () => {
+  const send = createAgsSender(config,{request:async (url,params)=>{
+    if(params.method==="POST") {
+      assert.match(params.body.get("scope"),/result\.readonly$/);
+      return Response.json({access_token:"mock-token",token_type:"Bearer"});
+    }
+    assert.equal(url.pathname,"/mod/lti/services.php/154/lineitems/444/lineitem/results");
+    assert.equal(url.searchParams.get("user_id"),grade.subject);
+    return Response.json([{userId:"different",resultScore:0},{userId:grade.subject,resultScore:19,resultMaximum:20}]);
+  }});
+  assert.equal(await send.readResult(grade),"matched");
+});
