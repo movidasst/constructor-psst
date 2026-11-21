@@ -2,9 +2,9 @@ import { digest, random, readText } from "./launch.mjs";
 
 const tokenPattern = /^[a-f0-9]{64}$/;
 const requestPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-const operations = new Set(["exchange", "workspace", "archive", "draft", "submit", "coach"]);
+const operations = new Set(["exchange", "workspace", "archive", "draft", "submit"]);
 
-export function createWorkspaceApi({ origin, rpc, coach }) {
+export function createWorkspaceApi({ origin, rpc }) {
   return async function workspaceApi(operation, request) {
     if (!operations.has(operation)) return new Response(null, { status: 404 });
     if (request.headers.get("Origin") !== origin) return new Response(null, { status: 403 });
@@ -41,12 +41,6 @@ export function createWorkspaceApi({ origin, rpc, coach }) {
       const token = request.headers.get("Authorization")?.match(/^Bearer ([a-f0-9]{64})$/)?.[1];
       if (!token) return json({ error: "Vuelve a abrir la actividad en Moodle." }, 401);
       const p_hash = await digest(token);
-      if(operation==="coach"){
-        if(body.consent!==true) return json({error:"Confirma que autorizas el envío del resumen anónimo a Gemini."},422);
-        if(!coach) return json({error:"Gemini aún no está habilitado en este curso."},503);
-        const answer=await coach({p_hash,mode:body.mode,text:body.text});
-        return answer.error?json({error:answer.error},answer.status):json(answer);
-      }
       let result;
       if (["workspace", "archive"].includes(operation)) {
         result = await rpc("psst_lti_" + operation, { p_hash });

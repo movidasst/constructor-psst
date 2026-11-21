@@ -1,3 +1,4 @@
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=tutorial-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
 import { excelGantt, wordFromReport } from "./psst-office.mjs?v=project-2";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
@@ -420,16 +421,76 @@ function setupRows(info) {
   renderPlanCoverage();
 }
 
+function renderTutorial(guide) {
+  const overview = document.getElementById("tutorial-overview");
+  if (!overview?.replaceChildren) return;
+  const panel = element("section");
+  panel.className = "tutorial-overview";
+  const outcome = element("p", guide.result);
+  const heading = element("h2","Qué vas a entregar");
+  const supplies = element("p");
+  supplies.append(element("strong","Antes de empezar. "), guide.supplies);
+  const terms = element("details");
+  terms.append(element("summary","Conceptos que necesitas para este módulo"));
+  const definitions = element("dl");
+  for (const [term, definition] of glossary[moduleId]) {
+    definitions.append(element("dt",term),element("dd",definition));
+  }
+  terms.append(definitions);
+  panel.append(heading,outcome,supplies,terms);
+  overview.replaceChildren(panel);
+}
+
+function renderStepTutorial(section, guide, index) {
+  const step = guide.steps[index];
+  const legend = section.querySelector("legend");
+  if (!step || !legend?.after) return;
+  const [, actions, sample, ready] = step;
+  const panel = element("div");
+  panel.className = "tutorial-step";
+  const list = element("ol");
+  for (const action of actions) list.append(element("li",action));
+  const example = element("details");
+  example.append(element("summary","Ejemplo guiado · Centro Norte"),element("p",sample));
+  const check = element("p");
+  check.className="tutorial-check";
+  check.append(element("strong","Antes de avanzar. "),ready);
+  const next = element("p");
+  next.className="tutorial-next";
+  const upcoming = guide.steps[index+1]?.[0];
+  next.append(element("strong",upcoming ? "Qué sigue. " : "Después de entregar. "),
+    upcoming || guide.next);
+  panel.append(element("h3","Qué hacer en este paso"), list, example, check, next);
+  const extra = section.querySelector(".step-help");
+  if (extra) {
+    const details = element("details");
+    details.className = "tutorial-reference";
+    const references = extra.querySelector("p.reference");
+    const explanation = extra.querySelector(":scope > p:nth-child(2)");
+    details.append(element("summary","Por qué importa y referencia técnica"));
+    if (explanation) details.append(explanation);
+    if (references) details.append(references);
+    if (explanation || references) panel.append(details);
+    extra.remove();
+  }
+  legend.after(panel);
+}
+
 function setupSteps() {
   steps = [...form.querySelectorAll("[data-module]")]
     .filter(section => section.dataset.module === moduleId && typeof section.querySelector === "function");
   if (!steps.length) return;
   const nav = document.getElementById("step-nav");
+  const guide=tutorials[moduleId];
+  if (guide) renderTutorial(guide);
   steps.forEach((section, index) => {
     section.id ||= moduleId + "-paso-" + (index + 1);
     const title = section.querySelector("legend");
     title.tabIndex = -1;
-    const button = element("button", title.textContent);
+    const stepName=guide?.steps[index]?.[0]||title.textContent;
+    if(guide?.steps[index]) title.textContent=stepName;
+    if(guide) renderStepTutorial(section,guide,index);
+    const button = element("button", (index+1)+". "+stepName);
     button.type = "button";
     button.setAttribute("aria-controls",section.id);
     button.addEventListener("click", () => showStep(index,true));
@@ -437,6 +498,11 @@ function setupSteps() {
   });
   document.getElementById("step-back").addEventListener("click",() => showStep(currentStep - 1,true));
   document.getElementById("step-next").addEventListener("click",() => showStep(currentStep + 1,true));
+  document.getElementById("step-finish")?.addEventListener("click",()=>{
+    const target=deliver.disabled ? form.querySelector('button[type="submit"]') : deliver;
+    target?.focus();
+    target?.scrollIntoView({block:"center"});
+  });
   document.getElementById("step-controls").hidden = false;
   document.getElementById("step-actions").hidden = false;
   let resumed=0;
@@ -454,7 +520,12 @@ function showStep(index, focus) {
   });
   document.getElementById("step-status").textContent = "Paso " + (index + 1) + " de " + steps.length;
   document.getElementById("step-back").disabled = index === 0;
-  document.getElementById("step-next").hidden = index === steps.length - 1;
+  const next=document.getElementById("step-next");
+  next.hidden = index === steps.length - 1;
+  const nextTitle=tutorials[moduleId]?.steps[index+1]?.[0];
+  next.textContent=nextTitle ? "Siguiente · "+nextTitle : "Siguiente";
+  const finish=document.getElementById("step-finish");
+  if(finish) finish.hidden=!next.hidden;
   if(recoveryKey) try { sessionStorage.setItem(recoveryKey+":step",String(index)); } catch {}
   if (focus) {
     steps[index].querySelector("legend").focus({preventScroll:true});
@@ -1176,20 +1247,6 @@ function setupProjectPanel(info){
   }
   rubric.replaceChildren(element("p","Rúbrica técnica · 4 criterios de 10 puntos"),list);
   renderChecklist();
-  const coachButton=document.getElementById("coach-request");
-  coachButton.addEventListener("click",async()=>{
-    const feedback=document.getElementById("coach-response");
-    const consent=document.getElementById("coach-consent").checked;
-    if(!consent){ feedback.textContent="Autoriza el envío para solicitar una sugerencia.";return;}
-    coachButton.disabled=true;
-    feedback.textContent="Preparando sugerencias…";
-    try {
-      const result=await api("coach",{mode:document.getElementById("coach-mode").value,
-        text:document.getElementById("coach-text").value,consent});
-      feedback.textContent=result.suggestion+"\n\nRevisa la sugerencia antes de incorporarla a tu PSST.";
-    } catch(error){ feedback.textContent=error.message; }
-    finally { coachButton.disabled=false; }
-  });
   if(moduleId==="m3"){
     if(!draft.m3?.referenciasRevisadas) {
       rememberedRisks=riskBaseline(integrationInputs?.m2?.data?.m2?.filas);
