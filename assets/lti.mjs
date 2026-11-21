@@ -1,3 +1,4 @@
+import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=ayuda-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=tutorial-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
 import { excelGantt, wordFromReport } from "./psst-office.mjs?v=project-2";
@@ -625,6 +626,88 @@ function insertOutline(name,fields) {
   field.focus();
 }
 
+function putDraftText(control, text) {
+  if (busy) return;
+  if (control.value.trim()) {
+    tell("El campo ya tiene contenido. Puedes usar el ejemplo de la ayuda para completar lo que te falte.");
+  } else if (!text || text.length > control.maxLength) {
+    tell("Resume el material de origen en el campo y conserva el resto como referencia.");
+  } else {
+    control.value = text;
+    rowChanged();
+    tell("Texto de partida incorporado. Revísalo y complétalo con tus datos.");
+  }
+  control.focus();
+}
+
+function makeFieldHelp(kind, control, previous) {
+  const guide = fieldHelp[kind];
+  const box = element("details");
+  box.className = "field-workshop";
+  const steps = element("ol");
+  for (const step of guide.steps) steps.append(element("li",step));
+  const example = element("p",guide.example);
+  example.className = "workshop-example";
+  const check = element("p");
+  check.append(element("strong","Revisa tu avance. "),guide.check);
+  box.append(element("summary",guide.title),steps,element("strong","Ejemplo · Centro Norte"),example,check);
+  if (guide.reference) box.append(reference(...guide.reference));
+  if (control) {
+    const actions=element("div");
+    actions.className="actions workshop-actions";
+    const template=element("button","Insertar plantilla editable");
+    template.type="button";
+    template.addEventListener("click",()=>putDraftText(control,guide.template));
+    actions.append(template);
+    const source=element("button","Traer mi registro de Módulo 1");
+    source.type="button";
+    source.hidden=true;
+    if (previous) {
+      source.addEventListener("click",()=>putDraftText(control,previous()));
+      actions.append(source);
+    }
+    box.append(actions);
+    return {box,source};
+  }
+  return {box};
+}
+
+function setupFieldHelp(info) {
+  if (info.moduleId === "m1") {
+    const organization=document.getElementById("organigrama-help");
+    if (organization?.append) organization.append(makeFieldHelp("organization",form.elements.namedItem("alcance.organigrama")).box);
+    const production=document.getElementById("production-help");
+    if (production?.append) production.append(makeFieldHelp("production").box);
+    return;
+  }
+  const contextGuide={m2:"risk",m3:"action"}[info.moduleId];
+  if (contextGuide) {
+    const mount=document.getElementById(contextGuide+"-help");
+    if (mount?.append) mount.append(makeFieldHelp(contextGuide).box);
+    return;
+  }
+  if (info.moduleId !== "m4" || !form.elements?.namedItem) return;
+  const prior=info.inputs?.m1?.data;
+  for (const [name,kind,previous] of [
+    ["m4.cap2_politica","policy",null],
+    ["m4.cap3_organigrama","organization",()=>prior?.alcance?.organigrama ?? ""],
+    ["m4.cap3_proceso_productivo","production",()=>productionFromM1(prior)],
+  ]) {
+    const control=form.elements.namedItem(name);
+    if (!control?.parentElement) continue;
+    const wrapper=element("div");
+    wrapper.className="wide";
+    control.parentElement.before(wrapper);
+    wrapper.append(control.parentElement);
+    const {box,source}=makeFieldHelp(kind,control,previous);
+    if (previous) {
+      const text=previous();
+      source.hidden=!text.trim() || text.length>control.maxLength;
+    }
+    wrapper.append(box);
+  }
+}
+
 function setupChapterFields() {
   if (moduleId !== "m4") return;
   for (const container of form.querySelectorAll("[data-chapter]")) {
@@ -1016,8 +1099,6 @@ function setupDocument(info) {
   const center=(String(profile.centro ?? "").trim() || "[Centro de trabajo]");
   const version=String(profile.version ?? "").trim() || "[Versión]";
   const sections=[
-    ["compose-policy","m4.cap2_politica",
-      entity+" adopta esta política de SST para "+center+". El equipo se compromete a prevenir accidentes y enfermedades ocupacionales, a reducir riesgos con base en el diagnóstico, y a consultar a las personas trabajadoras y sus representantes.\n\nPrioridades del centro: [incorporar objetivos y medidas de la entidad].\nDifusión, revisión y suscripción: [completar con el SSST, el CSSL y los responsables]."],
     ["compose-letter","m4.compromiso",
       "Borrador para revisión y suscripción\nEntidad: "+entity+"\nCentro: "+center+"\nVersión del PSST: "+version+"\nRepresentante: [completar]\nDirigida al Comité de Seguridad y Salud Laboral.\n\nSe propone asumir el compromiso de ejecutar y revisar los planes del PSST, proporcionar los recursos previstos, facilitar la participación y hacer seguimiento de las medidas preventivas.\n\nCompromisos específicos y responsables: [incorporar los planes, recursos y plazos].\nFecha y firma: [pendientes de validación y suscripción]."],
   ];
@@ -1325,6 +1406,7 @@ async function start() {
   moduleId = info.moduleId;
   setupProjectFields();
   setupChapterFields();
+  setupFieldHelp(info);
   setupReview();
   revision = info.revision;
   lastDelivery = info.delivery;
