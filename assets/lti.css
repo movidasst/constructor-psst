@@ -116,7 +116,21 @@ button#deliver{background:var(--teal);color:white}
 .teacher-metrics{margin:.7rem 0;color:#25575a;font-weight:700}
 @media(max-width:450px){.project-panel{padding:.8rem}.project-grid{grid-template-columns:1fr 1fr}.project-tile{padding:.52rem}}
 
-#coach-response{white-space:pre-wrap;overflow-wrap:anywhere}.consent{display:flex;align-items:center;gap:.5rem}.consent input{width:auto}
 
-#gantt-filters select,#gemini-panel select{display:block;width:100%;min-height:42px;margin-top:.35rem;padding:.64rem .72rem;border:1px solid #9dafbd;border-radius:8px;background:#fbfdff;color:#253951;font:inherit}
+#gantt-filters select{display:block;width:100%;min-height:42px;margin-top:.35rem;padding:.64rem .72rem;border:1px solid #9dafbd;border-radius:8px;background:#fbfdff;color:#253951;font:inherit}
 #trace-table td{white-space:pre-line}
+
+
+.tutorial-overview{border:1px solid #bfdad9;border-radius:14px;background:#f1f8f7;padding:1rem 1.15rem;margin-bottom:1rem}
+.tutorial-overview h2,.tutorial-step h3{margin:.05rem 0 .55rem;color:#134348;font-size:1.12rem}
+.tutorial-overview p,.tutorial-step p{line-height:1.5;margin:.4rem 0}
+.tutorial-overview dt{font-weight:750;color:#154d54}
+.tutorial-overview dd{margin:0 0 .65rem}
+.tutorial-step{border-left:4px solid #007b85;border-radius:10px;background:#f1f8f7;padding:1rem 1.15rem;margin:0 0 1rem}
+.tutorial-step ol{padding-left:1.45rem;margin:.5rem 0 .75rem;line-height:1.5}
+.tutorial-step li+li{margin-top:.4rem}
+.tutorial-step details,.tutorial-overview details{border-top:1px solid #c8dfde;margin-top:.75rem;padding-top:.6rem}
+.tutorial-step summary,.tutorial-overview summary{color:#21545a;cursor:pointer;font-weight:750}
+.tutorial-step .tutorial-check{margin-top:.8rem;border-left:3px solid #70ad47;padding-left:.65rem}
+.tutorial-step .tutorial-next{margin-top:.65rem}
+.step-actions button{white-space:normal}
