@@ -1,3 +1,5 @@
+import { operationalSchedule, recordsOf, technicalChecks } from "./psst-builder.mjs?v=constructor-1";
+import { schedule } from "./psst-program.mjs?v=coach-1";
 import { activityRows } from "./psst-project.mjs?v=project-2";
 
 const encoder=new TextEncoder();
@@ -19,7 +21,7 @@ function zip(files,type){
   const blocks=[], directory=[];
   let offset=0, size=0;
   for(const [path,data] of Object.entries(files)){
-    const name=encoder.encode(path), content=encoder.encode(data), crc=crc32(content);
+    const name=encoder.encode(path), content=typeof data==="string"?encoder.encode(data):data, crc=crc32(content);
     const header=new Uint8Array(30), h=new DataView(header.buffer);
     h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x800,true);
     h.setUint16(12,33,true); h.setUint32(14,crc,true); h.setUint32(18,content.length,true);
@@ -80,21 +82,80 @@ export function wordFromReport(report, parse=html=>new DOMParser().parseFromStri
     "word/document.xml",{"word/document.xml":"wordprocessingml.document.main+xml","word/styles.xml":"wordprocessingml.styles+xml"},"wordprocessingml.document");
 }
 
+export async function zipDocuments(files){
+  const contents=await Promise.all(Object.entries(files).map(async ([name,value])=>
+    [name, value instanceof Blob ? new Uint8Array(await value.arrayBuffer()) : value]));
+  return zip(Object.fromEntries(contents),"application/zip");
+}
+
 export function excelGantt(activities,plans){
+  return excelBook([["Carta Gantt 2027",ganttRows(activities,plans),true]]);
+}
+
+function ganttRows(activities,plans){
   const cols=["Centro","Plan","Actividad","Responsable","Estado","Inicio previsto","Cierre previsto","Inicio real","Cierre real",
     "Recursos","Evidencia prevista","Evidencia de ejecución","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  const rows=[cols,...activityRows(activities,plans)];
+  const valid=recordsOf(activities).filter(row=>row.actividad&&schedule(row));
+  return [cols,...activityRows(activities,plans).map((cells,index)=>{
+    const row=valid[index];
+    const current=row&&operationalSchedule(row);
+    return current?[...cells.slice(0,12),...Array.from({length:12},(_,month)=>
+      current.start<=month+1&&current.end>=month+1?1:"")]:cells;
+  })];
+}
+
+function sheetXml(rows,gantt){
+  const ns="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
   const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const data=rows.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((value,j)=>{
     const ref=letters[j]+(i+1);
-    if(value===1 && j>=12) return '<c r="'+ref+'" s="2"><v>1</v></c>';
+    if(gantt && value===1 && j>=12) return '<c r="'+ref+'" s="2"><v>1</v></c>';
     return '<c r="'+ref+'" s="'+(i===0?1:0)+'" t="inlineStr"><is><t xml:space="preserve">'+xml(value)+'</t></is></c>';
   }).join("")+"</row>").join("");
+  const end=letters[rows[0].length-1];
+  return declaration+'<worksheet xmlns="'+ns+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
+    (gantt?'<cols><col min="1" max="12" width="23" customWidth="1"/><col min="13" max="24" width="6" customWidth="1"/></cols>':
+      '<cols><col min="1" max="'+rows[0].length+'" width="27" customWidth="1"/></cols>')+
+    '<sheetData>'+data+'</sheetData><autoFilter ref="A1:'+end+rows.length+'"/></worksheet>';
+}
+
+function excelBook(sheets){
   const ns="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-  const sheet=declaration+'<worksheet xmlns="'+ns+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="12" width="23" customWidth="1"/><col min="13" max="24" width="6" customWidth="1"/></cols><sheetData>'+data+'</sheetData><autoFilter ref="A1:X'+rows.length+'"/></worksheet>';
   const styles=declaration+'<styleSheet xmlns="'+ns+'"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF006D76"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFBDE9DD"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="3" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
-  const work=declaration+'<workbook xmlns="'+ns+'" xmlns:r="'+offns+'"><sheets><sheet name="Carta Gantt 2027" sheetId="1" r:id="rId1"/></sheets></workbook>';
-  const rel=declaration+'<Relationships xmlns="'+relns+'"><Relationship Id="rId1" Type="'+offns+'/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="'+offns+'/styles" Target="styles.xml"/></Relationships>';
-  return packageOffice({"xl/workbook.xml":work,"xl/worksheets/sheet1.xml":sheet,"xl/styles.xml":styles,"xl/_rels/workbook.xml.rels":rel},
-    "xl/workbook.xml",{"xl/workbook.xml":"spreadsheetml.sheet.main+xml","xl/worksheets/sheet1.xml":"spreadsheetml.worksheet+xml","xl/styles.xml":"spreadsheetml.styles+xml"},"spreadsheetml.sheet");
+  const work=declaration+'<workbook xmlns="'+ns+'" xmlns:r="'+offns+'"><sheets>'+
+    sheets.map(([name],i)=>'<sheet name="'+xml(name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join("")+'</sheets></workbook>';
+  const rel=declaration+'<Relationships xmlns="'+relns+'">'+
+    sheets.map((_,i)=>'<Relationship Id="rId'+(i+1)+'" Type="'+offns+'/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join("")+
+    '<Relationship Id="rId'+(sheets.length+1)+'" Type="'+offns+'/styles" Target="styles.xml"/></Relationships>';
+  const types={"xl/workbook.xml":"spreadsheetml.sheet.main+xml","xl/styles.xml":"spreadsheetml.styles+xml"};
+  const files={"xl/workbook.xml":work,"xl/styles.xml":styles,"xl/_rels/workbook.xml.rels":rel};
+  sheets.forEach(([,rows,gantt],i)=>{
+    const path="xl/worksheets/sheet"+(i+1)+".xml";
+    types[path]="spreadsheetml.worksheet+xml";
+    files[path]=sheetXml(rows,gantt);
+  });
+  return packageOffice(files,"xl/workbook.xml",types,"spreadsheetml.sheet");
+}
+
+export function workbookForPSST({inputs={},draft={}}){
+  const one=inputs.m1?.data??{}, two=inputs.m2?.data?.m2??{}, three=inputs.m3?.data?.m3??{}, four=draft.m4??{};
+  const plans=recordsOf(three.planesDetallados);
+  const tasks=recordsOf(one.tarea?.actividades);
+  const name=(records,id)=>records.find(row=>row.id===id)?.codigo??"";
+  return excelBook([
+    ["Carta Gantt 2027",ganttRows(three.filas,plans),true],
+    ["Matriz de riesgos",[["Código","Tarea","Condición","Daño posible","Personas expuestas","Controles existentes","Valoración","Prioridad","Evidencia","Dato pendiente","Estado","Responsable","Fecha prevista","Control propuesto"],
+      ...recordsOf(two.filas).map(row=>[row.codigo,name(tasks,row.tareaRef),row.peligro,row.riesgo,row.expuestos,row.controles,row.valoracion,
+        row.prioridad,row.evidencia,row.pendiente,row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,row.controlPropuesto])]],
+    ["Seguimiento",[["Plan","Actividad","Responsable","Estado","Inicio previsto","Cierre previsto","Inicio real","Cierre real","Nuevo inicio","Nuevo cierre","Motivo",
+      "Evidencia esperada","Evidencia de ejecución","Criterio de eficacia","Resultado de eficacia","Fecha de verificación","Nota de eficacia"],
+      ...recordsOf(three.filas).filter(row=>row.actividad).map(row=>[name(plans,row.planRef)||row.plan,row.actividad,row.responsable,row.estado||"Pendiente",
+        row.fechaInicio||row.inicio,row.fechaFin||row.fin,row.inicioReal,row.cierreReal,row.nuevoInicio,row.nuevoFin,row.motivoReprogramacion,
+        row.evidenciaEsperada,row.evidenciaReal,row.eficacia,row.resultadoEficacia,row.verificacionEficacia,row.notaEficacia])]],
+    ["Anexos",[["Código","Soporte","Capítulo o referencia","Versión","Ubicación","Estado","Custodio","Responsable","Revisión de acceso"],
+      ...recordsOf(four.soportes).map(row=>[row.codigo,row.nombre,row.capitulo,row.version,row.ubicacion,row.estado,row.custodio,row.responsable,row.revisionAcceso])]],
+    ["Pendientes",[["Registro","Pendiente","Acción","Responsable","Plazo"],
+      ...recordsOf(four.filas).map(row=>[row.capitulo,row.brecha,row.accion,row.responsable,row.plazo]),
+      ...technicalChecks({one,two,three,four}).map(row=>[row.target,row.message,row.action,"",""])]],
+  ]);
 }

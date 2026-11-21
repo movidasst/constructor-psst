@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=ayuda-1">
-  <script src="assets/lti.mjs?v=ayuda-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=constructor-1">
+  <script src="assets/lti.mjs?v=constructor-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -23,11 +23,21 @@
         <p class="workspace" id="workspace" hidden></p>
       </div>
       <p id="startup" class="startup" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
+      <p id="practice-entry" hidden><a href="?practica=m1" class="back">Practicar con el caso ficticio Centro Norte</a></p>
       <form id="draft" hidden>
+        <section id="practice-panel" class="card builder-panel" hidden aria-label="Caso ficticio">
+          <h2>Caso de práctica · Centro Norte</h2>
+          <p>Usa datos ficticios. Los avances de práctica se guardan en esta pestaña y quedan separados de las entregas del curso.</p>
+          <nav class="actions" aria-label="Módulos de práctica">
+            <a href="?practica=m1">1 · Observar el trabajo</a><a href="?practica=m2">2 · Evaluar riesgos</a>
+            <a href="?practica=m3">3 · Preparar planes</a><a href="?practica=m4">4 · Integrar el PSST</a>
+          </nav>
+        </section>
         <div class="receipt" id="receipt" hidden aria-live="polite">
           <p class="receipt-title" id="receipt-title"></p>
           <p id="receipt-detail"></p>
-          <button type="button" id="export-archive" hidden>Descargar la versión entregada</button>
+          <div class="actions"><button type="button" id="export-archive" hidden>Descargar Word de la versión entregada</button>
+            <button type="button" id="export-archive-package" hidden>Descargar ZIP de la versión entregada</button></div>
         </div>
 
         <div id="tutorial-overview"></div>
@@ -79,6 +89,12 @@
             <div class="wide" id="organigrama-help"></div>
             <label class="wide">Integrantes, roles y acuerdos de la mesa<textarea name="mesa.organizacion" maxlength="3000" placeholder="Indica quién coordina, quién observa, quién registra y qué actividad acordaron levantar."></textarea></label>
           </div>
+          <details class="module-details builder-panel">
+            <summary>Construir el organigrama visual</summary>
+            <p>Agrega cada cargo o área y selecciona a quién reporta. Deja vacía la jefatura de la dirección.</p>
+            <div class="row-editor" data-editor="estructura"><div data-rows></div><button type="button" data-add>Agregar cargo o área</button></div>
+            <div id="organization-view"></div><button type="button" id="download-org">Descargar organigrama editable</button>
+          </details>
         </fieldset>
         <fieldset id="m1-inventario" class="card" data-module="m1">
           <legend>Mapa productivo e inventario del trabajo</legend>
@@ -92,6 +108,12 @@
               <p>P-01 Recepción de materiales. P-02 Almacenamiento. P-03 Despacho.</p><p class="reference">NT-04-2023, art. 14.1. Guía e instrumento, capítulo III.</p>
             </details>
           </div>
+          <details class="module-details builder-panel">
+            <summary>Dibujar las etapas del flujo</summary>
+            <p>Primero crea el flujo. Luego agrega sus etapas y ordénalas con «Subir» y «Bajar». Registra qué pasa cuando el trabajo sale del recorrido habitual.</p>
+            <div class="row-editor" data-editor="mapa"><div data-rows></div><button type="button" data-add>Agregar etapa al mapa</button></div>
+            <div id="flow-view"></div><button type="button" id="download-flow">Descargar mapa editable</button>
+          </details>
           <div class="row-editor" data-editor="procesos"><div data-rows></div><button type="button" data-add>Agregar proceso</button></div>
         </fieldset>
         <fieldset id="m1-proceso" class="card" data-module="m1">
@@ -193,6 +215,7 @@
             <div class="row-editor" data-editor="verificacion"><div data-rows></div><button type="button" data-add>Agregar revisión de tarea</button></div>
           </details>
           <div id="risk-help"></div>
+          <div id="incoming-tasks" class="builder-panel"></div>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
           <details class="module-details">
             <summary>Matriz de una versión anterior o archivo de referencia</summary>
@@ -211,6 +234,7 @@
               <p>PL-01 · Inspecciones en recepción. Meta: verificar los puntos de cruce previstos. Instrumento: lista de inspección.</p><p class="reference">NT-04-2023, art. 17.</p>
             </details>
           </div>
+          <div id="incoming-risks" class="builder-panel"></div>
           <div class="row-editor" data-editor="planes"><div data-rows></div><button type="button" data-add>Agregar plan</button></div>
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
@@ -239,6 +263,12 @@
           <p class="reference">Reglamento Parcial, art. 82. NT-04-2023, arts. 17 y 18. Instrumento de revisión, capítulo IV.</p>
           <p><strong>Formación.</strong> Para revisar las horas por persona, usa el mismo nombre de grupo e indica las horas de cada actividad. Si una actividad abarca varios trimestres, consigna las horas por persona en cada trimestre.</p>
           <div id="action-help"></div>
+          <details class="module-details builder-panel" id="execution-panel">
+            <summary>Seguimiento de ejecución y eficacia</summary>
+            <p>Abre una actividad para registrar su ejecución. Si cambió la fecha, registra la reprogramación; las fechas previstas originales quedan en la ficha.</p>
+            <div id="execution-board"></div>
+            <button type="button" id="download-tracking">Descargar seguimiento en Excel</button>
+          </details>
           <div class="row-editor" data-editor="m3"><div data-rows></div><button type="button" data-add>Agregar actividad</button></div>
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
@@ -285,6 +315,15 @@
           <h2>Avance de los capítulos</h2><div id="chapter-readiness"></div>
             <button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
             <button id="export-word" type="button">Descargar Word</button>
+            <button id="preview-psst" type="button">Vista previa por capítulo</button>
+            <button id="export-package" type="button">Descargar expediente ZIP</button>
+            <p id="package-version" role="status"></p>
+            <div class="fields" id="dossier-fields">
+              <label>Estado del expediente<select name="m4.estadoExpediente"><option value="">Borrador del taller</option>
+                <option value="borrador">Borrador del taller</option><option value="revision">Revisión interna</option>
+                <option value="preparacion">Preparación para consignación</option></select></label>
+              <label class="wide">Responsable, fecha y soportes de la revisión<textarea name="m4.referenciaExpediente" maxlength="1400"></textarea></label>
+            </div>
             <button id="export-pdf" type="button">Imprimir o guardar PDF</button>
           </div>
           <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
@@ -429,6 +468,7 @@
         </details>
         <details class="card module-details" id="coherence-panel">
           <summary>Revisar pendientes</summary>
+          <div id="builder-checks"></div>
           <div id="coherence"></div>
         </details>
         <div id="step-actions" class="step-actions" hidden>
@@ -446,6 +486,13 @@
           </div>
         </div>
       </form>
+      <dialog id="psst-preview" aria-labelledby="preview-heading">
+        <div class="preview-bar"><h2 id="preview-heading">Vista previa del PSST</h2>
+          <div class="actions"><button id="edit-preview-chapter" type="button">Editar capítulo</button>
+          <button id="close-preview" type="button">Cerrar vista previa</button></div></div>
+        <label>Capítulo<select id="preview-chapter"></select></label>
+        <div id="preview-content" tabindex="0"></div>
+      </dialog>
     </main>
   </div>
 </body>

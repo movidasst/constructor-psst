@@ -1,10 +1,12 @@
+import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
+import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks, workRoutes } from "./psst-builder.mjs?v=constructor-1";
 import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=ayuda-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=tutorial-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
-import { excelGantt, wordFromReport } from "./psst-office.mjs?v=project-2";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=constructor-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=project-2";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=constructor-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
 
@@ -18,6 +20,7 @@ const ticket = new URLSearchParams(location.hash.slice(1)).get("ticket");
 if (location.hash) history.replaceState(null, "", location.pathname + location.search);
 
 let session;
+let practice;
 let revision;
 let draft;
 let savedValues;
@@ -33,6 +36,14 @@ let rememberedRisks;
 
 const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const rowSchemas = {
+  estructura: {group:"alcance",key:"estructura",singular:"Cargo o área",fields:[
+    ["nombre","Nombre del cargo o área",true],["reportaA","Reporta a",false,"cargos"],["observacion","Función o coordinación"],
+  ]},
+  mapa: {group:"flujo",key:"etapasMapa",singular:"Etapa del flujo",fields:[
+    ["flujoRef","Flujo productivo o de servicio",true,"productivos"],["nombre","Etapa",true],
+    ["area","Área o responsable"],["entradas","Qué recibe"],["salidas","Qué entrega"],
+    ["excepcion","Desvío, devolución o condición particular"],
+  ]},
   productivos: {group:"flujo",key:"productivos",singular:"Flujo productivo o de servicio",fields:[
     ["codigo","Código del flujo",true],["nombre","Bien o servicio y nombre del flujo",true],
     ["entradas","Entradas e insumos"],["secuencia","Secuencia de etapas e interfaces",true],
@@ -61,7 +72,7 @@ const rowSchemas = {
   ]},
   procesos: { group:"flujo", key:"procesos", singular:"Proceso", fields:[
     ["codigo","Código (p. ej., P-01)",true], ["nombre","Nombre del proceso de trabajo",true],
-    ["productivoRef","Flujo productivo o de servicio",true,"productivos"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
+    ["productivoRef","Flujo productivo o de servicio",true,"productivos"], ["etapaMapaRef","Etapa del mapa",false,"etapasMapa"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
     ["secuencia","Etapas y organización del trabajo"], ["salidas","Productos, residuos y disposición"],
     ["contratistas","Contratistas e interacciones"], ["evidencia","Diagrama, croquis u otra evidencia"],
   ] },
@@ -114,6 +125,9 @@ const rowSchemas = {
     ...Array.from({length:4},(_,i)=>["horasT"+(i+1),"Horas por persona en trimestre "+(i+1)+" (si cruza trimestres)",false,"hours"]), ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
     ["procedimiento","Procedimiento e instrumento"], ["recursos","Recursos y presupuesto"],
     ["seguimiento","Indicador o evidencia de ejecución"],
+    ["nuevoInicio","Nuevo inicio previsto",false,"verification-date"],["nuevoFin","Nuevo cierre previsto",false,"verification-date"],
+    ["motivoReprogramacion","Motivo de reprogramación"],["resultadoEficacia","Resultado de eficacia",false,"resultadoEficacia"],
+    ["verificacionEficacia","Fecha de comprobación",false,"verification-date"],["notaEficacia","Resultado observado o ajuste necesario"],
   ] },
   m4: { group:"m4", key:"filas", singular: "Brecha", fields: [
     ["capitulo","Capítulo o sección"], ["brecha","Brecha o hallazgo",true],
@@ -138,6 +152,7 @@ const families = Object.keys(planGuides);
 const optionLists = {
   familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
   enfoques:Object.keys(approaches), evaluaciones:["En evaluación","Valorada","Pendiente de medición"],
+  resultadoEficacia:followupLabels,
   tiposEvidencia:["Observación directa","Entrevista o consulta","Medición","Fotografía","Video","Revisión documental","Croquis"],
   estadosTarea:["Por observar","Evaluada","Pendiente de medición","Hallazgo registrado"],
   soportes:["Formato en preparación","Formato disponible","Evidencia existente","Pendiente de obtener"],
@@ -160,6 +175,8 @@ function rowValues(key) {
 function choices(type) {
   if (optionLists[type]) return optionLists[type].map(name=>[name,name]);
   const data = ["procesos","planes","productivos","indicadores"].includes(type) ? rowValues(type)
+    : type==="cargos" ? rowValues("estructura")
+    : type==="etapasMapa" ? rowValues("mapa")
     : type === "planesEntregados" ? (integrationInputs.m3?.data?.m3?.planesDetallados ?? [])
     : type === "tareasPropias" ? rowValues("tareas")
     : type === "tareas" ? (integrationInputs.m1?.data?.tarea?.actividades ?? [])
@@ -230,7 +247,7 @@ function redrawGantt() {
     line.append(label);
     line.insertCell().textContent = row.responsable || "Por asignar";
     line.insertCell().textContent = row.estado || "Pendiente";
-    const timing = schedule(row);
+    const timing = operationalSchedule(row);
     for (let month = 1; month <= 12; month++) {
       const cell = line.insertCell();
       if (month >= timing.start && month <= timing.end) {
@@ -298,7 +315,8 @@ function rowChanged(event) {
     if (task && stage) stage.value = task.etapa ?? "";
   }
   if (!event || key === "codigo" || key === "nombre") refreshLinks();
-  if (!event || ["actividad","centro","planRef","inicio","fin","fechaInicio","fechaFin","responsable","estado"].includes(key)) redrawGantt();
+  renderBuilder();
+  if (!event || ["actividad","centro","planRef","inicio","fin","fechaInicio","fechaFin","nuevoInicio","nuevoFin","responsable","estado"].includes(key)) redrawGantt();
   if (key === "familia" || key === "enfoque") showRowHelp(event.target.closest(".row-card"));
   if (["m1","m2","m3","m4"].includes(moduleId)) showCoherence();
   if (!event || moduleId === "m3") renderPlanCoverage();
@@ -398,13 +416,16 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   row.append(remove);
   editor.querySelector("[data-rows]").append(row);
   updateRowLabels(editorKey, editor);
+  if (editorKey==="mapa") addStageOrder(row,editor);
+  if (editorKey==="planes") addPlanActivity(row);
   if (focus) fields.querySelector("[data-key]").focus();
+  return row;
 }
 
 function setupRows(info) {
   moduleId = info.moduleId;
   integrationInputs = info.inputs ?? {};
-  const keys = {m1:["productivos","procesos","tareas","campo"],m2:["verificacion","m2"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
+  const keys = {m1:["estructura","productivos","mapa","procesos","tareas","campo"],m2:["verificacion","m2"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
   for (const key of keys[moduleId] ?? []) {
     const editor = form.querySelector('[data-editor="' + key + '"]');
     if (!editor) continue;
@@ -865,6 +886,11 @@ function tell(message, state = "") {
 }
 
 async function api(path, body) {
+  if (practice) {
+    if(path==="draft") return practice.save(body.draft);
+    if(path==="workspace") return practice.info;
+    throw new Error("Las entregas se registran desde la actividad del curso.");
+  }
   const headers = {};
   if (session) headers.Authorization = "Bearer " + session;
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -902,9 +928,12 @@ function refreshDelivery() {
   const current = lastDelivery?.revision === revision && !dirty;
   deliver.disabled = busy || current;
   deliver.textContent = current ? "Entrega registrada" : "Entregar para revisión";
+  if(practice) deliver.hidden=true;
   if (!lastDelivery) return;
-  const download=document.getElementById("export-archive");
-  if(download) download.hidden=moduleId!=="m4" || !lastDelivery.hasArchive;
+  for(const id of ["export-archive","export-archive-package"]){
+    const download=document.getElementById(id);
+    if(download) download.hidden=moduleId!=="m4" || !lastDelivery.hasArchive;
+  }
 
   const date = new Date(lastDelivery.submittedAt);
   const when = Number.isNaN(date.valueOf()) ? "" :
@@ -998,13 +1027,28 @@ form.addEventListener("submit", event => {
 });
 
 deliver.addEventListener("click", () => {
-  if (busy || deliver.disabled) return;
+  if (practice || busy || deliver.disabled) return;
   if (moduleId === "m3" && rowValues("m3").some(row=>row.actividad && !schedule(row))) {
     revealControl(editors.get("m3")?.querySelector("select"));
     tell("Completa el inicio y el cierre previsto de cada actividad, dentro de 2027 y en orden.", "error");
     return;
   }
   if (!validateForm()) return;
+  if(moduleId==="m1"){
+    const invalid=organizationTree(rowValues("estructura")).find(row=>row.cycle || row.orphan);
+    if(invalid){
+      focusRecord("estructura",invalid.id);
+      tell("Revisa a quién reporta "+invalid.nombre+" en el organigrama.","error");
+      return;
+    }
+    const mappedStages=rowValues("mapa");
+    const mismatched=rowValues("procesos").find(row=>row.etapaMapaRef && !mappedStages.some(stage=>stage.id===row.etapaMapaRef && stage.flujoRef===row.productivoRef));
+    if(mismatched){
+      focusRecord("procesos",mismatched.id);
+      tell("La etapa elegida debe pertenecer al flujo de ese proceso de trabajo.","error");
+      return;
+    }
+  }
   if (moduleId === "m4") {
     const recorded=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
     for (const key of ["contratistas","indicadores"]) recorded[key]=rowValues(key);
@@ -1269,9 +1313,17 @@ function renderProjectDetails(){
       "Revisa primero estos planes: "+affected.map(plan=>plan.codigo||plan.nombre).join(", ")+".":"Revisa si los hallazgos nuevos requieren vincularse a un plan.");
     ack.hidden=!message;
   }
+  if(moduleId==="m4"){
+    const newer=["m1","m2","m3"].filter(id=>{
+      const progress=projectInfo?.progress?.[id];
+      return progress?.submittedRevision!=null && progress.revision>progress.submittedRevision;
+    });
+    if(newer.length) message="Hay avances guardados en "+newer.map(id=>"Módulo "+id.slice(1)).join(", ")+
+      " que todavía no forman parte de su última entrega. Revisa las fuentes antes de cerrar el borrador.";
+  }
   if(moduleId==="m4" && deliveredArchive){
     const changes=changedSources(deliveredArchive.inputs,integrationInputs);
-    if(changes.length) message="Hay cambios posteriores a la entrega en: "+changes.map(id=>"Módulo "+id.slice(1)).join(", ")+". Revisa los capítulos III y IV y los anexos antes de entregar otra versión.";
+    if(changes.length) message=(message?message+" ":"")+"Hay cambios posteriores a la entrega en: "+changes.map(id=>"Módulo "+id.slice(1)).join(", ")+". Revisa los capítulos III y IV y los anexos antes de entregar otra versión.";
   }
   marker.hidden=!message;
   marker.textContent=message;
@@ -1368,11 +1420,354 @@ function setupProjectPanel(info){
 }
 
 
+function actionButton(text,action){
+  const button=element("button",text);
+  button.type="button";
+  button.addEventListener("click",action);
+  return button;
+}
+
+function recordControl(target,id){
+  const editor=editors.get(target);
+  const row=id&&[...(editor?.querySelectorAll(".row-card")??[])].find(node=>node.dataset.id===id);
+  return row?.querySelector("[data-key]")??editor?.querySelector("[data-add]");
+}
+
+function focusRecord(target,id){
+  const input=recordControl(target,id);
+  if(!input) return false;
+  revealControl(input);
+  input.focus();
+  input.scrollIntoView({block:"center"});
+  return true;
+}
+
+function newLinkedRow(target, values){
+  if(busy||!editors.has(target)) return;
+  const row=appendRow(target,editors.get(target),values);
+  rowChanged();
+  focusRecord(target,row.dataset.id);
+  return row;
+}
+
+function addStageOrder(row,editor){
+  for(const [caption,offset] of [["Subir etapa",-1],["Bajar etapa",1]]){
+    row.append(actionButton(caption,()=>{
+      if(busy) return;
+      const group=row.querySelector('[data-key="flujoRef"]').value;
+      const siblings=[...editor.querySelectorAll(".row-card")].filter(other=>other.querySelector('[data-key="flujoRef"]').value===group);
+      const sibling=siblings[siblings.indexOf(row)+offset];
+      if(!sibling) return;
+      if(offset<0) sibling.before(row);
+      else sibling.after(row);
+      updateRowLabels("mapa",editor);
+      rowChanged();
+    }));
+  }
+}
+
+function addPlanActivity(row){
+  row.append(actionButton("Programar actividad",()=>{
+    const plan=rowValues("planes").find(item=>item.id===row.dataset.id);
+    if(!plan?.nombre||!plan.codigo){
+      tell("Primero identifica el plan con código y nombre.","error");
+      focusRecord("planes",row.dataset.id);
+      return;
+    }
+    const refs=recordRefs(plan);
+    newLinkedRow("m3",{planRef:plan.id,riesgoRef:refs.length===1?refs[0]:""});
+  }));
+}
+
+function renderIncoming(info){
+  const mount=document.getElementById(moduleId==="m2"?"incoming-tasks":"incoming-risks");
+  if(!mount?.replaceChildren || !["m2","m3"].includes(moduleId)) return;
+  const isTask=moduleId==="m2";
+  const source=isTask?info.inputs?.m1?.data?.tarea?.actividades:info.inputs?.m2?.data?.m2?.filas;
+  const rows=recordsOf(source).filter(row=>row.id&&(row.nombre||row.riesgo));
+  const title=element("h2",isTask?"Tareas disponibles del Módulo 1":"Hallazgos disponibles del Módulo 2");
+  mount.replaceChildren(title);
+  if(!rows.length){
+    mount.append(element("p",isTask?"Cuando guardes o entregues tareas en el Módulo 1 podrás retomarlas aquí.":"Cuando guardes o entregues hallazgos en el Módulo 2 podrás convertirlos en acciones desde aquí."));
+    return;
+  }
+  const list=element("ul");
+  list.className="builder-list";
+  for(const item of rows){
+    const line=element("li");
+    line.append(element("strong",[item.codigo,item.nombre||item.riesgo].filter(Boolean).join(" · ")));
+    if(item.evidencia) line.append(element("p","Fuente: "+item.evidencia));
+    if(isTask){
+      line.append(actionButton("Crear hallazgo",()=>newLinkedRow("m2",{
+        codigo:nextCode("R",rowValues("m2")),tareaRef:item.id,etapa:item.etapa||item.nombre,
+        evidencia:item.evidencia||"",
+      })));
+    } else {
+      line.append(actionButton("Crear plan para este hallazgo",()=>newLinkedRow("planes",{codigo:nextCode("PL",rowValues("planes")),riesgoRefs:[item.id]})));
+      const select=element("select");
+      select.setAttribute("aria-label","Plan existente para "+(item.codigo||item.riesgo));
+      const fill=()=>select.replaceChildren(new Option("Selecciona un plan existente",""),
+        ...rowValues("planes").filter(plan=>plan.nombre).map(plan=>new Option([plan.codigo,plan.nombre].filter(Boolean).join(" · "),plan.id)));
+      fill();
+      select.addEventListener("focus",fillOnce);
+      function fillOnce(){ if(!select.value) fill(); }
+      line.append(select,actionButton("Vincular al plan elegido",()=>{
+        const planId=select.value;
+        if(!planId){tell("Selecciona un plan existente para crear el vínculo.","error");return;}
+        const plan=editors.get("planes");
+        const row=[...(plan?.querySelectorAll(".row-card")??[])].find(node=>node.dataset.id===planId);
+        const field=row?.querySelector('[data-key="riesgoRefs"]');
+        if(!field) return;
+        fillSelect(field,choices("riesgos-multiple"),[...new Set([...fieldValue(field),item.id])]);
+        rowChanged();
+        focusRecord("planes",planId);
+      }));
+    }
+    list.append(line);
+  }
+  mount.append(list);
+}
+
+function showWorkRoutes(mount,id){
+  if(!mount?.before) return;
+  const guide=element("details");
+  guide.className="field-workshop";
+  guide.append(element("summary","Elige cómo preparar esta parte"));
+  const select=element("select");
+  select.setAttribute("aria-label","Forma de preparar "+id);
+  for(const [key,caption] of [["vigente","Tengo información o documento vigente"],["elaborar","Necesito elaborarlo"],["pendiente","Me falta verificarlo"]]){
+    select.add(new Option(caption,key));
+  }
+  select.value="elaborar";
+  const text=element("p",Object.fromEntries(workRoutes).elaborar);
+  text.setAttribute("role","status");
+  select.addEventListener("change",()=>{text.textContent=Object.fromEntries(workRoutes)[select.value];});
+  guide.append(select,text);
+  mount.before(guide);
+}
+
+function renderBuilder(){
+  if(!projectInfo?.projectKey||!draft) return;
+  if(moduleId==="m1") renderDiagrams();
+  if(moduleId==="m3") renderExecution();
+  const target=document.getElementById("builder-checks");
+  if(!target?.replaceChildren) return;
+  const data=caseDraft();
+  const current=collectDraft();
+  const notices=technicalChecks({...data,four:current.m4}).filter(item=>
+    moduleId==="m4"||({
+      m1:["estructura"],m2:["m2"],m3:["planes","m3"],
+    }[moduleId]??[]).includes(item.target));
+  target.replaceChildren();
+  if(!notices.length) return;
+  target.append(element("h3","Qué revisar en tus registros"));
+  const list=element("ul");
+  for(const notice of notices){
+    const item=element("li");
+    item.append(element("strong",notice.message),element("p",notice.action));
+    if(recordControl(notice.target,notice.id)) item.append(actionButton("Abrir registro",()=>focusRecord(notice.target,notice.id)));
+    else if(notice.target==="expediente") item.append(actionButton("Ir al estado del expediente",()=>{
+      const field=document.getElementById("dossier-fields").querySelector("select");
+      revealControl(field);field.focus();
+    }));
+    else if(moduleId==="m4"){
+      const route=document.querySelector(".project-actions a")?.cloneNode(true);
+      if(route){
+        if(practice) route.href="?practica="+(notice.target==="m2"?"m2":notice.target==="estructura"?"m1":"m3");
+        route.textContent="Volver al módulo de origen";
+        item.append(route);
+      }
+    }
+    list.append(item);
+  }
+  target.append(list);
+}
+
+function renderDiagrams(){
+  const org=document.getElementById("organization-view"),flow=document.getElementById("flow-view");
+  if(!org?.replaceChildren||!flow?.replaceChildren) return;
+  const structure=organizationTree(rowValues("estructura"));
+  const visible=new Set();
+  function showBranch(row){
+    visible.add(row.id);
+    const item=element("li");
+    const label=element("span",row.nombre);
+    item.append(label);
+    const linked=structure.filter(child=>child.parent?.id===row.id&&!child.cycle&&!visible.has(child.id));
+    if(linked.length){
+      const nested=element("ul");
+      for(const child of linked) nested.append(showBranch(child));
+      item.append(nested);
+    }
+    return item;
+  }
+  const orgTree=element("ul");
+  orgTree.className="org-tree";
+  for(const row of structure.filter(node=>!node.parent||node.cycle)) if(!visible.has(row.id)) orgTree.append(showBranch(row));
+  org.replaceChildren(structure.length?orgTree:element("p","Agrega al menos la dirección o un cargo para ver el organigrama."));
+  const flows=orderedFlows({flujo:{productivos:rowValues("productivos"),etapasMapa:rowValues("mapa")}});
+  flow.replaceChildren();
+  for(const item of flows){
+    const section=element("section");
+    section.append(element("h3",item.nombre));
+    const sequence=element("ol");
+    sequence.className="flow-sequence";
+    for(const stage of item.stages){
+      const entry=element("li");
+      entry.append(element("strong",stage.nombre));
+      if(stage.area) entry.append(element("p",stage.area));
+      if(stage.excepcion) entry.append(element("p","Desvío: "+stage.excepcion));
+      sequence.append(entry);
+    }
+    section.append(item.stages.length?sequence:element("p","Agrega una etapa y vincúlala a este flujo."));
+    if(item.stages.length) section.append(actionButton("Usar esta secuencia en la ficha",()=>{
+      const control=[...(editors.get("productivos")?.querySelectorAll(".row-card")??[])]
+        .find(row=>row.dataset.id===item.id)?.querySelector('[data-key="secuencia"]');
+      if(!control||busy) return;
+      if(control.value.trim()&&control.value!==item.stages.map(stage=>stage.nombre).join(" → ")){
+        tell("La ficha ya tiene una secuencia. Revisa el mapa para actualizar el texto cuando corresponda.");
+      } else {
+        const summary=item.stages.map(stage=>stage.nombre).join(" → ");
+        if(summary.length>control.maxLength){
+          tell("La secuencia es extensa. Escribe un resumen de las etapas principales en la ficha.","error");
+        }else{control.value=summary;rowChanged();}
+      }
+      control.focus();
+    }));
+    flow.append(section);
+  }
+  if(!flows.length) flow.append(element("p","Crea y nombra el flujo antes de agregar etapas al mapa."));
+}
+
+function renderExecution(){
+  const board=document.getElementById("execution-board");
+  if(!board?.replaceChildren) return;
+  const rows=rowValues("m3").filter(row=>row.actividad);
+  const stats=executionStats(rows);
+  board.replaceChildren(element("p",stats.total+" actividades · "+stats.pendientes+" pendientes · "+stats.enCurso+" en curso · "+
+    stats.reprogramadas+" reprogramadas · "+stats.ejecutadas+" ejecutadas · "+stats.eficaces+" con eficacia verificada"));
+  if(!rows.length) return;
+  const list=element("ul");list.className="builder-list";
+  for(const row of rows){
+    const item=element("li");
+    item.append(element("strong",row.actividad),element("p",[row.estado||"Pendiente",row.responsable,row.resultadoEficacia].filter(Boolean).join(" · ")),
+      actionButton("Actualizar seguimiento",()=>{
+        if(!focusRecord("m3",row.id)) return;
+        const target=[...editors.get("m3").querySelectorAll(".row-card")].find(card=>card.dataset.id===row.id)?.querySelector('[data-key="estado"]');
+        target?.focus();
+      }));
+    list.append(item);
+  }
+  board.append(list);
+}
+
+function projectSnapshot(){
+  return {label:projectInfo.label,inputs:integrationInputs??{},draft:collectDraft(),version:revision};
+}
+
+function openDraftPreview(){
+  const model=projectSnapshot(), dialog=document.getElementById("psst-preview");
+  document.getElementById("preview-heading").textContent=draftFingerprint()===savedValues
+    ?"Vista previa · Revisión "+revision:"Vista previa · Cambios todavía sin guardar";
+  const doc=new DOMParser().parseFromString(buildPsstDocument(model),"text/html");
+  const sections=[...doc.querySelectorAll("section[data-chapter-preview]")];
+  const select=document.getElementById("preview-chapter"), content=document.getElementById("preview-content");
+  select.replaceChildren(...sections.map((section,index)=>new Option(section.querySelector("h2").textContent,String(index))));
+  function paint(){
+    const section=sections[Number(select.value)];
+    content.replaceChildren();
+    if(section){
+      content.append(document.importNode(section,true));
+      content.scrollTop=0;
+    }
+  }
+  select.onchange=paint;
+  paint();
+  dialog.showModal();
+}
+
+async function exportProjectPackage(archived=false){
+  await update("Preparando el expediente…",async()=>{
+    if(!archived) await saveIfChanged();
+    const model=archived ? (deliveredArchive??=await api("archive")) : projectSnapshot();
+    const html=buildPsstDocument(model);
+    const stage=statusLabels[model.draft.m4?.estadoExpediente]??statusLabels.borrador;
+    const zip=await zipDocuments({
+      "01_PSST_editable.docx":wordFromReport(html),
+      "02_PSST.pdf":pdfFromReport(html),
+      "03_Matriz_cronograma_y_anexos.xlsx":workbookForPSST(model),
+      "04_Diagramas_editables.docx":wordFromReport(buildDiagramDocument(model)),
+      "05_Estado_del_expediente.txt":model.label+"\nRevisión "+model.version+" · "+stage+
+        "\n"+(model.draft.m4?.referenciaExpediente||"Revisión de la entidad por documentar.")+
+        "\nEl libro Excel reúne el cronograma, la matriz, los anexos y los pendientes registrados. Los soportes externos se identifican por su referencia.",
+    });
+    downloadBlob(zip,(archived?"Expediente_PSST_Entregado_R":"Expediente_PSST_R")+model.version+".zip");
+    document.getElementById("package-version").textContent="Expediente preparado desde la revisión "+model.version+".";
+  });
+}
+
+function setupBuilder(info){
+  if(!info.projectKey) return;
+  const entry=document.getElementById("practice-entry");
+  if(entry) entry.hidden=Boolean(practice);
+  if(practice){
+    document.getElementById("practice-panel").hidden=false;
+    document.getElementById("rubric-panel").hidden=true;
+    for(const link of document.querySelectorAll("#practice-panel nav a")) link.addEventListener("click",async event=>{
+      if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey) return;
+      event.preventDefault();
+      if(busy){tell("Espera a que termine el guardado antes de cambiar de módulo.");return;}
+      try {await saveIfChanged();location.href=link.href;} catch(error){tell(error.message,"error");}
+    });
+  }
+  if(moduleId==="m1"){
+    showWorkRoutes(document.querySelector("#organigrama-help"),"el organigrama");
+    showWorkRoutes(document.querySelector("#production-help"),"el proceso productivo");
+    for(const [id,name,kind] of [["download-org","Organigrama","org"],["download-flow","Mapa_productivo","flow"]]){
+      document.getElementById(id)?.addEventListener("click",()=>{
+        downloadBlob(wordFromReport(buildDiagramDocument({label:info.label,inputs:{m1:{data:collectDraft()}}},kind)),name+".docx");
+      });
+    }
+  }
+  if(moduleId==="m2"||moduleId==="m3") renderIncoming(info);
+  if(moduleId==="m3"){
+    document.getElementById("download-tracking")?.addEventListener("click",()=>{
+      const model={label:info.label,inputs:{...integrationInputs,m3:{data:collectDraft()}},draft:{}};
+      downloadBlob(workbookForPSST(model),"Seguimiento_PSST.xlsx");
+    });
+  }
+  if(moduleId==="m4"){
+    showWorkRoutes(document.querySelector('[name="m4.cap2_politica"]')?.parentElement,"la política de SST");
+    document.getElementById("preview-psst")?.addEventListener("click",openDraftPreview);
+    document.getElementById("close-preview")?.addEventListener("click",()=>document.getElementById("psst-preview").close());
+    document.getElementById("edit-preview-chapter")?.addEventListener("click",()=>{
+      const number=Number(document.getElementById("preview-chapter").value)+1;
+      document.getElementById("psst-preview").close();
+      const control=form.querySelector('[data-chapter="'+number+'"] textarea');
+      if(control){revealControl(control);control.focus();}
+    });
+    document.getElementById("export-package")?.addEventListener("click",()=>void exportProjectPackage());
+    document.getElementById("export-archive-package")?.addEventListener("click",()=>void exportProjectPackage(true));
+  }
+  renderBuilder();
+}
+
 async function start() {
-  if (!ticket) throw new Error("Abre la actividad desde el curso en Moodle.");
-  const auth = await api("exchange", { ticket });
-  session = auth.session;
-  const info = await api("workspace");
+  const demoId=new URLSearchParams(location.search).get("practica");
+  let info;
+  if(!ticket && /^m[1-4]$/.test(demoId??"")) {
+    practice=practiceStore(sessionStorage,demoId);
+    info=practice.info;
+  } else {
+    if (!ticket) {
+      const entry=document.getElementById("practice-entry");
+      if(entry) entry.hidden=false;
+      throw new Error("Abre la actividad desde Moodle para trabajar con tu empresa o entra al caso de práctica.");
+    }
+    const auth = await api("exchange", { ticket });
+    session = auth.session;
+    info = await api("workspace");
+  }
   projectInfo=info;
   recoveryKey=info.projectKey ? "psst154:"+info.projectKey+":"+info.moduleId : undefined;
   const moduleContent = {
@@ -1423,11 +1818,12 @@ async function start() {
   showCoherence();
   savedValues = draftFingerprint();
   setupProjectPanel(info);
+  setupBuilder(info);
   renderProjectDetails();
   if (lastDelivery?.revision === revision) {
     tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. " + deliveryStatus(lastDelivery), "success");
   } else {
-    tell("Guarda tu avance o entrega una versión para revisión.");
+    tell(practice?"Guarda tu avance de práctica antes de cambiar de módulo.":"Guarda tu avance o entrega una versión para revisión.");
   }
   startup.hidden = true;
   form.hidden = false;
