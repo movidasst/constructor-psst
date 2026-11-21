@@ -84,3 +84,9 @@ button#deliver{background:var(--teal);color:white}
 @media(max-width:600px){.step-controls nav button{flex:1 1 140px;text-align:left}.row-card .fields{gap:.8rem}}
 
 .field-guide{display:block;margin:.35rem 0;color:#415568;font-size:.85rem;font-weight:400;line-height:1.4}
+
+.field-help{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin:12px 0;padding:10px;border-left:3px solid #70ad47;background:#eff8f7}
+.field-help:empty{display:none}
+.field-help p{width:100%;margin:0}
+.field-help a,.module-details a{color:#005b66}
+#coherence-panel li{margin:.45rem 0}#coherence-panel button{margin-left:.4rem}

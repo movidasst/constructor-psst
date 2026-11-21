@@ -49,7 +49,7 @@ export function draftReadiness(four, inputs) {
   const two=inputs.m2?.data?.m2;
   const three=inputs.m3?.data?.m3;
   const hasChapter = number => Object.entries(four ?? {}).some(([key,value]) =>
-    (key === "cap"+number || key.startsWith("cap"+number+"_")) && typeof value==="string" && Boolean(value.trim()));
+    (key === "cap"+number || key.startsWith("cap"+number+"_")) && typeof value==="string" && Boolean(value.trim()) && !value.includes("[Completar]"));
   const has = value => typeof value === "string" && Boolean(value.trim());
   return [
     ["I · Generalidades",hasChapter(1)],

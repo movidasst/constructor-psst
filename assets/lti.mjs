@@ -1,5 +1,6 @@
-import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=program-1";
-import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=program-1";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=coach-1";
+import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
+import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
 
@@ -58,6 +59,7 @@ const rowSchemas = {
     ["etapa","Etapa",true], ["nombre","Tarea observada",true], ["descripcion","Secuencia real de la tarea",true],
     ["puestos","Puestos y personal expuesto"], ["medios","Herramientas, equipos y objetos"],
     ["organizacion","Turnos, ritmo y organización"], ["evidencia","Fuente o evidencia"],
+    ["observacion","Observación directa"], ["consulta","Aporte del personal consultado"], ["contraste","Diferencias y aspectos por confirmar"],
   ] },
   planes: { group:"m3", key:"planesDetallados", singular:"Plan", fields:[
     ["codigo","Código del plan",true], ["nombre","Nombre del plan",true],
@@ -75,13 +77,19 @@ const rowSchemas = {
     ["etapa","Etapa o tarea",true], ["peligro","Peligro o condición observada",true],
     ["riesgo","Riesgo y posible consecuencia",true], ["expuestos","Personas o puestos expuestos"],
     ["controles","Controles existentes"], ["valoracion","Valoración según el método elegido"],
-    ["evidencia","Referencia de la evidencia"], ["pendiente","Pendiente de evaluación"],
+    ["evidencia","Referencia de la evidencia"], ["pendiente","Dato o medición que falta"],
+    ["estadoEvaluacion","Estado de la evaluación",false,"evaluaciones"], ["responsableEvaluacion","Responsable de verificar"],
+    ["fechaEvaluacion","Fecha prevista de verificación",false,"verification-date"],
+    ["controlPropuesto","Medida propuesta según el hallazgo"], ["justificacionControl","Justificación del control y prioridad en la fuente"],
   ] },
   m3: { group:"m3", key:"filas", singular: "Actividad", fields: [
     ["planRef","Plan de trabajo",true,"planes"], ["plan","Nombre del plan en una versión anterior"],
     ["actividad","Actividad preventiva",true], ["riesgoRef","Hallazgo de M2",false,"riesgos"], ["hallazgo","Referencia complementaria del hallazgo"], ["responsable","Responsable",true],
     ["fechaInicio","Fecha prevista de inicio",false,"date"], ["fechaFin","Fecha prevista de cierre",false,"date"],
     ["estado","Estado de ejecución",false,"estados"], ["inicio","Mes de inicio guardado",false,"month"], ["fin","Mes de cierre guardado",false,"month"],
+    ["enfoque","Enfoque de la actividad",false,"enfoques"], ["detalleEnfoque","Procedimiento y criterio según el enfoque"],
+    ["evidenciaEsperada","Evidencia esperada"], ["eficacia","Criterio de eficacia"], ["evidenciaReal","Evidencia de ejecución"],
+    ["grupo","Grupo de formación (si aplica)"], ["horasPersona","Horas de formación por persona (si aplica)",false,"hours"],
     ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
     ["procedimiento","Procedimiento e instrumento"], ["recursos","Recursos y presupuesto"],
     ["seguimiento","Indicador o evidencia de ejecución"],
@@ -108,6 +116,7 @@ function element(tag, content) {
 const families = Object.keys(planGuides);
 const optionLists = {
   familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
+  enfoques:Object.keys(approaches), evaluaciones:["En evaluación","Valorada","Pendiente de medición"],
   soportes:["Formato en preparación","Formato disponible","Evidencia existente","Pendiente de obtener"],
 };
 
@@ -192,13 +201,49 @@ function redrawGantt() {
   view.replaceChildren(table);
 }
 
+function reference(text,href) {
+  const link=element("a",text);
+  link.href=href;
+  link.target="_blank";
+  link.rel="noopener noreferrer";
+  return link;
+}
+
+function showRowHelp(row,key,value) {
+  if (!row) return;
+  const box=row.querySelector("[data-row-help]");
+  if (!box) return;
+  const family=key==="familia" ? value : row.querySelector('[data-key="familia"]')?.value;
+  const approach=key==="enfoque" ? value : row.querySelector('[data-key="enfoque"]')?.value;
+  box.replaceChildren();
+  if (family && familyTemplates[family]) {
+    const template=familyTemplates[family];
+    const text=element("p",planGuides[family]);
+    if (family==="Educación e información") text.append(" · Referencia: 16 horas trimestrales por trabajador.");
+    const button=element("button","Usar plantilla");
+    button.type="button";
+    button.addEventListener("click",()=>{
+      const field=row.querySelector('[data-key="detalleFamilia"]');
+      if (busy || !field) return;
+      if (!field.value.trim()) { field.value=outline(template.fields); rowChanged(); }
+      else tell("La plantilla se puede insertar en un campo vacío. Conservé el texto que ya escribiste.");
+      field.focus();
+    });
+    box.append(text,reference("Consultar NT-04-2023, "+template.clause,sources.nt+"#page="+template.page),button);
+  } else if (approach && approaches[approach]) {
+    const [meaning,action,example]=approaches[approach];
+    box.append(element("p",meaning),element("p",action),element("p","Ejemplo: "+example),
+      reference("Consultar NT-04-2023, art. 17.1.1.4",sources.nt+"#page=8"));
+  }
+}
+
 function updateRowLabels(key, editor) {
   const schema = rowSchemas[key];
   const rows = [...editor.querySelectorAll(".row-card")];
   rows.forEach((row, index) => {
     const label = schema.singular + " " + (index + 1);
     row.querySelector("legend").textContent = label;
-    row.querySelector("button").setAttribute("aria-label", "Quitar " + label.toLowerCase());
+    row.querySelector("[data-remove]").setAttribute("aria-label", "Quitar " + label.toLowerCase());
   });
   editor.querySelector("[data-add]").disabled = busy;
 }
@@ -212,7 +257,8 @@ function rowChanged(event) {
   }
   if (!event || key === "codigo" || key === "nombre") refreshLinks();
   if (!event || ["actividad","inicio","fin","fechaInicio","fechaFin","responsable","estado"].includes(key)) redrawGantt();
-  if (key === "familia") event.target.closest(".row-card").querySelector("[data-plan-guide]").textContent = planGuides[event.target.value] || "";
+  if (key === "familia" || key === "enfoque") showRowHelp(event.target.closest(".row-card"));
+  if (["m1","m2","m3","m4"].includes(moduleId)) showCoherence();
   if (!event || moduleId === "m3") renderPlanCoverage();
   if (!event || moduleId === "m4") showReadiness();
   tell("Tienes cambios en el borrador.");
@@ -227,17 +273,22 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   fields.className = "fields";
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
     const wrapper = element("label", label);
-    const field = element(type && type !== "date" ? "select" : "input");
+    const isInput = !type || ["date","verification-date","hours"].includes(type);
+    const long = ["detalleFamilia","detalleEnfoque","observacion","consulta","contraste","controlPropuesto","justificacionControl"].includes(key);
+    const field = element(long ? "textarea" : isInput ? "input" : "select");
     const value = key==="riesgoRefs" ? recordRefs(values)
       : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
       : typeof values?.[key] === "string" ? values[key] : "";
     if (type === "month") {
       field.add(new Option("Elige un mes", ""));
       months.forEach((month,index) => field.add(new Option(month, String(index + 1))));
-    } else if (type === "date") {
+    } else if (type === "date" || type === "verification-date") {
       field.type = "date";
-      field.min = "2027-01-01";
-      field.max = "2027-12-31";
+      if (type==="date") { field.min = "2027-01-01"; field.max = "2027-12-31"; }
+    } else if (type === "hours") {
+      field.type = "number";
+      field.min = "0";
+      field.step = "0.25";
     } else if (type) {
       field.dataset.link = type;
       if (type === "riesgos-multiple") { field.multiple = true; field.size = 5; }
@@ -271,7 +322,31 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     editor.querySelector("[data-add]").focus();
     rowChanged();
   });
-  row.append(element("legend"), fields, remove);
+  row.append(element("legend"), fields);
+  if (editorKey === "planes" || editorKey === "m3") {
+    const help=element("div");
+    help.dataset.rowHelp="";
+    help.className="field-help";
+    row.append(help);
+    const helpKey=editorKey==="planes" ? "familia" : "enfoque";
+    const valueForHelp=typeof values[helpKey]==="string" ? values[helpKey] : "";
+    if (valueForHelp) showRowHelp(row,helpKey,valueForHelp);
+  }
+  const guideFields = editorKey==="tareas" ? ["observacion",["Fecha, turno y lugar","Tarea observada","Personas y medios","Condición observada","Fuente"]]
+    : editorKey==="m2" ? ["justificacionControl",["Condición de origen","Control considerado en la fuente","Justificación y medidas complementarias","Verificación prevista"]] : null;
+  if (guideFields) {
+    const button=element("button","Usar plantilla");
+    button.type="button";
+    button.addEventListener("click",()=>{
+      const field=row.querySelector('[data-key="'+guideFields[0]+'"]');
+      if (busy || !field) return;
+      if (!field.value.trim()) { field.value=outline(guideFields[1]); rowChanged(); }
+      else tell("La plantilla se puede insertar en un campo vacío. Conservé el texto que ya escribiste.");
+      field.focus();
+    });
+    row.append(button);
+  }
+  row.append(remove);
   editor.querySelector("[data-rows]").append(row);
   updateRowLabels(editorKey, editor);
   if (focus) fields.querySelector("[data-key]").focus();
@@ -355,6 +430,46 @@ function renderPlanCoverage() {
   view.replaceChildren(list);
 }
 
+function showCoherence() {
+  const panel=document.getElementById("coherence");
+  if (!panel?.replaceChildren) return;
+  let one=integrationInputs?.m1?.data ?? {},two=integrationInputs?.m2?.data?.m2 ?? {};
+  let three=integrationInputs?.m3?.data?.m3 ?? {},four={};
+  if (moduleId==="m1") one={flujo:{procesos:rowValues("procesos")},tarea:{actividades:rowValues("tareas")}};
+  if (moduleId==="m2") two={filas:rowValues("m2")};
+  if (moduleId==="m3") three={planesDetallados:rowValues("planes"),filas:rowValues("m3")};
+  if (moduleId==="m4") {
+    four=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
+    four.soportes=rowValues("anexos");
+  }
+  const issues=coherenceIssues({one,two,three,four});
+  if (issues.length===0) {
+    panel.replaceChildren(element("p","No se detectaron pendientes en estas comprobaciones."));
+  } else {
+    const list=element("ul");
+    for (const {target,message} of issues) {
+      const item=element("li",message);
+      const local=editors.get(target) ?? (moduleId==="m4" && target==="capitulos" ? form.querySelector("[data-chapter]") : null);
+      if (local) {
+        const button=element("button","Ir al paso");
+        button.type="button";
+        button.addEventListener("click",()=>{
+          revealControl(local);
+          local.scrollIntoView({block:"center"});
+        });
+        item.append(" ",button);
+      }
+      list.append(item);
+    }
+    panel.replaceChildren(list);
+  }
+  if (moduleId==="m3") {
+    const hours=trainingHours(three.filas,three.planesDetallados);
+    if (hours.length>0) panel.append(element("p","Horas programadas por persona: "+
+      hours.map(({group,quarters})=>group+" ("+quarters.map((h,i)=>"T"+(i+1)+" "+h+" h").join(", ")+")").join(" · ")+"."));
+  }
+}
+
 function setupProjectFields() {
   const container = document.getElementById("project-fields");
   if (moduleId !== "m1" || !container?.append) return;
@@ -380,6 +495,15 @@ function showReadiness() {
   panel.replaceChildren(list);
 }
 
+function insertOutline(name,fields) {
+  if (busy) return;
+  const field=form.elements.namedItem(name);
+  if (!field) return;
+  if (!field.value.trim()) { field.value=outline(fields); rowChanged(); }
+  else tell("La plantilla se puede insertar en un campo vacío. Conservé el texto que ya escribiste.");
+  field.focus();
+}
+
 function setupChapterFields() {
   if (moduleId !== "m4") return;
   for (const container of form.querySelectorAll("[data-chapter]")) {
@@ -402,6 +526,23 @@ function setupChapterFields() {
       fields.append(label);
     }
     container.append(fields);
+    const definitionTemplate=chapterTemplates[number];
+    const toolbar=element("div");
+    toolbar.className="field-help";
+    const general=element("button","Usar plantilla");
+    general.type="button";
+    general.addEventListener("click",()=>insertOutline("m4.cap"+number,definitionTemplate.fields));
+    const url=number===1 ? sources.guia : sources.nt;
+    toolbar.append(reference(definitionTemplate.clause,url+"#page="+definitionTemplate.page),general);
+    if (number===5) {
+      for (const [key,fields] of Object.entries(investigationTemplates)) {
+        const button=element("button",key==="accidentes" ? "Plantilla de accidentes" : "Plantilla de enfermedades ocupacionales");
+        button.type="button";
+        button.addEventListener("click",()=>insertOutline("m4.cap5_"+key,fields));
+        toolbar.append(button);
+      }
+    }
+    container.append(toolbar);
   }
   const annexes = document.getElementById("chapter-annexes");
   if (!annexes?.append) return;
@@ -703,11 +844,11 @@ async function start() {
   session = auth.session;
   const info = await api("workspace");
   const moduleContent = {
-    m2: ["Procesos peligrosos y evaluación de riesgos",
+    m2: ["Identificación de procesos peligrosos y evaluación de riesgos",
       "Registra lo observado en campo y entrega la matriz inicial de riesgos para revisión."],
-    m3: ["Planes de trabajo y carta Gantt 2027",
+    m3: ["Planes de trabajo y carta Gantt",
       "Organiza las acciones preventivas, los responsables y el cronograma para 2027."],
-    m4: ["Integración y revisión final del PSST",
+    m4: ["Borrador del PSST y revisión técnica",
       "Entrega el primer borrador integrado junto con las brechas y evidencias de revisión."],
   };
   const content = moduleContent[info.moduleId];
@@ -746,6 +887,7 @@ async function start() {
   setupDocument(info);
   setupGanttDownload(info);
   setupSteps();
+  showCoherence();
   savedValues = draftFingerprint();
   if (lastDelivery?.revision === revision) {
     tell("✓ Entrega registrada. " + lastDelivery.automaticPoints + " de 60 puntos automáticos. Pendiente de revisión.", "success");
