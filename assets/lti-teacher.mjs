@@ -1,3 +1,4 @@
+import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { checksLabels, rubrics } from "./psst-project.mjs?v=project-2";
 import { wordFromReport } from "./psst-office.mjs?v=project-2";
 import { buildPsstDocument } from "./psst-document.mjs?v=project-2";
@@ -185,10 +186,15 @@ for(const id of ["delivery-state","delivery-search"]) byId(id).addEventListener(
 });
 
 async function start() {
-  const ticket=new URLSearchParams(location.hash.slice(1)).get("ticket");
+  const grant=new URLSearchParams(location.hash.slice(1));
+  const ticket=grant.get("ticket");
   if (location.hash) history.replaceState(null,"",location.pathname+location.search);
   if (!ticket) throw new Error("Abre esta actividad como docente desde Moodle.");
-  ({session}=await call("teacher-exchange",{ticket}));
+  const binding=grant.get("binding");
+  const proof=binding ? readProof(binding) : undefined;
+  if(binding && !proof) throw new Error("Abre la actividad docente desde Moodle en esta pestaña. El enlace pertenece a otra sesión del navegador.");
+  ({session}=await call("teacher-exchange",{ticket,proof}));
+  clearProof(binding);
   const list=await call("teacher",{action:"list"});
   byId("module").textContent=moduleTitles[list.moduleId];
   byId("teacher-list").hidden=false;
