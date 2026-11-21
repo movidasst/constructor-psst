@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=program-1">
-  <script src="assets/lti.mjs?v=program-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=coach-1">
+  <script src="assets/lti.mjs?v=coach-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -18,7 +18,7 @@
     <main>
       <div class="hero">
         <p class="eyebrow">Constructor de PSST · Módulo 1</p>
-        <h1>Mesas de trabajo y descripción de procesos</h1>
+        <h1>Proceso productivo, procesos de trabajo y tareas</h1>
         <p>Organiza la mesa, inventaría los procesos y documenta las tareas reales. Usa los aportes de los trabajadores y las evidencias de campo para preparar el levantamiento que continuarás en el Módulo 2.</p>
         <p class="workspace" id="workspace" hidden></p>
       </div>
@@ -93,7 +93,11 @@
             </details>
           </div>
           <p class="section-guide">Sigue el proceso desde su entrada hasta su salida y selecciona una etapa para observar en detalle.</p>
-                    <div class="row-editor" data-editor="tareas"><div data-rows></div><button type="button" data-add>Agregar tarea</button></div>
+                    <details class="module-details"><summary>Ficha de observación</summary>
+            <p>Anota fecha, turno, tarea y lo que viste. Pregunta cómo cambia la tarea en otros turnos, qué equipos intervienen y qué ocurre cuando hay demoras. Registra el aporte de la persona y lo que falta contrastar.</p>
+            <a href="https://www.piensosst.com/wp-content/uploads/2025/03/GO-NT-04-2023.pdf#page=6" target="_blank" rel="noopener noreferrer">Consultar NT-04-2023, art. 14</a>
+          </details>
+          <div class="row-editor" data-editor="tareas"><div data-rows></div><button type="button" data-add>Agregar tarea</button></div>
           <details class="module-details">
             <summary>Ficha de levantamiento anterior</summary>
 <div class="fields">
@@ -173,6 +177,10 @@
             </details>
           </div>
           <p class="section-guide">Agrega una fila por hallazgo. Registra los controles que observaste y lo que queda pendiente de verificar.</p>
+          <details class="module-details"><summary>Ficha de evaluación</summary>
+            <p>Registra la tarea, la condición observada y las personas expuestas. Identifica los controles, sustenta la valoración y documenta qué queda por medir. Al elegir una medida, considera primero el control en la fuente.</p>
+            <a href="https://medicinalaboraldevenezuela.com.ve/archivo/LOPCYMAT.pdf#page=32" target="_blank" rel="noopener noreferrer">Consultar LOPCYMAT, art. 62</a>
+          </details>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>
           <details class="module-details">
             <summary>Matriz de una versión anterior o archivo de referencia</summary>
@@ -223,6 +231,7 @@
           <p><strong>Entregable.</strong> Planes vinculados con los hallazgos y cronograma 2027.</p>
           <details class="module-details"><summary>Ver ejemplo de recepción de materiales</summary><p>R-01 · Revisar la circulación en recepción · Responsable: equipo del área · Inicio y cierre: febrero a marzo · Evidencia: recorrido verificado y plano actualizado.</p></details>
           <p class="reference">Reglamento Parcial, art. 82. NT-04-2023, arts. 17 y 18. Instrumento de revisión, capítulo IV.</p>
+          <p><strong>Formación.</strong> Para revisar las horas por persona, usa el mismo nombre de grupo e indica las horas de cada actividad. Si una actividad abarca dos trimestres, registra sus sesiones por separado.</p>
           <div class="row-editor" data-editor="m3"><div data-rows></div><button type="button" data-add>Agregar actividad</button></div>
         </fieldset>
         <fieldset class="card" data-module="m3" hidden disabled>
@@ -401,6 +410,10 @@
           <div id="review-items"></div>
         </fieldset>
 
+        <details class="card module-details" id="coherence-panel">
+          <summary>Revisar pendientes</summary>
+          <div id="coherence"></div>
+        </details>
         <div id="step-actions" class="step-actions" hidden>
           <button type="button" id="step-back">Anterior</button>
           <button type="button" id="step-next">Siguiente</button>

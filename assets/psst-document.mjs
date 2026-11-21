@@ -1,4 +1,5 @@
-import { draftReadiness, projectFields, recordRefs, schedule } from "./psst-program.mjs?v=program-1";
+import { coherenceIssues, trainingHours } from "./psst-coach.mjs?v=coach-1";
+import { draftReadiness, projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=chapters-1";
@@ -23,7 +24,7 @@ export function scheduledActivities(activities) {
 
 function ganttTable(scheduled, includeDetails = false) {
   const columns = includeDetails
-    ? [["Plan","plan"],["Actividad","actividad"],["Responsable","responsable"],["Inicio","inicioPrevisto"],["Cierre","finPrevisto"],["Estado","estado"]]
+    ? [["Plan","plan"],["Actividad","actividad"],["Responsable","responsable"],["Inicio","inicioPrevisto"],["Cierre","finPrevisto"],["Estado","estado"],["Enfoque","enfoque"]]
     : [["Actividad","actividad"],["Responsable","responsable"],["Estado","estado"]];
   return table([...columns,...months.map((month,index)=>[month,index+1])],scheduled.map(row=>{
     const planned=schedule(row);
@@ -40,12 +41,28 @@ function planSections(plans, riskLabel) {
   ])).join("");
 }
 
+function activityEvidence(activities) {
+  const entries=rows(activities).filter(row=>[row.enfoque,row.detalleEnfoque,row.evidenciaEsperada,row.evidenciaReal,row.eficacia].some(hasValue));
+  return table([["Plan","plan"],["Actividad","actividad"],["Enfoque","enfoque"],["Procedimiento y criterio","detalleEnfoque"],
+    ["Evidencia esperada","evidenciaEsperada"],["Criterio de eficacia","eficacia"],["Evidencia registrada","evidenciaReal"]],entries);
+}
+
+function educationSchedule(activities,plans) {
+  return table([["Grupo","group"],["T1","t1"],["T2","t2"],["T3","t3"],["T4","t4"]],
+    trainingHours(activities,plans).map(({group,quarters})=>({
+      group,t1:quarters[0]+" h",t2:quarters[1]+" h",t3:quarters[2]+" h",t4:quarters[3]+" h",
+    })));
+}
+
 export function buildGanttDocument({ label, activities, plans = [], legacyReference, riskRows = [], includePlans = false }) {
-  const scheduled = scheduledActivities(activities).map(row => {
+  const allActivities = rows(activities).map(row => {
     const plan = plans.find(item=>item.id===row.planRef);
     return {...row,plan:plan ? [plan.codigo,plan.nombre].filter(Boolean).join(" · ") : row.plan};
   });
-  const pendingDates = rows(activities).filter(row=>hasValue(row.actividad) && !schedule(row));
+  const scheduled = scheduledActivities(allActivities);
+  const pendingDates = allActivities.filter(row=>hasValue(row.actividad) && !schedule(row));
+  const criteria = activityEvidence(allActivities);
+  const education = educationSchedule(allActivities,plans);
   const pendingList = table([["Actividad","actividad"],["Responsable","responsable"],["Estado","estado"]],
     pendingDates.map(row=>({...row,estado:row.estado || "Pendiente"})));
   const riskLabel = row => recordRefs(row).map(ref=>riskRows.find(risk=>risk.id===ref)?.codigo || "Referencia por verificar").join(", ");
@@ -58,7 +75,10 @@ header{border-top:5px solid #007b85;padding:.65rem 0}h1{color:#00205b;margin:.4r
 th,td{padding:5px;border:1px solid #bbced2;text-align:center;overflow-wrap:anywhere;vertical-align:top}th{background:#e3f1f1}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}th:nth-child(1){width:9%}th:nth-child(2){width:15%}th:nth-child(3){width:9%}th:nth-child(4),th:nth-child(5){width:7%}th:nth-child(6){width:8%}td:nth-child(n+7){color:#005861;font-weight:700}
 @media print{body{max-width:none;margin:0;padding:0}.calendar{overflow:visible}table{font-size:8.5pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>
 <body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>${title}</h1><p>${escape(label)} · Cronograma de los planes de trabajo</p></header>
-${includePlans ? planSections(plans,riskLabel)+"<h2>Carta Gantt 2027</h2>" : ""}
+${includePlans ? planSections(plans,riskLabel)
+  +(criteria ? "<h2>Enfoques y evidencias de las actividades</h2>"+criteria : "")
+  +(education ? "<h2>Horas de formación programadas por persona</h2>"+education : "")
+  +"<h2>Carta Gantt 2027</h2>" : ""}
 ${chart ? '<p>● Mes de ejecución programado</p><div class="calendar">'+chart+'</div>' : ""}
 ${pendingList ? "<h2>Actividades pendientes de fechar</h2>"+pendingList : ""}
 ${hasValue(legacyReference) ? "<h2>Referencia al cronograma anterior</h2>"+note(legacyReference) : ""}
@@ -119,18 +139,30 @@ export function buildPsstDocument({ label, inputs = {}, draft = {} }) {
   const indicators = table([["Código","codigo"],["Indicador","nombre"],["Plan","plan"],["Criterio","formula"],["Línea base","base"],
     ["Meta","meta"],["Fuente","fuente"],["Frecuencia","frecuencia"],["Responsable","responsable"],["Respuesta","respuesta"]],
     rows(four.indicadores).map(row=>({...row,plan:labelFor(planRows,row.planRef)})));
+  const fieldNotes=taskRows.filter(row=>[row.observacion,row.consulta,row.contraste].some(hasValue));
+  const pendingRiskEntries=matrix.filter(row=>[row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,
+    row.controlPropuesto,row.justificacionControl].some(hasValue));
+  const observationTable=table([["Tarea","codigo"],["Observación","observacion"],["Consulta","consulta"],["Por contrastar","contraste"]],fieldNotes);
+  const evaluationTable=table([["Hallazgo","codigo"],["Estado","estadoEvaluacion"],["Medida propuesta","controlPropuesto"],
+    ["Justificación","justificacionControl"],["Responsable de verificar","responsableEvaluacion"],["Fecha prevista","fechaEvaluacion"]],pendingRiskEntries);
+  const evaluationCriteria=activityEvidence(activities);
+  const education=educationSchedule(activities,planRows);
+  const issues=coherenceIssues({one,two,three,four});
   const annexTable = table([["Código","codigo"],["Soporte","nombre"],["Capítulo","capitulo"],["Versión","version"],
     ["Ubicación","ubicacion"],["Estado","estado"],["Responsable","responsable"]],rows(four.soportes));
   const extras = {
     0: objectives,
     2: process + (productionMap ? "<h3>Mapa productivo o de servicio</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos</h3>"+inventory : "") +
-      (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") +
+      (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
+      (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
-    3: (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + plans + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
+    3: (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + plans +
+      (evaluationCriteria ? "<h3>Enfoques y evidencias de las actividades</h3>"+evaluationCriteria : "") +
+      (education ? "<h3>Horas de formación programadas por persona</h3>"+education : "") + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
       facts([["Planes anteriores",three.planes],["Cronograma anterior",three.gantt],["Responsables",three.responsables],["Recursos",three.recursos],["Seguimiento",three.seguimiento]]),
     5: note(four.compromiso),
     6: contractorTable,
-    7: indicators,
+    7: indicators + (evaluationCriteria ? "<h3>Criterios de eficacia a verificar</h3>"+evaluationCriteria : ""),
   };
   const recovered = {
     cap3_organigrama: hasValue(one.alcance?.organigrama),
@@ -172,6 +204,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {} }) {
 <h2>Avance de elaboración</h2>${readiness}
 ${chapterSections}
 <h2>Índice de anexos y soportes</h2>${annexIndex}${annexTable}
+${issues.length ? "<h2>Revisión de coherencia</h2><ul>"+issues.map(item=>"<li>"+escape(item.message)+"</li>").join("")+"</ul>" : ""}
 <h2>Anexo · Evidencias y brechas</h2>
 ${facts([["Organización de la mesa",one.mesa?.organizacion],["Bitácora",one.bitacora?.referencia],["Horas",one.bitacora?.horas],
  ["Registro de campo",one.bitacora?.evidencias],["Pendientes de campo",one.bitacora?.pendientes],["Evidencias",four.evidencia],
