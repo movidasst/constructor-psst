@@ -1,3 +1,4 @@
+import { createTeacherApi } from "../_shared/teacher-api.mjs";
 import { course } from "../_shared/course-154.mjs";
 import { createLaunchHandler, digest, random } from "../_shared/launch.mjs";
 import { createWorkspaceApi } from "../_shared/workspace.mjs";
@@ -38,6 +39,15 @@ async function configuredServices() {
     if (app.protocol !== "https:" || app.username || app.password || app.hash || app.search) return null;
     if (app.origin !== "https://constructor.movidasst.com" &&
         !(app.origin === "https://movidasst.github.io" && app.pathname === "/constructor-psst/lti.html")) return null;
+    async function getSender() {
+      await publicKeys();
+      const material = await rpc("psst_lti_signing_material", {});
+      if (!material) throw new Error("Llave no disponible");
+      const privateKey = await crypto.subtle.importKey("jwk", material.privateJwk,
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+      return createAgsSender({ issuer:config.issuer, tokenUrl:config.tokenUrl,
+        clientId:config.clientId, keyId:material.kid, privateKey });
+    }
     const launch = createLaunchHandler({
       ...config,
       loginUrl: new URL("login", serviceBase).href,
@@ -53,13 +63,7 @@ async function configuredServices() {
           config.resourceLinks?.[id] === activity.resourceId && config.lineItems?.[id] === activity.lineItem);
         if (!moduleId || !activity.lineItem) return null;
         try {
-          await publicKeys();
-          const material = await rpc("psst_lti_signing_material", {});
-          if (!material) return { autorizado: false, fase: "llave" };
-          const privateKey = await crypto.subtle.importKey("jwk", material.privateJwk,
-            { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
-          const sender = createAgsSender({ issuer: config.issuer, tokenUrl: config.tokenUrl,
-            clientId: config.clientId, keyId: material.kid, privateKey });
+          const sender = await getSender();
           const reviewed = await dispatchReviewedPilot({ rpc, sender, activity });
           if (reviewed) return reviewed;
           return await checkOrDispatchGradeTest({ rpc, sender, activity, connectionTest: moduleId !== "m1" });
@@ -69,18 +73,21 @@ async function configuredServices() {
       },
       onVerified: async (session) => {
         const ticket = random();
-        const allowed = await rpc("psst_lti_ticket", {
+        const allowed = await rpc(session.teacher ? "psst_lti_teacher_ticket"
+          : session.enroll ? "psst_lti_enroll" : "psst_lti_ticket", {
           p_hash: await digest(ticket), p_issuer: config.issuer, p_client: config.clientId,
           p_deployment: config.deploymentId, p_context: session.contextId, p_subject: session.subject,
           p_module: session.moduleId, p_resource: session.resourceId,
+          ...(session.teacher ? { p_line_item:session.lineItem } : {}),
         });
         if (allowed !== true) return null;
-        const url = new URL(app);
+        const url = session.teacher ? new URL("./lti-teacher.html",app) : new URL(app);
         url.hash = new URLSearchParams({ ticket }).toString();
         return url.href;
       },
     });
-    return { launch, workspace: createWorkspaceApi({ origin: app.origin, rpc }) };
+    return { launch, workspace: createWorkspaceApi({ origin: app.origin, rpc }),
+      teacher:createTeacherApi({origin:app.origin,rpc,getSender}) };
   } catch {
     return null;
   }
@@ -99,7 +106,7 @@ function servicesForRequest() {
 }
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|draft|submit)$/)?.[1];
+  const route = url.pathname.match(/^(?:\/functions\/v1)?\/psst-lti\/(login|launch|jwks|exchange|workspace|draft|submit|teacher-exchange|teacher)$/)?.[1];
   if (route === "jwks" && req.method === "GET") {
     try {
       if (!supabase || !secret) throw new Error("Servicio no configurado");
@@ -121,5 +128,6 @@ Deno.serve(async (req) => {
     canonical.search = url.search;
     return services.launch(url.pathname === canonical.pathname ? req : new Request(canonical.href, req));
   }
+  if (route === "teacher-exchange" || route === "teacher") return services.teacher(route,req);
   return services.workspace(route, req);
 });

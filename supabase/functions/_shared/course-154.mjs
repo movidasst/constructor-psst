@@ -76,19 +76,25 @@ export function createInstructorDiagnostic(config) {
 }
 
 export function createPilotRouter(config) {
-  if (config.diagnostic !== true) return createCourseRouter(config);
+  if (config.diagnostic !== true && !config.teacherEnabled && !config.enrollmentEnabled) return createCourseRouter(config);
   const diagnostic = createInstructorDiagnostic(config);
-  if (config.studentPilot?.enabled !== true) return diagnostic;
+  if (config.studentPilot?.enabled !== true && !config.teacherEnabled && !config.enrollmentEnabled) return diagnostic;
   const normal = createCourseRouter(config);
-  const subject = config.studentPilot.subject;
-  if (!/^[1-9][0-9]{0,17}$/.test(subject ?? "")) throw new TypeError("Cuenta de prueba inválida");
-  const modules = new Set(config.studentPilot.modules ?? ["m1"]);
+  const subject = config.studentPilot?.subject;
+  if (config.studentPilot?.enabled === true && !/^[1-9][0-9]{0,17}$/.test(subject ?? "")) throw new TypeError("Cuenta de prueba inválida");
+  const modules = new Set(config.studentPilot?.modules ?? ["m1"]);
   return claims => {
-    if (claims.sub === subject && Array.isArray(claims[claimBase + "roles"]) &&
-        claims[claimBase + "roles"].includes("http://purl.imsglobal.org/vocab/lis/v2/membership#Learner")) {
-      const match = normal(claims);
-      if (match && modules.has(match.moduleId)) return match;
+    const match = normal(claims);
+    const staff = diagnostic(claims);
+    if (match && staff && config.teacherEnabled === true &&
+      staff.lineItem && config.lineItems?.[match.moduleId] === staff.lineItem) {
+      return { ...match, teacher:true, lineItem:staff.lineItem };
     }
-    return diagnostic(claims);
+    if (match && !staff && Array.isArray(claims[claimBase + "roles"]) &&
+        claims[claimBase + "roles"].includes("http://purl.imsglobal.org/vocab/lis/v2/membership#Learner")) {
+      if (config.enrollmentEnabled === true) return { ...match, enroll:true };
+      if (config.studentPilot?.enabled === true && claims.sub===subject && modules.has(match.moduleId)) return match;
+    }
+    return staff;
   };
 }

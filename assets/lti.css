@@ -90,3 +90,9 @@ button#deliver{background:var(--teal);color:white}
 .field-help p{width:100%;margin:0}
 .field-help a,.module-details a{color:#005b66}
 #coherence-panel li{margin:.45rem 0}#coherence-panel button{margin-left:.4rem}
+.teacher-card{margin-top:16px}
+.teacher-card select{display:block;width:100%;min-height:44px;margin-top:.35rem;padding:8px;border:1px solid #9dafbd;border-radius:8px;background:#fbfdff;color:#253951}
+.teacher-card dl{margin:.5rem 0}
+.teacher-card dt{font-weight:750;color:#23435d}
+.teacher-card dd{margin:0 0 .55rem .65rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.teacher-card form>label{margin-top:1rem}
