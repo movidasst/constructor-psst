@@ -59,21 +59,42 @@ export function outline(fields) {
 const has = value => typeof value === "string" && value.trim() !== "";
 const rowList = value => Array.isArray(value) ? value : [];
 
-export function trainingHours(activities, plans) {
+export function trainingHours(activities, plans, declaredGroups="") {
   const education=new Set(rowList(plans).filter(plan=>plan.familia==="Educación e información").map(plan=>plan.id));
   const groups=new Map();
+  function groupFor(name) {
+    const group=name.trim();
+    const key=group.toLocaleLowerCase("es");
+    if (!groups.has(key)) groups.set(key,{group,quarters:[0,0,0,0]});
+    return groups.get(key);
+  }
+  for(const name of (typeof declaredGroups==="string"?declaredGroups.split("\n"):[]).filter(has)) groupFor(name);
   for (const activity of rowList(activities)) {
     if (!education.has(activity.planRef) || !has(activity.grupo)) continue;
+    const entry=groupFor(activity.grupo);
     const timing=schedule(activity);
-    const hours=Number(activity.horasPersona);
-    if (!timing || !Number.isFinite(hours) || hours<=0 || Math.ceil(timing.start/3)!==Math.ceil(timing.end/3)) continue;
-    const group=activity.grupo.trim();
-    const key=group.toLocaleLowerCase("es");
-    const current=groups.get(key) ?? {group,quarters:[0,0,0,0]};
-    current.quarters[Math.ceil(timing.start/3)-1]+=hours;
-    groups.set(key,current);
+    if(!timing) continue;
+    const start=Math.ceil(timing.start/3)-1,end=Math.ceil(timing.end/3)-1;
+    const total=Number(activity.horasPersona);
+    if(start===end){
+      if(Number.isFinite(total)&&total>0) entry.quarters[start]+=total;
+      continue;
+    }
+    const allocated=trainingAllocation(activity);
+    if(allocated) allocated.forEach((value,i)=>{entry.quarters[i]+=value;});
   }
   return [...groups.values()];
+}
+
+function trainingAllocation(row){
+  const timing=schedule(row);
+  if(!timing) return null;
+  const start=Math.ceil(timing.start/3)-1,end=Math.ceil(timing.end/3)-1;
+  const allocation=[1,2,3,4].map(i=>Number(row["horasT"+i]||0));
+  if(allocation.some((value,i)=>!Number.isFinite(value)||value<0||(value>0&&(i<start||i>end)))) return null;
+  const total=Number(row.horasPersona);
+  const allocated=allocation.reduce((a,b)=>a+b,0);
+  return allocated>0 && (!total||Math.abs(total-allocated)<0.00001) ? allocation : null;
 }
 
 export function coherenceIssues({one={},two={},three={},four={}}) {
@@ -85,6 +106,7 @@ export function coherenceIssues({one={},two={},three={},four={}}) {
   const plans=rowList(three.planesDetallados);
   const activities=rowList(three.filas);
   const assessed=new Set(risks.map(row=>row.tareaRef).filter(Boolean));
+  const verification=new Map(rowList(two.verificaciones).filter(row=>row.tareaRef).map(row=>[row.tareaRef,row]));
   const planned=new Set(plans.flatMap(recordRefs));
   const activePlans=new Set(activities.filter(row=>has(row.responsable) && schedule(row)).map(row=>row.planRef));
   for (const process of processes) {
@@ -92,8 +114,13 @@ export function coherenceIssues({one={},two={},three={},four={}}) {
       add("tareas",(process.codigo||process.nombre)+" · Proceso sin tareas registradas.");
   }
   for (const task of tasks) {
-    if (task.id && risks.length && !assessed.has(task.id))
-      add("m2",(task.codigo||task.nombre)+" · Tarea sin hallazgo vinculado. Verifica si ya fue evaluada.");
+    const progress=verification.get(task.id);
+    if (task.id && (risks.length||verification.size) && !assessed.has(task.id) && !progress)
+      add("m2",(task.codigo||task.nombre)+" · Registra el estado de la evaluación de esta tarea.");
+    if (progress?.estado==="Pendiente de medición" && (!has(progress.responsable)||!has(progress.fecha)))
+      add("verificacion",(task.codigo||task.nombre)+" · Asigna fecha y responsable para medir.");
+    if (progress?.estado==="Hallazgo registrado" && !assessed.has(task.id))
+      add("m2",(task.codigo||task.nombre)+" · Vincula el hallazgo que registraste.");
   }
   for (const risk of risks) {
     const name=risk.codigo||risk.riesgo||"Hallazgo";
@@ -105,14 +132,20 @@ export function coherenceIssues({one={},two={},three={},four={}}) {
     if (has(plan.nombre) && !activePlans.has(plan.id)) add("m3",(plan.codigo||plan.nombre)+" · Plan sin actividad programada con responsable.");
     if (plan.detalleFamilia?.includes("[Completar]")) add("planes",(plan.codigo||plan.nombre)+" · Plantilla específica con apartados pendientes.");
   }
+  const education=new Set(plans.filter(plan=>plan.familia==="Educación e información").map(plan=>plan.id));
   for (const activity of activities) {
     if (!has(activity.actividad)) continue;
     if (![activity.enfoque,activity.evidenciaEsperada,activity.eficacia].every(has))
       add("m3",activity.actividad+" · Completa el enfoque, la evidencia esperada o el criterio de eficacia.");
+    const timing=schedule(activity);
+    if(education.has(activity.planRef) && timing && Math.ceil(timing.start/3)!==Math.ceil(timing.end/3) && !trainingAllocation(activity))
+      add("m3",activity.actividad+" · Distribuye las horas entre los trimestres activos y comprueba la suma.");
+    if (activity.inicioReal && activity.cierreReal && activity.inicioReal>activity.cierreReal)
+      add("m3",activity.actividad+" · Revisa el orden de las fechas reales.");
     if (activity.estado==="Ejecutada" && !has(activity.evidenciaReal))
       add("m3",activity.actividad+" · Registra la evidencia de ejecución disponible.");
   }
-  for (const {group,quarters} of trainingHours(activities,plans)) {
+  for (const {group,quarters} of trainingHours(activities,plans,three.gruposFormacion)) {
     quarters.forEach((hours,i)=>{
       if (hours<16) add("m3",group+" · Trimestre "+(i+1)+": "+hours+" horas programadas por persona de las 16 previstas.");
     });

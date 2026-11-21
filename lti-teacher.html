@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Revisión docente · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=teacher-1">
-  <script src="assets/lti-teacher.mjs?v=teacher-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=project-2">
+  <script src="assets/lti-teacher.mjs?v=project-2" type="module"></script>
 </head>
 <body class="teacher-body">
   <div class="shell">
@@ -20,6 +20,12 @@
       <p id="teacher-status" class="startup" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
       <section id="teacher-list" class="card teacher-card" hidden>
         <h2>Entregas</h2>
+        <p class="teacher-metrics" id="teacher-counts"></p>
+        <div class="teacher-filters"><label>Estado<select id="delivery-state">
+          <option value="">Todas las entregas</option><option value="unreviewed">Por revisar</option>
+          <option value="draft">Revisión en borrador</option><option value="pending">Pendientes en Moodle</option>
+          <option value="sent">Nota publicada</option></select></label>
+          <label>Buscar por proyecto o cuenta<input id="delivery-search" type="search"></label></div>
         <label>Proyecto y revisión<select id="delivery-select"></select></label>
         <p id="empty" hidden>Aún no hay entregas en esta actividad.</p>
       </section>
@@ -29,15 +35,17 @@
         <details class="module-details"><summary>Comprobaciones automáticas</summary><ul id="auto-checks"></ul></details>
         <details class="module-details"><summary>Contenido de la entrega</summary><div id="snapshot"></div></details>
         <p id="previous-inputs" hidden>Esta entrega anterior conserva sus campos originales. Las nuevas entregas del Módulo 4 incluyen además las fuentes de los módulos anteriores.</p>
-        <button type="button" id="download-review" hidden>Descargar PSST entregado</button>
+        <button type="button" id="download-review" hidden>Descargar entrega en Word</button>
         <form id="teacher-rubric">
           <h2>Rúbrica técnica</h2>
           <p>Asigna de 0 a 10 por criterio. Usa 0 cuando falta evidencia, 5 cuando la evidencia es parcial y 10 cuando es completa y está sustentada.</p>
           <div id="criteria" class="fields"></div>
           <label>Retroalimentación<textarea name="feedback" required maxlength="4000"></textarea></label>
           <p id="grade-total" aria-live="polite"></p>
-          <p id="grade-sync"></p>
-          <div class="actions"><button type="submit" id="review-save">Guardar revisión</button>
+          <p id="grade-sync"></p><p id="grade-verify-status" role="status"></p>
+          <button type="button" id="grade-verify" hidden>Consultar nota en Moodle</button>
+          <a class="back" href="https://movidasst.org/grade/report/grader/index.php?id=154" target="_blank" rel="noopener noreferrer">Libro de calificaciones</a>
+          <div class="actions"><button type="submit" id="review-save">Guardar borrador de revisión</button>
           <button type="button" id="review-publish" hidden>Publicar nota en Moodle</button></div>
         </form>
       </section>
