@@ -1,6 +1,7 @@
-import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=chapters-1";
+import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=program-1";
+import { buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=program-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
-import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=chapters-1";
+import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
 
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
 const status = document.getElementById("status");
@@ -21,9 +22,34 @@ let busy = false;
 
 const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const rowSchemas = {
+  productivos: {group:"flujo",key:"productivos",singular:"Flujo productivo o de servicio",fields:[
+    ["codigo","Código del flujo",true],["nombre","Bien o servicio y nombre del flujo",true],
+    ["entradas","Entradas e insumos"],["secuencia","Secuencia de etapas e interfaces",true],
+    ["salidas","Resultados y salidas"],["evidencia","Referencia al diagrama de flujo"],
+  ]},
+  objetivos: {group:"m4",key:"objetivos",singular:"Objetivo específico",fields:[
+    ["codigo","Código del objetivo",true],["nombre","Resultado que se busca",true],
+    ["planRef","Plan relacionado",false,"planesEntregados"],["indicadorRef","Indicador de seguimiento",false,"indicadores"],
+  ]},
+  contratistas: {group:"m4",key:"contratistas",singular:"Obra o servicio de terceros",fields:[
+    ["nombre","Obra o servicio",true],["parte","Parte contratante o contratista"],["procesos","Procesos y áreas que comparten"],
+    ["riesgoRef","Hallazgo registrado en M2",false,"riesgos"],["controles","Coordinación y controles de la interacción"],
+    ["responsable","Responsable de verificar"],["evidencia","Soporte y estado"],
+  ]},
+  indicadores: {group:"m4",key:"indicadores",singular:"Indicador",fields:[
+    ["codigo","Código",true],["nombre","Indicador",true],["planRef","Plan o actividad que se evalúa",false,"planesEntregados"],
+    ["formula","Fórmula o criterio de evaluación",true],["base","Línea base y fecha"],["meta","Meta y unidad",true],
+    ["fuente","Fuente de datos",true],["frecuencia","Periodicidad",true],["responsable","Responsable",true],
+    ["respuesta","Qué hacer si hay desviación"],
+  ]},
+  anexos: {group:"m4",key:"soportes",singular:"Anexo",fields:[
+    ["codigo","Código",true],["nombre","Documento o evidencia",true],["capitulo","Capítulo o código al que respalda"],
+    ["version","Versión y fecha"],["ubicacion","Ubicación o referencia"],["estado","Estado del soporte",false,"soportes"],
+    ["responsable","Responsable de completarlo"],
+  ]},
   procesos: { group:"flujo", key:"procesos", singular:"Proceso", fields:[
     ["codigo","Código (p. ej., P-01)",true], ["nombre","Nombre del proceso de trabajo",true],
-    ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
+    ["productivoRef","Flujo productivo o de servicio",true,"productivos"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
     ["secuencia","Etapas y organización del trabajo"], ["salidas","Productos, residuos y disposición"],
     ["contratistas","Contratistas e interacciones"], ["evidencia","Diagrama, croquis u otra evidencia"],
   ] },
@@ -35,7 +61,8 @@ const rowSchemas = {
   ] },
   planes: { group:"m3", key:"planesDetallados", singular:"Plan", fields:[
     ["codigo","Código del plan",true], ["nombre","Nombre del plan",true],
-    ["familia","Familia de plan",true,"familias"], ["riesgoRef","Hallazgo prioritario",false,"riesgos"],
+    ["familia","Familia de plan",true,"familias"], ["riesgoRefs","Hallazgos vinculados",false,"riesgos-multiple"],
+    ["detalleFamilia","Desarrollo específico de la familia"],
     ["objetivo","Objetivo",true], ["meta","Meta verificable",true], ["alcance","Alcance",true],
     ["frecuencia","Frecuencia",true], ["responsable","Personal y responsabilidades",true],
     ["procedimiento","Procedimiento de ejecución",true], ["instrumentos","Formularios e instrumentos",true],
@@ -44,6 +71,7 @@ const rowSchemas = {
   m2: { group:"m2", key:"filas", singular: "Riesgo", fields: [
     ["codigo","Código del hallazgo (p. ej., R-01)",true], ["tareaRef","Tarea registrada en M1",false,"tareas"],
     ["proceso","Proceso peligroso asociado"],
+    ["prioridad","Prioridad de actuación",false,"prioridades"],
     ["etapa","Etapa o tarea",true], ["peligro","Peligro o condición observada",true],
     ["riesgo","Riesgo y posible consecuencia",true], ["expuestos","Personas o puestos expuestos"],
     ["controles","Controles existentes"], ["valoracion","Valoración según el método elegido"],
@@ -52,7 +80,8 @@ const rowSchemas = {
   m3: { group:"m3", key:"filas", singular: "Actividad", fields: [
     ["planRef","Plan de trabajo",true,"planes"], ["plan","Nombre del plan en una versión anterior"],
     ["actividad","Actividad preventiva",true], ["riesgoRef","Hallazgo de M2",false,"riesgos"], ["hallazgo","Referencia complementaria del hallazgo"], ["responsable","Responsable",true],
-    ["inicio","Mes de inicio",true,"month"], ["fin","Mes de cierre",true,"month"],
+    ["fechaInicio","Fecha prevista de inicio",false,"date"], ["fechaFin","Fecha prevista de cierre",false,"date"],
+    ["estado","Estado de ejecución",false,"estados"], ["inicio","Mes de inicio guardado",false,"month"], ["fin","Mes de cierre guardado",false,"month"],
     ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
     ["procedimiento","Procedimiento e instrumento"], ["recursos","Recursos y presupuesto"],
     ["seguimiento","Indicador o evidencia de ejecución"],
@@ -76,43 +105,52 @@ function element(tag, content) {
   return node;
 }
 
-const families = [
-  "Educación e información", "Inducción y cambios de puesto", "Inspecciones",
-  "Monitoreo de riesgos y condiciones de trabajo", "Vigilancia epidemiológica de la salud",
-  "Utilización del tiempo libre", "Reglas y procedimientos de trabajo seguro",
-  "Protección personal y colectiva", "Atención preventiva de la salud", "Ingeniería, ergonomía y mantenimiento",
-  "Contingencias y emergencias", "Desalojo de instalaciones", "Recursos económicos",
-];
+const families = Object.keys(planGuides);
+const optionLists = {
+  familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
+  soportes:["Formato en preparación","Formato disponible","Evidencia existente","Pendiente de obtener"],
+};
+
+function fieldValue(control) {
+  if (control.multiple) return [...(control.selectedOptions ?? [])].map(option=>option.value).filter(Boolean);
+  return control.value.trim();
+}
 
 function rowValues(key) {
   const editor = editors.get(key);
   if (!editor) return [];
   return [...editor.querySelectorAll(".row-card")].map(row => ({
     id: row.dataset.id,
-    ...Object.fromEntries([...row.querySelectorAll("[data-key]")].map(input => [input.dataset.key, input.value.trim()])),
+    ...Object.fromEntries([...row.querySelectorAll("[data-key]")].map(input => [input.dataset.key, fieldValue(input)])),
   }));
 }
 
 function choices(type) {
-  const data = type === "procesos" || type === "planes" ? rowValues(type)
+  if (optionLists[type]) return optionLists[type].map(name=>[name,name]);
+  const data = ["procesos","planes","productivos","indicadores"].includes(type) ? rowValues(type)
+    : type === "planesEntregados" ? (integrationInputs.m3?.data?.m3?.planesDetallados ?? [])
     : type === "tareas" ? (integrationInputs.m1?.data?.tarea?.actividades ?? [])
     : (integrationInputs.m2?.data?.m2?.filas ?? []);
-  if (type === "familias") return families.map(name => [name,name]);
   return (Array.isArray(data) ? data : []).filter(row => row.id && (row.nombre || row.riesgo))
     .map(row => [row.id, [row.codigo,row.nombre || row.riesgo].filter(Boolean).join(" · ")]);
 }
 
 function fillSelect(field, available, value) {
-  field.replaceChildren(new Option("Selecciona", ""));
+  const selected = field.multiple ? value : [value];
+  field.replaceChildren(...(field.multiple ? [] : [new Option("Selecciona", "")]));
   for (const [id,name] of available) field.add(new Option(name,id));
-  if (value && !available.some(([id]) => id === value)) field.add(new Option("Referencia anterior · revisa el vínculo",value));
-  field.value = value;
+  for (const id of selected.filter(Boolean)) {
+    if (!available.some(([availableId])=>availableId===id)) field.add(new Option("Referencia anterior · revisa el vínculo ("+id+")",id));
+  }
+  if (field.multiple) {
+    for (const option of field.options) option.selected = selected.includes(option.value);
+  } else field.value = value;
 }
 
 function refreshLinks() {
   for (const editor of editors.values()) {
     for (const control of editor.querySelectorAll("[data-link]")) {
-      fillSelect(control,choices(control.dataset.link),control.value);
+      fillSelect(control,choices(control.dataset.link),fieldValue(control));
     }
   }
 }
@@ -122,13 +160,13 @@ function redrawGantt() {
   const view = document.getElementById("gantt-view");
   const rows = scheduledActivities(rowValues("m3"));
   if (!rows.length) {
-    view.replaceChildren(element("p", "Agrega una actividad y elige sus meses para ver el cronograma."));
+    view.replaceChildren(element("p", "Agrega una actividad con fechas previstas para ver el cronograma."));
     return;
   }
   const table = element("table");
   table.setAttribute("aria-label", "Carta Gantt 2027");
   const header = table.createTHead().insertRow();
-  for (const label of ["Actividad", ...months]) {
+  for (const label of ["Actividad","Responsable","Estado", ...months]) {
     const cell = element("th", label);
     cell.scope = "col";
     header.append(cell);
@@ -139,9 +177,12 @@ function redrawGantt() {
     const label = element("th", row.actividad);
     label.scope = "row";
     line.append(label);
+    line.insertCell().textContent = row.responsable || "Por asignar";
+    line.insertCell().textContent = row.estado || "Pendiente";
+    const timing = schedule(row);
     for (let month = 1; month <= 12; month++) {
       const cell = line.insertCell();
-      if (month >= Number(row.inicio) && month <= Number(row.fin)) {
+      if (month >= timing.start && month <= timing.end) {
         cell.dataset.active = "";
         cell.textContent = "●";
         cell.setAttribute("aria-label", "Programada en " + months[month - 1]);
@@ -170,8 +211,10 @@ function rowChanged(event) {
     if (task && stage) stage.value = task.etapa ?? "";
   }
   if (!event || key === "codigo" || key === "nombre") refreshLinks();
-  if (!event || ["actividad","inicio","fin"].includes(key)) redrawGantt();
-  if (!event || ["familia","nombre"].includes(key)) renderPlanCoverage();
+  if (!event || ["actividad","inicio","fin","fechaInicio","fechaFin","responsable","estado"].includes(key)) redrawGantt();
+  if (key === "familia") event.target.closest(".row-card").querySelector("[data-plan-guide]").textContent = planGuides[event.target.value] || "";
+  if (!event || moduleId === "m3") renderPlanCoverage();
+  if (!event || moduleId === "m4") showReadiness();
   tell("Tienes cambios en el borrador.");
   refreshDelivery();
 }
@@ -184,23 +227,38 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   fields.className = "fields";
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
     const wrapper = element("label", label);
-    const field = element(type ? "select" : "input");
-    const value = typeof values?.[key] === "string" ? values[key] : "";
+    const field = element(type && type !== "date" ? "select" : "input");
+    const value = key==="riesgoRefs" ? recordRefs(values)
+      : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
+      : typeof values?.[key] === "string" ? values[key] : "";
     if (type === "month") {
       field.add(new Option("Elige un mes", ""));
       months.forEach((month,index) => field.add(new Option(month, String(index + 1))));
+    } else if (type === "date") {
+      field.type = "date";
+      field.min = "2027-01-01";
+      field.max = "2027-12-31";
     } else if (type) {
       field.dataset.link = type;
+      if (type === "riesgos-multiple") { field.multiple = true; field.size = 5; }
       fillSelect(field,choices(type),value);
     } else {
       field.maxLength = 800;
     }
     field.dataset.key = key;
     field.required = Boolean(required) && !(key === "planRef" && values.plan && !values.planRef)
-      && !(key === "codigo" && !focus && !value);
-    field.value = value;
+      && !(key === "codigo" && !focus && !value)
+      && !(key === "productivoRef" && !focus && !value);
+    if (!field.multiple) field.value = value;
     if (editorKey === "m3" && key === "plan" && !value) wrapper.hidden = true;
+    if (type==="month" && !value) wrapper.hidden = true;
     wrapper.append(field);
+    if (key === "familia") {
+      const guide=element("small",planGuides[value] || "");
+      guide.className="field-guide";
+      guide.dataset.planGuide="";
+      wrapper.append(guide);
+    }
     fields.append(wrapper);
   }
   const remove = element("button", "Quitar fila");
@@ -222,7 +280,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
 function setupRows(info) {
   moduleId = info.moduleId;
   integrationInputs = info.inputs ?? {};
-  const keys = {m1:["procesos","tareas"],m2:["m2"],m3:["planes","m3"],m4:["m4"]};
+  const keys = {m1:["productivos","procesos","tareas"],m2:["m2"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
   for (const key of keys[moduleId] ?? []) {
     const editor = form.querySelector('[data-editor="' + key + '"]');
     if (!editor) continue;
@@ -282,12 +340,44 @@ function showStep(index, focus) {
 function renderPlanCoverage() {
   const view = moduleId === "m3" && document.getElementById("plan-coverage");
   if (!view?.replaceChildren) return;
-  const covered = new Set(rowValues("planes").filter(row => row.nombre).map(row => row.familia));
+  const plans = rowValues("planes");
+  const activities = scheduledActivities(rowValues("m3")).filter(row=>row.responsable);
   const list = element("ul");
   for (const family of families) {
-    list.append(element("li", family + " · " + (covered.has(family) ? "Con ficha de plan" : "Por documentar")));
+    const matches = plans.filter(row=>row.nombre && row.familia===family);
+    const scheduled = matches.some(plan=>recordRefs(plan).length && activities.some(row=>row.planRef===plan.id));
+    list.append(element("li", family + " · " +
+      (scheduled ? "Con vínculo y actividad programada" : matches.length ? "Ficha en preparación" : "Por documentar")));
   }
+  const linked = new Set(plans.flatMap(recordRefs));
+  const pending = (integrationInputs?.m2?.data?.m2?.filas ?? []).filter(row=>row.prioridad==="Inmediata" && !linked.has(row.id));
+  for (const risk of pending) list.append(element("li","Hallazgo inmediato sin plan vinculado · "+(risk.codigo || risk.riesgo)));
   view.replaceChildren(list);
+}
+
+function setupProjectFields() {
+  const container = document.getElementById("project-fields");
+  if (moduleId !== "m1" || !container?.append) return;
+  for (const [key,title] of projectFields) {
+    const label=element("label",title);
+    const input=element("input");
+    input.name="proyecto."+key;
+    input.maxLength=500;
+    label.append(input);
+    container.append(label);
+  }
+}
+
+function showReadiness() {
+  const panel = document.getElementById("chapter-readiness");
+  if (moduleId !== "m4" || !panel?.replaceChildren) return;
+  const current=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
+  for (const key of ["contratistas","indicadores"]) current[key]=rowValues(key);
+  const list=element("ul");
+  for (const [title,ready] of draftReadiness(current,integrationInputs ?? {})) {
+    list.append(element("li",title+" · "+(ready?"Con avance registrado":"Pendiente de desarrollar")));
+  }
+  panel.replaceChildren(list);
 }
 
 function setupChapterFields() {
@@ -372,7 +462,7 @@ function validateForm() {
   for (const control of controls) {
     if (!control.dataset.link || !control.setCustomValidity) continue;
     const available = choices(control.dataset.link);
-    control.setCustomValidity(control.value && !available.some(([id]) => id === control.value)
+    control.setCustomValidity([fieldValue(control)].flat().some(value=>value && !available.some(([id])=>id===value))
       ? "Selecciona una referencia que siga disponible en el registro." : "");
   }
   const invalid = controls.find(control => control.willValidate && !control.validity.valid);
@@ -386,10 +476,10 @@ function validateForm() {
   const riskWithoutTask = moduleId === "m2" && linkedTasks.length &&
     rowValues("m2").findIndex(row => row.codigo && !row.tareaRef);
   const planWithoutRisk = moduleId === "m3" && linkedRisks.length &&
-    rowValues("planes").findIndex(row => !row.riesgoRef);
+    rowValues("planes").findIndex(row => !recordRefs(row).length);
   for (const [index,key,field,message] of [
     [riskWithoutTask,"m2","tareaRef","Selecciona la tarea de M1 para cada hallazgo nuevo."],
-    [planWithoutRisk,"planes","riesgoRef","Relaciona cada plan nuevo con un hallazgo prioritario de M2."],
+    [planWithoutRisk,"planes","riesgoRefs","Selecciona los hallazgos de M2 que aborda este plan."],
   ]) {
     if (typeof index !== "number" || index < 0 || !editors.has(key)) continue;
     const row = editors.get(key).querySelectorAll(".row-card")[index];
@@ -510,13 +600,21 @@ form.addEventListener("submit", event => {
 
 deliver.addEventListener("click", () => {
   if (busy || deliver.disabled) return;
-  if (moduleId === "m3" && rowValues("m3").some(row =>
-    row.inicio && row.fin && Number(row.fin) < Number(row.inicio))) {
+  if (moduleId === "m3" && rowValues("m3").some(row=>row.actividad && !schedule(row))) {
     revealControl(editors.get("m3")?.querySelector("select"));
-    tell("El mes de cierre debe ser igual o posterior al de inicio.", "error");
+    tell("Completa el inicio y el cierre previsto de cada actividad, dentro de 2027 y en orden.", "error");
     return;
   }
   if (!validateForm()) return;
+  if (moduleId === "m4") {
+    const recorded=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
+    for (const key of ["contratistas","indicadores"]) recorded[key]=rowValues(key);
+    const missing = draftReadiness(recorded,integrationInputs ?? {}).filter(([,ready])=>!ready);
+    if (missing.length) {
+      tell("Antes de entregar, desarrolla o referencia estos capítulos: "+missing.map(([title])=>title).join(", ")+".", "error");
+      return;
+    }
+  }
   void update("Enviando la entrega…", async () => {
     await saveIfChanged();
     pending ??= crypto.randomUUID();
@@ -539,19 +637,22 @@ function downloadHtml(documentText, filename) {
 
 function setupGanttDownload(info) {
   if (info.moduleId !== "m3") return;
-  document.getElementById("export-gantt").addEventListener("click", () => {
+  function downloadSchedule(includePlans) {
     if (busy) return;
     const documentText = buildGanttDocument({
-      label: info.label, activities: rowValues("m3"), plans: rowValues("planes"),
+      label: info.label, activities: rowValues("m3"), plans: rowValues("planes"), includePlans,
+      riskRows: info.inputs?.m2?.data?.m2?.filas,
       legacyReference: form.elements.namedItem("m3.gantt").value.trim(),
     });
     if (!documentText) {
-      tell("Registra una actividad con los meses de inicio y cierre antes de descargar.", "error");
+      tell("Registra una actividad con fechas previstas o una ficha de plan antes de descargar.", "error");
       return;
     }
-    downloadHtml(documentText, "Carta_Gantt_2027.html");
-    tell("Carta Gantt preparada. Ábrela para imprimirla o guardarla como PDF.", "success");
-  });
+    downloadHtml(documentText, includePlans ? "Planes_y_Carta_Gantt_2027.html" : "Carta_Gantt_2027.html");
+    tell("Documento preparado. Ábrelo para imprimirlo o guardarlo como PDF.", "success");
+  }
+  document.getElementById("export-gantt").addEventListener("click",()=>downloadSchedule(false));
+  document.getElementById("export-plans-gantt").addEventListener("click",()=>downloadSchedule(true));
 }
 
 function setupDocument(info) {
@@ -567,6 +668,26 @@ function setupDocument(info) {
     list.append(element("li", "Módulo " + number + " · " + status));
   }
   sources.replaceChildren(list);
+  const profile=integrationInputs.m1?.data?.proyecto ?? {};
+  const entity=(String(profile.entidad ?? "").trim() || "[Entidad]");
+  const center=(String(profile.centro ?? "").trim() || "[Centro de trabajo]");
+  const version=String(profile.version ?? "").trim() || "[Versión]";
+  const sections=[
+    ["compose-policy","m4.cap2_politica",
+      entity+" adopta esta política de SST para "+center+". El equipo se compromete a prevenir accidentes y enfermedades ocupacionales, a reducir riesgos con base en el diagnóstico, y a consultar a las personas trabajadoras y sus representantes.\n\nPrioridades del centro: [incorporar objetivos y medidas de la entidad].\nDifusión, revisión y suscripción: [completar con el SSST, el CSSL y los responsables]."],
+    ["compose-letter","m4.compromiso",
+      "Borrador para revisión y suscripción\nEntidad: "+entity+"\nCentro: "+center+"\nVersión del PSST: "+version+"\nRepresentante: [completar]\nDirigida al Comité de Seguridad y Salud Laboral.\n\nSe propone asumir el compromiso de ejecutar y revisar los planes del PSST, proporcionar los recursos previstos, facilitar la participación y hacer seguimiento de las medidas preventivas.\n\nCompromisos específicos y responsables: [incorporar los planes, recursos y plazos].\nFecha y firma: [pendientes de validación y suscripción]."],
+  ];
+  for(const [id,name,content] of sections) {
+    document.getElementById(id).addEventListener("click",()=>{
+      if (busy) return;
+      const field=form.elements.namedItem(name);
+      if (field.value.trim()) { field.focus(); return; }
+      field.value=content;
+      rowChanged();
+      field.focus();
+    });
+  }
   const button = document.getElementById("export-psst");
   button.addEventListener("click", () => void update("Preparando el borrador…", async () => {
     await saveIfChanged();
@@ -610,6 +731,7 @@ async function start() {
   workspace.hidden = false;
   draft = info.draft ?? {};
   moduleId = info.moduleId;
+  setupProjectFields();
   setupChapterFields();
   setupReview();
   revision = info.revision;
@@ -620,6 +742,7 @@ async function start() {
     input.value = typeof value === "string" || typeof value === "number" ? value : "";
   }
   setupRows(info);
+  showReadiness();
   setupDocument(info);
   setupGanttDownload(info);
   setupSteps();
