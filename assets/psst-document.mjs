@@ -1,5 +1,5 @@
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
-import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=exposicion-1";
+import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
 import { coherenceIssues, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
@@ -127,7 +127,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   const process = facts([
     ["Centro",one.alcance?.centro],["Área, turno y alcance",one.alcance?.area],
     ["Organigrama y estructura del SSST",one.alcance?.organigrama],
-    ["Proceso",one.flujo?.proceso],["Secuencia",one.flujo?.secuencia],["Diagrama",one.flujo?.referencia],
+    ["Proceso productivo",one.flujo?.proceso],["Secuencia",one.flujo?.secuencia],["Diagrama",one.flujo?.referencia],
     ["Etapa y tarea",one.tarea?.etapa],["Descripción",one.tarea?.descripcion],
     ["Participación",one.mesa?.metodo],["Aportes",one.mesa?.aportes],["Referencia",one.mesa?.referencia],["Asamblea",one.mesa?.asamblea],
     ["Método de evaluación",two.metodo],["Alcance de evaluación",two.etapa],["Observaciones",two.procesos],
@@ -145,7 +145,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Recursos / presupuesto","recursos"],["Seguimiento","seguimiento"],
   ],activities);
   const inventory = table([
-    ["Código","codigo"],["Flujo","flujo"],["Proceso","nombre"],["Área","area"],["Entradas","entradas"],["Secuencia","secuencia"],
+    ["Código","codigo"],["Proceso productivo","flujo"],["Proceso de trabajo","nombre"],["Área","area"],["Entradas","entradas"],["Secuencia","secuencia"],
     ["Salidas","salidas"],["Contratistas","contratistas"],["Evidencia","evidencia"],
   ],processRows.map(row=>({...row,flujo:labelFor(productionFlows,row.productivoRef)})));
   const tasks = table([
@@ -182,7 +182,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Cierre real","cierreReal"],["Estado","estado"],["Responsable","responsable"],["Recursos","recursos"]],activities);
   const extras = {
     0: objectives,
-    2: process + diagramSections(one) + (productionMap ? "<h3>Mapa productivo o de servicio</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos</h3>"+inventory : "") +
+    2: process + diagramSections(one) + (productionMap ? "<h3>Descripción del proceso productivo</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos de trabajo</h3>"+inventory : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
       (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
@@ -201,8 +201,8 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   if(actuals) extras[7]+="<h3>Seguimiento de ejecución y eficacia</h3>"+actuals;
   const stage=statusLabels[four.estadoExpediente]??statusLabels.borrador;
   const recovered = {
-    cap3_organigrama: hasValue(one.alcance?.organigrama),
-    cap3_diagramas: hasValue(one.flujo?.referencia) || processRows.some(row=>hasValue(row.evidencia)),
+    cap3_organigrama: hasValue(one.alcance?.organigrama) || organizationTree(one.alcance?.estructura).some(row=>!row.orphan&&!row.cycle),
+    cap3_diagramas: orderedFlows(one).some(process=>process.stages.length) || hasValue(one.flujo?.referencia) || processRows.some(row=>hasValue(row.evidencia)),
     cap3_riesgos: matrix.length>0 || hasValue(two.matriz),
     cap3_validacion: hasValue(one.mesa?.asamblea),
     cap4_prioridades: activities.some(row=>hasValue(row.hallazgo)),

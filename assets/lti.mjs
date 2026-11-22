@@ -1,14 +1,14 @@
 import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
-import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks, workRoutes } from "./psst-builder.mjs?v=exposicion-1";
-import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=ayuda-1";
-import { tutorials, glossary } from "./psst-tutorial.mjs?v=ruta-1";
-import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
+import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationImport, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
+import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=organigrama-1";
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=organigrama-1";
+import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=exposicion-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=exposicion-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=organigrama-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
 
@@ -42,13 +42,13 @@ const rowSchemas = {
   estructura: {group:"alcance",key:"estructura",singular:"Cargo o área",fields:[
     ["nombre","Nombre del cargo o área",true],["reportaA","Reporta a",false,"cargos"],["observacion","Función o coordinación"],
   ]},
-  mapa: {group:"flujo",key:"etapasMapa",singular:"Etapa del flujo",fields:[
-    ["flujoRef","Flujo productivo o de servicio",true,"productivos"],["nombre","Etapa",true],
+  mapa: {group:"flujo",key:"etapasMapa",singular:"Etapa del proceso productivo",fields:[
+    ["flujoRef","Proceso productivo",true,"productivos"],["nombre","Etapa",true],
     ["area","Área o responsable"],["entradas","Qué recibe"],["salidas","Qué entrega"],
     ["excepcion","Desvío, devolución o condición particular"],
   ]},
-  productivos: {group:"flujo",key:"productivos",singular:"Flujo productivo o de servicio",fields:[
-    ["codigo","Código del flujo",true],["nombre","Bien o servicio y nombre del flujo",true],
+  productivos: {group:"flujo",key:"productivos",singular:"Proceso productivo",fields:[
+    ["codigo","Código del proceso productivo",true],["nombre","Nombre del proceso productivo",true],
     ["entradas","Entradas e insumos"],["secuencia","Secuencia de etapas e interfaces",true],
     ["salidas","Resultados y salidas"],["evidencia","Referencia al diagrama de flujo"],
   ]},
@@ -73,9 +73,9 @@ const rowSchemas = {
     ["responsable","Responsable de completarlo"],["custodio","Custodio y personas autorizadas"],
     ["revisionAcceso","Fecha de revisión del acceso",false,"verification-date"],
   ]},
-  procesos: { group:"flujo", key:"procesos", singular:"Proceso", fields:[
+  procesos: { group:"flujo", key:"procesos", singular:"Proceso de trabajo", fields:[
     ["codigo","Código (p. ej., P-01)",true], ["nombre","Nombre del proceso de trabajo",true],
-    ["productivoRef","Flujo productivo o de servicio",true,"productivos"], ["etapaMapaRef","Etapa del mapa",false,"etapasMapa"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
+    ["productivoRef","Proceso productivo",true,"productivos"], ["etapaMapaRef","Etapa del mapa",false,"etapasMapa"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
     ["secuencia","Etapas y organización del trabajo"], ["salidas","Productos, residuos y disposición"],
     ["contratistas","Contratistas e interacciones"], ["evidencia","Diagrama, croquis u otra evidencia"],
   ] },
@@ -203,7 +203,7 @@ function choices(type) {
 
 function fillSelect(field, available, value) {
   const selected = field.multiple ? value : [value];
-  field.replaceChildren(...(field.multiple ? [] : [new Option("Selecciona", "")]));
+  field.replaceChildren(...(field.multiple ? [] : [new Option(field.dataset.link === "cargos" ? "Nivel superior" : "Selecciona", "")]));
   for (const [id,name] of available) field.add(new Option(name,id));
   for (const id of selected.filter(Boolean)) {
     if (!available.some(([availableId])=>availableId===id)) field.add(new Option("Referencia anterior · revisa el vínculo ("+id+")",id));
@@ -214,9 +214,16 @@ function fillSelect(field, available, value) {
 }
 
 function refreshLinks() {
+  const structure = new Map(organizationTree(rowValues("estructura")).map(row => [row.id,row]));
+  const cargoOptions = choices("cargos");
   for (const editor of editors.values()) {
     for (const control of editor.querySelectorAll("[data-link]")) {
-      fillSelect(control,choices(control.dataset.link),fieldValue(control));
+      const type = control.dataset.link;
+      const id = control.closest(".row-card")?.dataset.id;
+      const available = type === "cargos"
+        ? cargoOptions.filter(([candidate]) => candidate !== id && !structure.get(candidate).ancestors.includes(id))
+        : choices(type);
+      fillSelect(control,available,fieldValue(control));
     }
   }
 }
@@ -316,11 +323,15 @@ function updateRowLabels(key, editor) {
   const schema = rowSchemas[key];
   const rows = [...editor.querySelectorAll(".row-card")];
   rows.forEach((row, index) => {
-    const label = schema.singular + " " + (index + 1);
+    const label = key === "estructura"
+      ? row.querySelector('[data-key="nombre"]').value.trim() || (index === 0 ? "Máxima autoridad" : "Nuevo cargo o área")
+      : schema.singular + " " + (index + 1);
     row.querySelector("legend").textContent = label;
     row.querySelector("[data-remove]").setAttribute("aria-label", "Quitar " + label.toLowerCase());
   });
-  editor.querySelector("[data-add]").disabled = busy;
+  const add = editor.querySelector("[data-add]");
+  add.disabled = busy;
+  if (key === "estructura") add.textContent = rows.length ? "Agregar otro cargo" : "Agregar máxima autoridad";
 }
 
 function rowChanged(event) {
@@ -330,7 +341,11 @@ function rowChanged(event) {
     const stage = event.target.closest(".row-card")?.querySelector('[data-key="etapa"]');
     if (task && stage) stage.value = task.etapa ?? "";
   }
-  if (!event || key === "codigo" || key === "nombre" || key === "riesgo") refreshLinks();
+  if (!event || key === "codigo" || key === "nombre" || key === "riesgo" || key === "reportaA") refreshLinks();
+  if (key === "nombre" || !event) {
+    const organization = editors.get("estructura");
+    if (organization) updateRowLabels("estructura",organization);
+  }
   renderBuilder();
   if (!event || ["actividad","centro","planRef","inicio","fin","fechaInicio","fechaFin","nuevoInicio","nuevoFin","responsable","estado"].includes(key)) redrawGantt();
   if (key === "familia" || key === "enfoque") showRowHelp(event.target.closest(".row-card"));
@@ -345,7 +360,7 @@ function rowChanged(event) {
 
 function appendRow(editorKey, editor, values = {}, focus = false) {
   const row = element("fieldset");
-  row.className = "row-card";
+  row.className = editorKey === "estructura" ? "row-card organization-row" : "row-card";
   row.dataset.id = values.id || crypto.randomUUID();
   const fields = element("div");
   fields.className = "fields";
@@ -382,6 +397,8 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
       fillSelect(field,choices(type),value);
     } else {
       field.maxLength = 800;
+      if (editorKey === "estructura" && key === "nombre") field.placeholder = "Ej. Dirección general";
+      if (editorKey === "productivos" && key === "secuencia") field.placeholder = "Recepción, preparación, despacho";
     }
     if(key==="evidencia"||key==="ubicacion"){
       const help=element("small","Usa un código o una referencia a un repositorio con acceso autorizado. Registra la fecha o condición de revisión del acceso cuando corresponda.");
@@ -409,6 +426,12 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   remove.dataset.remove = "";
   remove.addEventListener("click", () => {
     if (busy) return;
+    if (editorKey === "estructura") {
+      const parent = row.querySelector('[data-key="reportaA"]').value;
+      for (const child of editor.querySelectorAll('[data-key="reportaA"]')) {
+        if (child.value === row.dataset.id) child.value = parent;
+      }
+    }
     row.remove();
     updateRowLabels(editorKey, editor);
     editor.querySelector("[data-add]").focus();
@@ -438,7 +461,20 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     });
     row.append(button);
   }
-  row.append(remove);
+  if (editorKey === "estructura") {
+    const actions = element("div");
+    actions.className = "actions";
+    actions.append(actionButton("Agregar debajo", () => {
+      const name = fields.querySelector('[data-key="nombre"]');
+      if (!name.value.trim()) {
+        name.focus();
+        tell("Escribe primero el nombre del cargo al que reportará.","error");
+        return;
+      }
+      newLinkedRow("estructura", {reportaA:row.dataset.id});
+    }), remove);
+    row.append(actions);
+  } else row.append(remove);
   editor.querySelector("[data-rows]").append(row);
   updateRowLabels(editorKey, editor);
   if (editorKey==="mapa") addStageOrder(row,editor);
@@ -476,10 +512,17 @@ function setupRows(info) {
     if (Array.isArray(values)) values.forEach(row => appendRow(key,editor,row));
     editor.querySelector("[data-add]").addEventListener("click", () => {
       if (busy) return;
-      appendRow(key,editor,{},true);
+      const productive = rowValues("productivos").filter(row => row.nombre);
+      const parent = productive.length === 1 ? productive[0].id : "";
+      const defaults = key === "productivos" ? {codigo:nextCode("F",rowValues(key))}
+        : key === "procesos" ? {codigo:nextCode("P",rowValues(key)),productivoRef:parent}
+        : key === "mapa" ? {flujoRef:parent}
+        : {};
+      appendRow(key,editor,defaults,true);
       rowChanged();
     });
   }
+  refreshLinks();
   redrawGantt();
   renderPlanCoverage();
 }
@@ -779,13 +822,6 @@ function makeFieldHelp(kind, control, previous) {
 }
 
 function setupFieldHelp(info) {
-  if (info.moduleId === "m1") {
-    const organization=document.getElementById("organigrama-help");
-    if (organization?.append) organization.append(makeFieldHelp("organization",form.elements.namedItem("alcance.organigrama")).box);
-    const production=document.getElementById("production-help");
-    if (production?.append) production.append(makeFieldHelp("production").box);
-    return;
-  }
   const contextGuide={m2:"risk",m3:"action"}[info.moduleId];
   if (contextGuide) {
     const mount=document.getElementById(contextGuide+"-help");
@@ -794,9 +830,14 @@ function setupFieldHelp(info) {
   }
   if (info.moduleId !== "m4" || !form.elements?.namedItem) return;
   const prior=info.inputs?.m1?.data;
+  const organization = form.elements.namedItem("m4.cap3_organigrama");
+  const organizationRows = organizationTree(prior?.alcance?.estructura);
+  if (organization?.parentElement && organizationRows.length) {
+    organization.parentElement.before(element("p","Se incorporará el organigrama de M1 (" +
+      organizationRows.length + " cargos o áreas). Describe aquí la estructura del SSST y la coordinación con el CSSL si falta precisarlas."));
+  }
   for (const [name,kind,previous] of [
     ["m4.cap2_politica","policy",null],
-    ["m4.cap3_organigrama","organization",()=>prior?.alcance?.organigrama ?? ""],
     ["m4.cap3_proceso_productivo","production",()=>productionFromM1(prior)],
   ]) {
     const control=form.elements.namedItem(name);
@@ -1130,7 +1171,7 @@ deliver.addEventListener("click", () => {
     const mismatched=rowValues("procesos").find(row=>row.etapaMapaRef && !mappedStages.some(stage=>stage.id===row.etapaMapaRef && stage.flujoRef===row.productivoRef));
     if(mismatched){
       focusRecord("procesos",mismatched.id);
-      tell("La etapa elegida debe pertenecer al flujo de ese proceso de trabajo.","error");
+      tell("La etapa elegida debe pertenecer al proceso productivo seleccionado.","error");
       return;
     }
   }
@@ -1362,7 +1403,7 @@ function renderProjectDetails(){
     const table=element("table");
     table.setAttribute("aria-label","Trazabilidad de tareas");
     const row=table.createTHead().insertRow();
-    for(const title of ["Flujo productivo","Proceso de trabajo","Tarea","Hallazgos","Planes","Actividades y evidencia"]){
+    for(const title of ["Proceso productivo","Proceso de trabajo","Tarea","Hallazgos","Planes","Actividades y evidencia"]){
       const cell=element("th",title);cell.scope="col";row.append(cell);
     }
     const body=table.createTBody();
@@ -1614,27 +1655,9 @@ function renderIncoming(info){
   mount.append(list);
 }
 
-function showWorkRoutes(mount,id){
-  if(!mount?.before) return;
-  const guide=element("details");
-  guide.className="field-workshop";
-  guide.append(element("summary","Elige cómo preparar esta parte"));
-  const select=element("select");
-  select.setAttribute("aria-label","Forma de preparar "+id);
-  for(const [key,caption] of [["vigente","Tengo información o documento vigente"],["elaborar","Necesito elaborarlo"],["pendiente","Me falta verificarlo"]]){
-    select.add(new Option(caption,key));
-  }
-  select.value="elaborar";
-  const text=element("p",Object.fromEntries(workRoutes).elaborar);
-  text.setAttribute("role","status");
-  select.addEventListener("change",()=>{text.textContent=Object.fromEntries(workRoutes)[select.value];});
-  guide.append(select,text);
-  mount.before(guide);
-}
-
 function renderBuilder(){
+  if (moduleId === "m1") renderDiagrams();
   if(!projectInfo?.projectKey||!draft) return;
-  if(moduleId==="m1") renderDiagrams();
   if(moduleId==="m3") renderExecution();
   if(moduleId==="m2"){
     const groups=exposureRows({filas:rowValues("m2"),gruposExpuestos:rowValues("expuestos")});
@@ -1679,60 +1702,91 @@ function renderBuilder(){
   target.append(list);
 }
 
-function renderDiagrams(){
-  const org=document.getElementById("organization-view"),flow=document.getElementById("flow-view");
-  if(!org?.replaceChildren||!flow?.replaceChildren) return;
-  const structure=organizationTree(rowValues("estructura"));
-  const visible=new Set();
-  function showBranch(row){
-    visible.add(row.id);
-    const item=element("li");
-    const label=element("span",row.nombre);
-    item.append(label);
-    const linked=structure.filter(child=>child.parent?.id===row.id&&!child.cycle&&!visible.has(child.id));
-    if(linked.length){
-      const nested=element("ul");
-      for(const child of linked) nested.append(showBranch(child));
-      item.append(nested);
+function setupOrganizationImport() {
+  const outline = document.getElementById("organization-outline");
+  const file = document.getElementById("organization-file");
+  const notice = document.getElementById("organization-import-status");
+  file.addEventListener("change", async () => {
+    const selected = file.files[0];
+    if (!selected) return;
+    try {
+      if (!/\.txt$/i.test(selected.name) || selected.size > 64000) {
+        throw new Error("Elige un archivo TXT de hasta 64 KB.");
+      }
+      const text = await selected.text();
+      if (text.length > outline.maxLength) throw new Error("Divide el archivo en listas más cortas.");
+      outline.value = text;
+      notice.textContent = "Revisa la lista y pulsa Agregar cargos de la lista.";
+    } catch (error) {
+      notice.textContent = error.message;
+    } finally {
+      file.value = "";
     }
-    return item;
+  });
+  document.getElementById("organization-import").addEventListener("click", () => {
+    if (busy) return;
+    try {
+      const rows = organizationImport(outline.value);
+      const editor = editors.get("estructura");
+      const ids = rows.map(() => crypto.randomUUID());
+      rows.forEach(({nombre, parent}, index) => appendRow("estructura",editor,
+        {id:ids[index],nombre,reportaA:ids[parent] ?? ""}));
+      outline.value = "";
+      rowChanged();
+      notice.textContent = rows.length + (rows.length === 1 ? " cargo agregado al organigrama." : " cargos agregados al organigrama.");
+    } catch (error) {
+      notice.textContent = error.message;
+    }
+  });
+}
+
+function renderDiagrams() {
+  const org = document.getElementById("organization-view");
+  if (!editors.has("estructura") || !org) return;
+  const structure = organizationTree(rowValues("estructura"));
+  const branches = new Map();
+  for (const row of structure) {
+    const parent = row.cycle ? undefined : row.parent?.id;
+    if (!branches.has(parent)) branches.set(parent, []);
+    branches.get(parent).push(row);
   }
-  const orgTree=element("ul");
-  orgTree.className="org-tree";
-  for(const row of structure.filter(node=>!node.parent||node.cycle)) if(!visible.has(row.id)) orgTree.append(showBranch(row));
-  org.replaceChildren(structure.length?orgTree:element("p","Agrega al menos la dirección o un cargo para ver el organigrama."));
-  const flows=orderedFlows({flujo:{productivos:rowValues("productivos"),etapasMapa:rowValues("mapa")}});
+  function branch(parent) {
+    const list = element("ul");
+    for (const row of branches.get(parent) ?? []) {
+      const item = element("li");
+      item.append(element("span", row.nombre));
+      if (row.orphan || row.cycle) item.append(element("small", "Revisa a quién reporta."));
+      if (branches.has(row.id)) item.append(branch(row.id));
+      list.append(item);
+    }
+    return list;
+  }
+  const tree = branch(undefined);
+  tree.className = "org-tree";
+  org.replaceChildren(structure.length ? tree : element("p","El organigrama aparecerá aquí al escribir el primer cargo."));
+  document.getElementById("download-org").hidden = structure.length === 0;
+  const flow = document.getElementById("flow-view");
+  const processes = orderedFlows({flujo:{productivos:rowValues("productivos"),etapasMapa:rowValues("mapa")}});
   flow.replaceChildren();
-  for(const item of flows){
-    const section=element("section");
-    section.append(element("h3",item.nombre));
-    const sequence=element("ol");
-    sequence.className="flow-sequence";
-    for(const stage of item.stages){
-      const entry=element("li");
+  let hasDiagram = false;
+  for (const process of processes) {
+    if (!process.stages.length) continue;
+    hasDiagram = true;
+    const section = element("section");
+    section.append(element("h3","Diagrama · " + process.nombre));
+    const sequence = element("ol");
+    sequence.className = "flow-sequence";
+    for (const stage of process.stages) {
+      const entry = element("li");
       entry.append(element("strong",stage.nombre));
-      if(stage.area) entry.append(element("p",stage.area));
-      if(stage.excepcion) entry.append(element("p","Desvío: "+stage.excepcion));
+      if (stage.area) entry.append(element("p",stage.area));
+      if (stage.excepcion) entry.append(element("p","Desvío: " + stage.excepcion));
       sequence.append(entry);
     }
-    section.append(item.stages.length?sequence:element("p","Agrega una etapa y vincúlala a este flujo."));
-    if(item.stages.length) section.append(actionButton("Usar esta secuencia en la ficha",()=>{
-      const control=[...(editors.get("productivos")?.querySelectorAll(".row-card")??[])]
-        .find(row=>row.dataset.id===item.id)?.querySelector('[data-key="secuencia"]');
-      if(!control||busy) return;
-      if(control.value.trim()&&control.value!==item.stages.map(stage=>stage.nombre).join(" → ")){
-        tell("La ficha ya tiene una secuencia. Revisa el mapa para actualizar el texto cuando corresponda.");
-      } else {
-        const summary=item.stages.map(stage=>stage.nombre).join(" → ");
-        if(summary.length>control.maxLength){
-          tell("La secuencia es extensa. Escribe un resumen de las etapas principales en la ficha.","error");
-        }else{control.value=summary;rowChanged();}
-      }
-      control.focus();
-    }));
+    section.append(sequence);
     flow.append(section);
   }
-  if(!flows.length) flow.append(element("p","Crea y nombra el flujo antes de agregar etapas al mapa."));
+  document.getElementById("download-flow").hidden = !hasDiagram;
 }
 
 function renderExecution(){
@@ -1817,8 +1871,7 @@ function setupBuilder(info){
     });
   }
   if(moduleId==="m1"){
-    showWorkRoutes(document.querySelector("#organigrama-help"),"el organigrama");
-    showWorkRoutes(document.querySelector("#production-help"),"el proceso productivo");
+    setupOrganizationImport();
     for(const [id,name,kind] of [["download-org","Organigrama","org"],["download-flow","Mapa_productivo","flow"]]){
       document.getElementById(id)?.addEventListener("click",()=>{
         downloadBlob(wordFromReport(buildDiagramDocument({label:info.label,inputs:{m1:{data:collectDraft()}}},kind)),name+".docx");
@@ -1833,7 +1886,6 @@ function setupBuilder(info){
     });
   }
   if(moduleId==="m4"){
-    showWorkRoutes(document.querySelector('[name="m4.cap2_politica"]')?.parentElement,"la política de SST");
     document.getElementById("preview-psst")?.addEventListener("click",openDraftPreview);
     document.getElementById("close-preview")?.addEventListener("click",()=>document.getElementById("psst-preview").close());
     document.getElementById("edit-preview-chapter")?.addEventListener("click",()=>{

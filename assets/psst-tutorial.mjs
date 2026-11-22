@@ -3,19 +3,19 @@ export const tutorials = {
     title:"Describe el trabajo real",
     chapters:"Capítulo III · Descripción del trabajo. El alcance y el equipo también aportan al capítulo I.",
     first:"Registra el centro, el área y con quién vas a observar el trabajo.",
-    destinations:["Capítulos I y III · Alcance y equipo", "Capítulo III · Flujo y procesos", "Capítulo III · Tareas, puestos y medios", "Capítulo III · Participación y validación", "Capítulo III y anexos · Evidencias de campo"],
+    destinations:["Capítulos I y III · Alcance, equipo y organigrama", "Capítulo III · Proceso productivo y procesos de trabajo", "Capítulo III · Tareas, puestos y medios", "Capítulo III · Participación y validación", "Capítulo III y anexos · Evidencias de campo"],
     result:"Una descripción del trabajo real con tareas observadas, aportes de las personas trabajadoras y evidencias que puedas localizar.",
     supplies:"Ten a mano el centro, el área, los turnos y quién puede acompañarte a observar el trabajo.",
     next:"En el Módulo 2 usarás las tareas observadas para identificar y evaluar riesgos.",
     steps:[
       ["Delimita el trabajo",[
         "En Centro de trabajo escribe el lugar físico. En Área, turno y alcance indica qué incluirás en esta visita.",
-        "En Integrantes, roles y acuerdos escribe quién coordina, quién conoce la tarea y cuándo harán el recorrido. Registra el estado del organigrama si todavía debes conseguirlo.",
+        "En Integrantes, roles y acuerdos escribe quién coordina, quién conoce la tarea y cuándo harán el recorrido. En Organigrama escribe la máxima autoridad y usa Agregar debajo para los cargos que le reportan. El dibujo se actualiza al escribir.",
       ],"Centro Norte · despacho · turno de la mañana. El SSST organiza el recorrido y el personal de despacho explica la secuencia real.","Quedaron registrados el lugar, el turno, el alcance y las personas o roles que participan."],
-      ["Dibuja el flujo e identifica los procesos",[
-        "Pulsa Agregar flujo productivo o de servicio. Escribe qué bien o servicio entrega el centro y ordena sus etapas desde la entrada hasta la salida.",
-        "Pulsa Agregar proceso. Crea una fila para cada proceso de trabajo que revisarás, ponle un código y selecciona el flujo que acabas de registrar.",
-      ],"F-01 · Distribución de materiales (recepción → almacenamiento → despacho). P-01 · Preparación de pedidos, vinculado al flujo F-01.","Puedes ubicar cada proceso de trabajo dentro del flujo al que pertenece."],
+      ["Describe el proceso productivo",[
+        "Pulsa Agregar proceso productivo. Escribe qué bien o servicio entrega el centro y separa las etapas con comas. Verás el diagrama al escribir.",
+        "Pulsa Agregar proceso de trabajo para registrar cada proceso que revisarás. Vincúlalo con el proceso productivo.",
+      ],"F-01 · Distribución de materiales (recepción → almacenamiento → despacho). P-01 · Preparación de pedidos, vinculado al proceso productivo F-01.","Puedes ubicar cada proceso de trabajo dentro del proceso productivo al que pertenece."],
       ["Describe una tarea observada",[
         "Pulsa Agregar tarea, asígnale un código y elige el proceso de trabajo que registraste.",
         "Describe lo que viste en orden: quién hace la tarea, qué usa, dónde se mueve y en qué condiciones. Agrega más filas si observaste otras tareas.",
@@ -28,7 +28,7 @@ export const tutorials = {
       ["Completa la bitácora y entrega",[
         "Pulsa Agregar registro de campo. Para cada actividad real, indica fecha, horas, tarea y referencia de la evidencia. Usa códigos que permitan localizar el soporte.",
         "En Pendientes para el Módulo 2 escribe qué aspecto deberá comprobarse.",
-      ],"E-01 · croquis de la ruta de T-01; E-02 · registro de consulta. Pendiente: observar el cruce durante el relevo.","Tienes alcance, flujo, proceso, tarea, aportes y evidencias de lo realizado. Las horas corresponden al trabajo efectivamente documentado."],
+      ],"E-01 · croquis de la ruta de T-01; E-02 · registro de consulta. Pendiente: observar el cruce durante el relevo.","Tienes alcance, proceso productivo, procesos de trabajo, tareas, aportes y evidencias de lo realizado. Las horas corresponden al trabajo efectivamente documentado."],
     ],
   },
   m2: {
@@ -94,8 +94,8 @@ export const tutorials = {
       ],"El borrador de Centro Norte usa el levantamiento de despacho, la matriz con el hallazgo R-01 y el plan PL-01. Falta comprobar el turno de relevo.","Sabes qué fuentes respaldan el borrador y qué información aún debes validar."],
       ["Redacta los capítulos I a III",[
         "Abre Capítulo 1 · Generalidades y registra los datos de la entidad, los objetivos, el alcance y los responsables. Abre Capítulo 2 para preparar la política o identificar su versión vigente.",
-        "Abre Capítulo 3 para explicar el flujo, la evaluación y la validación. Usa como respaldo el levantamiento de M1 y la matriz de M2, que se incorporan al borrador.",
-      ],"En el capítulo III, describe el flujo F-01, ubica P-01 y T-01 y vincula R-01 con el croquis E-01.","Los capítulos dejan claro a quién aplica el PSST, qué política lo orienta y cómo se preparó el diagnóstico."],
+        "Abre Capítulo 3 para explicar el proceso productivo, la evaluación y la validación. Usa como respaldo el levantamiento de M1 y la matriz de M2, que se incorporan al borrador.",
+      ],"En el capítulo III, describe el proceso productivo F-01, ubica P-01 y T-01 y vincula R-01 con el croquis E-01.","Los capítulos dejan claro a quién aplica el PSST, qué política lo orienta y cómo se preparó el diagnóstico."],
       ["Redacta los capítulos IV a VI",[
         "Abre Capítulo 4 · Planes de trabajo. Usa los planes y la Gantt de M3 y explica sus prioridades, recursos y seguimiento.",
         "En el capítulo V indica cómo se investigarán accidentes y enfermedades y dónde estarán los formatos. En el capítulo VI prepara o referencia la carta compromiso y registra su estado.",
@@ -117,7 +117,7 @@ export const tutorials = {
 };
 
 export const glossary = {
-  m1:[["Flujo productivo o de servicio","Etapas que conectan las entradas con el bien o servicio entregado."],["Proceso de trabajo","Conjunto de actividades que realiza el personal para obtener un resultado dentro del flujo."],["Tarea","Acción concreta que puedes observar y describir."],["Evidencia","Fuente que permite ubicar y verificar una observación, por ejemplo un croquis fechado o una ficha de visita."]],
+  m1:[["Proceso productivo","Etapas que conectan las entradas con el bien o servicio entregado."],["Proceso de trabajo","Conjunto de actividades que realiza el personal para obtener un resultado dentro del proceso productivo."],["Tarea","Acción concreta que puedes observar y describir."],["Evidencia","Fuente que permite ubicar y verificar una observación, por ejemplo un croquis fechado o una ficha de visita."]],
   m2:[["Peligro","Fuente o condición con potencial de causar daño."],["Exposición","Quién entra en contacto con el peligro, en qué condiciones y con qué frecuencia o duración."],["Valoración","Resultado del método aplicado con los datos disponibles."],["Control","Medida que se utiliza para eliminar el peligro o reducir la exposición o el riesgo."]],
   m3:[["Plan","Ficha que reúne el objetivo, las medidas, los responsables y los recursos para atender una necesidad."],["Actividad","Acción concreta programada dentro de un plan."],["Carta Gantt","Calendario visual de las actividades según sus fechas."],["Evidencia de ejecución","Registro que permite comprobar que la actividad se realizó."]],
   m4:[["Fuente","Registro concreto que respalda una parte del borrador."],["Anexo","Documento o evidencia complementaria referenciada en el PSST."],["Brecha","Información, acción o validación que falta frente al criterio revisado."],["Borrador","Versión de trabajo que reúne lo elaborado y deja visibles los pendientes de revisión."]],

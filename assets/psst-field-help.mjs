@@ -1,25 +1,14 @@
 const nt = "https://medicinalaboraldevenezuela.com.ve/archivo/norma-tecnica-04-2023.pdf";
 
 export const fieldHelp = {
-  organization: {
-    title:"Cómo hacer el organigrama",
-    steps:[
-      "Busca el organigrama vigente. Si no existe, escribe arriba la dirección del centro y debajo las áreas o cargos que dependen de ella.",
-      "Dibuja un recuadro por cargo o área. Une con una línea a quien reporta a cada nivel. Ubica cómo se organiza el Servicio de Seguridad y Salud en el Trabajo (SSST).",
-      "Describe por separado cómo se coordina el Comité de Seguridad y Salud Laboral (CSSL). Valida el esquema con la entidad y registra la versión o lo que queda pendiente.",
-    ],
-    example:"Centro Norte · Dirección del centro\n  ↳ Operaciones · Recepción, Almacenamiento y Despacho\n  ↳ Administración\n  ↳ SSST · En este ejemplo reporta a la Dirección\nCoordinación con el CSSL · Sesiones y acuerdos registrados en acta.",
-    check:"Cada área tiene una relación clara; se entiende dónde se ubica el SSST y cómo se coordina el CSSL. Si hay un archivo, indica su código, fecha y ubicación.",
-    template:"Dirección del centro: [Completar]\nÁreas y a quién reportan: [Completar]\nUbicación y organización del SSST: [Completar]\nCoordinación con el CSSL: [Completar]\nAnexo, versión o pendiente de validación: [Completar]",
-  },
   production: {
     title:"Cómo describir el proceso productivo",
     steps:[
       "Empieza por lo que entrega el centro: un bien elaborado o un servicio prestado. Anota qué recibe para poder hacerlo.",
       "Recorre el trabajo en orden y escribe qué sucede desde la entrada hasta la salida. Indica quién recibe el resultado de cada etapa y qué ocurre cuando hay una excepción o devolución.",
-      "Contrasta el recorrido con quienes realizan el trabajo. Registra las fuentes y asocia los procesos de trabajo a su flujo. Luego detalla las tareas en su propio paso.",
+      "Contrasta el recorrido con quienes realizan el trabajo. Registra las fuentes y asocia los procesos de trabajo al proceso productivo. Luego detalla las tareas en su propio paso.",
     ],
-    example:"F-01 · Distribución de materiales. Entradas: pedido y cajas recibidas. Flujo: recepción y verificación → almacenamiento → preparación del pedido → despacho. Si el pedido está incompleto, vuelve a preparación. Salida: pedido entregado y registro de entrega. Soporte: croquis E-01.",
+    example:"F-01 · Distribución de materiales. Entradas: pedido y cajas recibidas. Etapas: recepción y verificación → almacenamiento → preparación del pedido → despacho. Si el pedido está incompleto, vuelve a preparación. Salida: pedido entregado y registro de entrega. Soporte: croquis E-01.",
     check:"Al leerlo se entiende qué entra, cómo se transforma o se presta el servicio, quién interviene, qué sale y dónde comprobarlo.",
     template:"Bien elaborado o servicio prestado: [Completar]\nEntradas: [Completar]\nEtapas en orden y áreas que intervienen: [Completar]\nExcepciones o devoluciones: [Completar]\nSalidas y destinatarios: [Completar]\nDiagrama, fuente o pendiente de validar: [Completar]",
     reference:["Descripción del trabajo · NT-04-2023, art. 14",nt+"#page=7"],

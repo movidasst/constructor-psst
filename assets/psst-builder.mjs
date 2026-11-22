@@ -7,12 +7,25 @@ export const statusLabels = {
   borrador:"Borrador del taller",revision:"Revisión interna",preparacion:"Preparación para consignación",
 };
 export const followupLabels = ["Por verificar","En evaluación","Eficaz","Requiere ajuste"];
-const wording = {
-  vigente:"Identifica la versión, la fecha y el lugar donde puede consultarse. Revisa si corresponde al centro y anota qué debe actualizarse.",
-  elaborar:"Empieza con el ejemplo y adapta la plantilla a tu centro. Registra la fuente que respalda cada dato.",
-  pendiente:"Indica qué falta, quién lo verificará y cuándo. Registra ese pendiente en la bitácora o en la revisión del borrador.",
-};
-export const workRoutes = Object.entries(wording);
+export function organizationImport(text) {
+  const rows = [];
+  const parents = [];
+  for (const [index, raw] of text.split(/\r?\n/).entries()) {
+    const nombre = raw.trim();
+    if (!nombre) continue;
+    const indent = raw.match(/^[ \t]*/)[0].replaceAll("\t", "  ").length;
+    const level = indent / 2;
+    if (!Number.isInteger(level) || level > parents.length) {
+      throw new Error("Revisa la sangría de la línea " + (index + 1) + ". Usa dos espacios por nivel, sin saltar niveles.");
+    }
+    if (nombre.length > 800) throw new Error("Acorta el nombre del cargo de la línea " + (index + 1) + ".");
+    rows.push({nombre,parent:parents[level-1]});
+    parents[level] = rows.length - 1;
+    parents.length = level + 1;
+  }
+  if (!rows.length) throw new Error("Agrega al menos un cargo a la lista.");
+  return rows;
+}
 
 export function organizationTree(records) {
   const nodes=list(records).filter(row=>row.id&&row.nombre);
@@ -26,7 +39,7 @@ export function organizationTree(records) {
       current=byId.get(current.reportaA);
     }
     return {...row,level:cycle?0:ancestors.length-1,
-      parent:byId.get(row.reportaA),root:current.id,cycle,orphan:Boolean(row.reportaA&&!byId.has(row.reportaA))};
+      parent:byId.get(row.reportaA),ancestors,root:current.id,cycle,orphan:Boolean(row.reportaA&&!byId.has(row.reportaA))};
   });
 }
 
@@ -34,11 +47,19 @@ export function flowSequence(stages, flowId) {
   return list(stages).filter(row=>row.flujoRef===flowId && row.nombre);
 }
 
+function productStages(process, recordedStages) {
+  const stages = flowSequence(recordedStages,process.id);
+  if (stages.length) return stages;
+  const text = process.secuencia ?? "";
+  const separator = /[→\n;]/.test(text) ? /(?:→|\r?\n|;)+/ : /,+/;
+  return text.split(separator).map(name => name.trim()).filter(Boolean).map(nombre => ({nombre}));
+}
+
 export function orderedFlows(flowData) {
   const source=flowData?.flujo??{};
   return list(source.productivos).filter(flow=>flow.id&&flow.nombre).map(flow=>({
     ...flow,
-    stages:flowSequence(source.etapasMapa,flow.id),
+    stages:productStages(flow,source.etapasMapa),
   }));
 }
 

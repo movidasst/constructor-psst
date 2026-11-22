@@ -5,7 +5,7 @@ export const modules = [
   ["m3","Planes y cronograma","3"], ["m4","Borrador y revisión","4"],
 ];
 export const rubrics = {
-  m1: [["Mapa productivo y procesos de trabajo","Distingue el flujo del bien o servicio de los procesos de trabajo y vincula sus etapas."],
+  m1: [["Proceso productivo y procesos de trabajo","Distingue el proceso productivo y los procesos de trabajo que lo componen."],
     ["Tareas observadas","Describe la secuencia real, el personal, los medios y las condiciones."],
     ["Participación y contraste","Documenta aportes, diferencias y lo que se acordó verificar."],
     ["Evidencias y horas de campo","Relaciona fuentes fechadas con las tareas y el tiempo declarado."]],

@@ -199,3 +199,24 @@ button#deliver{background:var(--teal);color:white}
   .step-controls details {margin-left:0}
   .module-start .primary-button {width:100%}
 }
+
+.organization-builder {margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--line)}
+.organization-builder h2,.organization-preview h3 {margin:0;color:var(--navy)}
+.organization-builder > p {margin:.45rem 0 1rem;line-height:1.5}
+.organization-layout {display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start;gap:1rem}
+.organization-preview {min-width:0;border:1px solid #bfdad9;background:#f1f8f7;border-radius:12px;padding:1rem}
+.organization-preview p {margin:.5rem 0;color:#415669}
+.organization-preview button {margin-top:.55rem}
+.organization-preview .org-tree {padding-left:0}
+.organization-preview .org-tree li {position:relative}
+.organization-preview .org-tree ul {padding-left:clamp(.6rem,2vw,1.15rem)}
+.organization-preview .org-tree ul > li::before {content:"";position:absolute;top:1.1em;right:100%;width:clamp(.6rem,2vw,1.15rem);border-top:1px solid #83b8bd}
+.organization-preview .org-tree li > small {display:block;color:#9c2623}
+.organization-row .fields {display:block}
+.organization-row .fields label + label {margin-top:.6rem}
+.organization-row textarea {min-height:2.8rem}
+.organization-row [data-remove] {border-color:transparent}
+.organization-builder > details {margin-top:1rem}
+.outline-file {max-width:100%;flex:1 1 14rem}
+#flow-view > section {margin:.85rem 0}
+@media(max-width:700px) {.organization-layout {grid-template-columns:minmax(0,1fr)}}
