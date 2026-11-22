@@ -3,7 +3,7 @@ import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
 import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks, workRoutes } from "./psst-builder.mjs?v=exposicion-1";
 import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=ayuda-1";
-import { tutorials, glossary } from "./psst-tutorial.mjs?v=exposicion-1";
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=ruta-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=project-2";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=exposicion-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
@@ -149,6 +149,8 @@ const rowSchemas = {
 const editors = new Map();
 let steps = [];
 let currentStep = 0;
+let stage = "overview";
+let displayStage;
 let moduleId;
 let projectLabel;
 let integrationInputs;
@@ -482,112 +484,156 @@ function setupRows(info) {
   renderPlanCoverage();
 }
 
-function renderTutorial(guide) {
+function renderTutorial(guide, resumeIndex) {
   const overview = document.getElementById("tutorial-overview");
-  if (!overview?.replaceChildren) return;
-  const panel = element("section");
-  panel.className = "tutorial-overview";
-  const outcome = element("p", guide.result);
-  const heading = element("h2","Qué vas a entregar");
-  const supplies = element("p");
-  supplies.append(element("strong","Antes de empezar. "), guide.supplies);
+  const heading = element("h2", "Qué vas a construir");
+  heading.tabIndex = -1;
+  const summary = element("dl");
+  summary.className = "module-summary";
+  for (const [label, value] of [
+    ["Parte del PSST", guide.chapters],
+    ["Primero haz esto", guide.first],
+    ["Al terminar tendrás", guide.result],
+  ]) {
+    const item = element("div");
+    item.append(element("dt", label), element("dd", value));
+    summary.append(item);
+  }
+  const start = element("button", resumeIndex > 0 ? "Continuar en el paso " + (resumeIndex + 1) : "Empezar paso 1");
+  start.type = "button";
+  start.className = "primary-button";
+  start.addEventListener("click", () => showStep(currentStep, true));
   const terms = element("details");
-  terms.append(element("summary","Conceptos que necesitas para este módulo"));
+  terms.className = "module-details";
+  terms.append(element("summary", "Qué necesitas y términos útiles"), element("p", guide.supplies));
   const definitions = element("dl");
   for (const [term, definition] of glossary[moduleId]) {
-    definitions.append(element("dt",term),element("dd",definition));
+    definitions.append(element("dt", term), element("dd", definition));
   }
   terms.append(definitions);
-  panel.append(heading,outcome,supplies,terms);
-  overview.replaceChildren(panel);
+  overview.replaceChildren(heading, summary, start, terms);
+  return start;
 }
 
 function renderStepTutorial(section, guide, index) {
-  const step = guide.steps[index];
-  const legend = section.querySelector("legend");
-  if (!step || !legend?.after) return;
-  const [, actions, sample, ready] = step;
+  const [, actions, sample, ready] = guide.steps[index];
   const panel = element("div");
   panel.className = "tutorial-step";
+  const destination = element("p", guide.destinations[index]);
+  destination.className = "step-destination";
   const list = element("ol");
-  for (const action of actions) list.append(element("li",action));
-  const example = element("details");
-  example.append(element("summary","Ejemplo guiado · Centro Norte"),element("p",sample));
+  for (const action of actions) list.append(element("li", action));
+  const help = element("details");
+  help.append(element("summary", "Ejemplo y referencia técnica"), element("p", sample));
+  const previousHelp = section.querySelector(".step-help");
+  const reference = previousHelp?.querySelector(".reference");
+  if (reference) help.append(reference);
+  previousHelp?.remove();
   const check = element("p");
-  check.className="tutorial-check";
-  check.append(element("strong","Antes de avanzar. "),ready);
-  const next = element("p");
-  next.className="tutorial-next";
-  const upcoming = guide.steps[index+1]?.[0];
-  next.append(element("strong",upcoming ? "Qué sigue. " : "Después de entregar. "),
-    upcoming || guide.next);
-  panel.append(element("h3","Qué hacer en este paso"), list, example, check, next);
-  const extra = section.querySelector(".step-help");
-  if (extra) {
-    const details = element("details");
-    details.className = "tutorial-reference";
-    const references = extra.querySelector("p.reference");
-    const explanation = extra.querySelector(":scope > p:nth-child(2)");
-    details.append(element("summary","Por qué importa y referencia técnica"));
-    if (explanation) details.append(explanation);
-    if (references) details.append(references);
-    if (explanation || references) panel.append(details);
-    extra.remove();
-  }
-  legend.after(panel);
+  check.className = "tutorial-check";
+  check.append(element("strong", "Listo cuando: "), ready);
+  panel.append(destination, element("h3", "Qué hacer aquí"), list, check, help);
+  section.querySelector("legend").after(panel);
 }
 
 function setupSteps() {
   steps = [...form.querySelectorAll("[data-module]")]
-    .filter(section => section.dataset.module === moduleId && typeof section.querySelector === "function");
-  if (!steps.length) return;
+    .filter(section => section.dataset.module === moduleId);
+  const guide = tutorials[moduleId];
+  let resumed = 0;
+  if (recoveryKey) {
+    try {
+      const saved = sessionStorage.getItem(recoveryKey + ":ruta");
+      const previous = Number(sessionStorage.getItem(recoveryKey + ":step")) || 0;
+      resumed = saved === null ? Math.max(0, previous - (moduleId === "m1" ? 1 : 0)) : Number(saved);
+    } catch {}
+  }
+  currentStep = steps[resumed] ? resumed : 0;
+  const start = renderTutorial(guide, currentStep);
+
   const nav = document.getElementById("step-nav");
-  const guide=tutorials[moduleId];
-  if (guide) renderTutorial(guide);
   steps.forEach((section, index) => {
     section.id ||= moduleId + "-paso-" + (index + 1);
     const title = section.querySelector("legend");
     title.tabIndex = -1;
-    const stepName=guide?.steps[index]?.[0]||title.textContent;
-    if(guide?.steps[index]) title.textContent=stepName;
-    if(guide) renderStepTutorial(section,guide,index);
-    const button = element("button", (index+1)+". "+stepName);
+    const stepName = guide.steps[index][0];
+    title.textContent = stepName;
+    renderStepTutorial(section, guide, index);
+    const item = element("li");
+    const button = element("button", stepName);
     button.type = "button";
-    button.setAttribute("aria-controls",section.id);
-    button.addEventListener("click", () => showStep(index,true));
-    nav.append(button);
+    button.className = "quiet-button";
+    button.setAttribute("aria-controls", section.id);
+    button.addEventListener("click", () => showStep(index, true));
+    item.append(button);
+    nav.append(item);
   });
-  document.getElementById("step-back").addEventListener("click",() => showStep(currentStep - 1,true));
-  document.getElementById("step-next").addEventListener("click",() => showStep(currentStep + 1,true));
-  document.getElementById("step-finish")?.addEventListener("click",()=>{
-    const target=deliver.disabled ? form.querySelector('button[type="submit"]') : deliver;
-    target?.focus();
-    target?.scrollIntoView({block:"center"});
+
+  const overview = document.getElementById("tutorial-overview");
+  const controls = document.getElementById("step-controls");
+  const navigation = document.getElementById("step-actions");
+  const actionPanel = document.getElementById("action-panel");
+  const closing = document.getElementById("module-close");
+  document.getElementById("final-document").hidden = moduleId !== "m4";
+  document.getElementById("close-result").textContent = guide.result;
+  document.getElementById("close-next").textContent = practice
+    ? "Guarda tu avance de práctica. Puedes seguir con otro módulo del caso Centro Norte."
+    : guide.next;
+
+  function screen(name) {
+    stage = name;
+    overview.hidden = name !== "overview";
+    controls.hidden = name === "overview";
+    navigation.hidden = name === "overview";
+    actionPanel.hidden = name === "overview";
+    closing.hidden = name !== "closing";
+    steps.forEach((section, position) => { section.hidden = name !== "step" || position !== currentStep; });
+    document.getElementById("step-next").hidden = name !== "step" || currentStep === steps.length - 1;
+    document.getElementById("step-finish").hidden = name !== "step" || currentStep !== steps.length - 1;
+    document.getElementById("step-back").hidden = name === "step" && currentStep === 0;
+    document.getElementById("step-menu").open = false;
+    refreshDeliveryVisibility();
+  }
+  displayStage = screen;
+  screen("overview");
+
+  document.getElementById("step-overview").addEventListener("click", () => {
+    start.textContent = "Continuar en el paso " + (currentStep + 1);
+    screen("overview");
+    overview.querySelector("h2").focus({preventScroll:true});
+    overview.scrollIntoView({block:"start"});
   });
-  document.getElementById("step-controls").hidden = false;
-  document.getElementById("step-actions").hidden = false;
-  let resumed=0;
-  try { resumed=Number(sessionStorage.getItem(recoveryKey+":step"))||0; } catch {}
-  showStep(steps[resumed]?resumed:0,false);
+  document.getElementById("step-back").addEventListener("click", () =>
+    showStep(stage === "closing" ? steps.length - 1 : currentStep - 1, true));
+  document.getElementById("step-next").addEventListener("click", () => showStep(currentStep + 1, true));
+  document.getElementById("step-finish").addEventListener("click", () => {
+    screen("closing");
+    document.getElementById("step-status").textContent = "Revisión final del módulo";
+    const title = document.getElementById("close-heading");
+    title.focus({preventScroll:true});
+    title.scrollIntoView({block:"start"});
+  });
+}
+
+function refreshDeliveryVisibility() {
+  deliver.hidden = Boolean(practice) || stage !== "closing";
 }
 
 function showStep(index, focus) {
   if (!steps[index]) return;
   currentStep = index;
-  steps.forEach((section,position) => { section.hidden = position !== index; });
-  [...document.getElementById("step-nav").children].forEach((button,position) => {
-    if (position === index) button.setAttribute("aria-current","step");
+  displayStage("step");
+  const nav = document.getElementById("step-nav");
+  [...nav.querySelectorAll("button")].forEach((button, position) => {
+    if (position === index) button.setAttribute("aria-current", "step");
     else button.removeAttribute("aria-current");
   });
   document.getElementById("step-status").textContent = "Paso " + (index + 1) + " de " + steps.length;
-  document.getElementById("step-back").disabled = index === 0;
-  const next=document.getElementById("step-next");
-  next.hidden = index === steps.length - 1;
-  const nextTitle=tutorials[moduleId]?.steps[index+1]?.[0];
-  next.textContent=nextTitle ? "Siguiente · "+nextTitle : "Siguiente";
-  const finish=document.getElementById("step-finish");
-  if(finish) finish.hidden=!next.hidden;
-  if(recoveryKey) try { sessionStorage.setItem(recoveryKey+":step",String(index)); } catch {}
+  const nextTitle = tutorials[moduleId].steps[index + 1]?.[0];
+  document.getElementById("step-next").textContent = nextTitle ? "Siguiente: " + nextTitle : "Siguiente";
+  if (recoveryKey) {
+    try { sessionStorage.setItem(recoveryKey + ":ruta", String(index)); } catch {}
+  }
   if (focus) {
     steps[index].querySelector("legend").focus({preventScroll:true});
     steps[index].scrollIntoView({block:"start"});
@@ -967,7 +1013,7 @@ function refreshDelivery() {
   const current = lastDelivery?.revision === revision && !dirty;
   deliver.disabled = busy || current;
   deliver.textContent = current ? "Entrega registrada" : "Entregar para revisión";
-  if(practice) deliver.hidden=true;
+  refreshDeliveryVisibility();
   if (!lastDelivery) return;
   for(const id of ["export-archive","export-archive-package"]){
     const download=document.getElementById(id);
@@ -1268,6 +1314,7 @@ function handleSaveError(error){
   if([401,403,409].includes(error.http)){
     conflict=true;
     const marker=document.getElementById("draft-conflict");
+    marker.closest("details").open = true;
     marker.hidden=false;
     marker.textContent=error.http===409 ? "Existe una versión más reciente. Puedes descargar tus cambios y volver a abrir el módulo para compararlos." :
       "La sesión terminó. Vuelve a abrir el módulo en esta pestaña desde Moodle o descarga una copia de tus cambios.";
@@ -1395,6 +1442,7 @@ function setupProjectPanel(info){
   if(item) {
     if(JSON.stringify(item.draft)===JSON.stringify(info.draft)) clearRecovery();
     else {
+      panel.open=true;
       marker.hidden=false;
       copy.hidden=false;
       restore.hidden=item.revision!==revision;
@@ -1407,7 +1455,6 @@ function setupProjectPanel(info){
     if(!data){ tell("No hay una copia de recuperación en esta pestaña.","error");return; }
     downloadBlob(new Blob([JSON.stringify(data.draft,null,2)],{type:"application/json"}),"PSST_"+moduleId+"_recuperacion.json");
   });
-  document.getElementById("resume-step").addEventListener("click",()=>showStep(currentStep,true));
   window.addEventListener("pagehide",stashRecovery);
   window.addEventListener("online",queueAutosave);
   const rubric=document.getElementById("learner-rubric");
@@ -1823,26 +1870,15 @@ async function start() {
   }
   projectInfo=info;
   recoveryKey=info.projectKey ? "psst154:"+info.projectKey+":"+info.moduleId : undefined;
-  const moduleContent = {
-    m2: ["Identificación de procesos peligrosos y evaluación de riesgos",
-      "Registra lo observado en campo y entrega la matriz inicial de riesgos para revisión."],
-    m3: ["Planes de trabajo y carta Gantt",
-      "Organiza las acciones preventivas, los responsables y el cronograma para 2027."],
-    m4: ["Borrador del PSST y revisión técnica",
-      "Entrega el primer borrador integrado junto con las brechas y evidencias de revisión."],
-  };
-  const content = moduleContent[info.moduleId];
-  if (info.moduleId !== "m1" && !content) {
+  const guide = tutorials[info.moduleId];
+  if (!guide) {
     startup.textContent = "Esta actividad no está disponible.";
     return;
   }
-  if (content) {
-    const number = info.moduleId.slice(1);
-    document.title = "Módulo " + number + " · Constructor de PSST";
-    document.querySelector(".hero .eyebrow").textContent = "Constructor de PSST · Módulo " + number;
-    document.querySelector(".hero h1").textContent = content[0];
-    document.querySelector(".hero h1 + p").textContent = content[1];
-  }
+  const number = info.moduleId.slice(1);
+  document.title = "Módulo " + number + " · Constructor de PSST";
+  document.querySelector(".hero .eyebrow").textContent = "Constructor de PSST · Módulo " + number + " de 4";
+  document.querySelector(".hero h1").textContent = guide.title;
   for (const section of form.querySelectorAll("[data-module]")) {
     section.hidden = section.dataset.module !== info.moduleId;
     section.disabled = section.hidden;

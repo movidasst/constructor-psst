@@ -1,13 +1,13 @@
 export const tutorials = {
   m1: {
+    title:"Describe el trabajo real",
+    chapters:"Capítulo III · Descripción del trabajo. El alcance y el equipo también aportan al capítulo I.",
+    first:"Registra el centro, el área y con quién vas a observar el trabajo.",
+    destinations:["Capítulos I y III · Alcance y equipo", "Capítulo III · Flujo y procesos", "Capítulo III · Tareas, puestos y medios", "Capítulo III · Participación y validación", "Capítulo III y anexos · Evidencias de campo"],
     result:"Una descripción del trabajo real con tareas observadas, aportes de las personas trabajadoras y evidencias que puedas localizar.",
-    supplies:"Ten a mano el nombre del centro y del área, una libreta o ficha de observación y un lugar donde guardar tus evidencias.",
+    supplies:"Ten a mano el centro, el área, los turnos y quién puede acompañarte a observar el trabajo.",
     next:"En el Módulo 2 usarás las tareas observadas para identificar y evaluar riesgos.",
     steps:[
-      ["Prepara el recorrido",[
-        "Elige un centro de trabajo y un área que puedas observar. Si empiezas con un área, deja registrado ese alcance.",
-        "Ubica a una persona que conozca la tarea y acuerda cuándo podrás observar cómo se realiza.",
-      ],"Centro Norte, área de despacho, turno de la mañana. El recorrido será con una persona que prepara los pedidos.","Puedes explicar dónde observarás, qué trabajo verás y con quién lo contrastarás."],
       ["Delimita el trabajo",[
         "En Centro de trabajo escribe el lugar físico. En Área, turno y alcance indica qué incluirás en esta visita.",
         "En Integrantes, roles y acuerdos escribe quién coordina, quién conoce la tarea y cuándo harán el recorrido. Registra el estado del organigrama si todavía debes conseguirlo.",
@@ -27,11 +27,15 @@ export const tutorials = {
       ],"El personal indicó que durante el relevo aumenta el tránsito peatonal; en esta visita se observó solo el turno diurno. Aporte registrado en E-02.","Se puede identificar qué aportó el personal y qué sigue pendiente de confirmar."],
       ["Completa la bitácora y entrega",[
         "Pulsa Agregar registro de campo. Para cada actividad real, indica fecha, horas, tarea y referencia de la evidencia. Usa códigos que permitan localizar el soporte.",
-        "En Pendientes para el Módulo 2 escribe qué aspecto deberá comprobarse. Guarda el borrador y, cuando hayas revisado los datos, pulsa Entregar para revisión.",
+        "En Pendientes para el Módulo 2 escribe qué aspecto deberá comprobarse.",
       ],"E-01 · croquis de la ruta de T-01; E-02 · registro de consulta. Pendiente: observar el cruce durante el relevo.","Tienes alcance, flujo, proceso, tarea, aportes y evidencias de lo realizado. Las horas corresponden al trabajo efectivamente documentado."],
     ],
   },
   m2: {
+    title:"Identifica y evalúa los riesgos",
+    chapters:"Capítulo III · Procesos peligrosos y evaluación de riesgos. Completa el diagnóstico iniciado en el Módulo 1.",
+    first:"Elige una tarea registrada en el Módulo 1 e indica cómo vas a evaluarla.",
+    destinations:["Capítulo III · Alcance y método", "Capítulo III · Matriz, personas expuestas y controles"],
     result:"Una matriz con hallazgos vinculados a tareas del Módulo 1, controles observados, valoración sustentada y verificaciones pendientes.",
     supplies:"Ten a mano las tareas, evidencias y pendientes de M1. Identifica el método de evaluación que utilizarás y los datos que exige.",
     next:"En el Módulo 3 usarás los códigos de los hallazgos para vincularlos con los planes de trabajo.",
@@ -44,11 +48,15 @@ export const tutorials = {
         "Pulsa Agregar riesgo. Selecciona la tarea de M1 y asigna un código al hallazgo.",
         "Separa la condición observada, quién se expone, qué daño podría ocurrir y el control que viste. Sustenta la valoración con el método elegido o registra lo que queda pendiente.",
         "Pulsa Registrar puestos expuestos en el hallazgo. Registra cada puesto por área y turno, cuántas personas se exponen, cuánto dura la exposición y la fuente del dato.",
-        "Si falta verificar una tarea, abre Estado de las tareas evaluadas y registra su situación, fuente, responsable y fecha cuando corresponda. Guarda y entrega la matriz.",
+        "Si falta verificar una tarea, abre Estado de las tareas evaluadas y registra su situación, fuente, responsable y fecha cuando corresponda.",
       ],"R-01 vinculado a T-01. Condición: cruce de rutas. Personas expuestas: quienes cruzan en despacho. Posible daño: golpe por carga en movimiento. Evidencia: E-01. Falta observar el relevo.","Cada hallazgo tiene tarea y evidencia. Las evaluaciones pendientes tienen una acción de verificación."],
     ],
   },
   m3: {
+    title:"Prepara los planes y el cronograma",
+    chapters:"Capítulo IV · Planes de trabajo para abordar los riesgos y procesos peligrosos, con carta Gantt.",
+    first:"Elige un hallazgo del Módulo 2 y crea el plan que lo atenderá.",
+    destinations:["Capítulo IV · Ficha del plan (art. 17)", "Capítulo IV · Cobertura (art. 18)", "Capítulo IV · Actividades y seguimiento", "Capítulo IV · Carta Gantt"],
     result:"Planes vinculados a hallazgos del Módulo 2 y una carta Gantt de 2027 con actividades, responsables, fechas y seguimiento.",
     supplies:"Abre tu matriz de M2 y ubica los hallazgos que necesitan medidas. Ten a mano el calendario y los responsables que deberán validar tu propuesta.",
     next:"En el Módulo 4 incorporarás los planes y el cronograma al borrador del PSST.",
@@ -67,11 +75,15 @@ export const tutorials = {
       ],"Actividad de PL-01: inspeccionar el cruce de despacho en ambos turnos. Responsable previsto: SSST. Evidencia esperada: lista de inspección y croquis actualizado.","Cada actividad tiene un plan, un responsable, fechas y una forma de verificarla."],
       ["Revisa la carta Gantt y entrega",[
         "Comprueba que cada actividad aparezca en los meses previstos. Si algo falta, vuelve a Actividades de los planes y corrige las fechas.",
-        "Revisa responsables, coincidencias de fechas y las horas de formación cuando apliquen. Descarga la carta Gantt, guarda y entrega el módulo.",
+        "Revisa responsables, coincidencias de fechas y horas de formación cuando apliquen. Puedes descargar la carta Gantt en Excel.",
       ],"Si la inspección va del 10 al 15 de febrero, debe aparecer en febrero. Filtra por responsable para verificar su carga de trabajo.","El cronograma coincide con las actividades y tiene fechas y responsables visibles."],
     ],
   },
   m4: {
+    title:"Integra el borrador del PSST",
+    chapters:"Introducción, capítulos I a VIII y anexos. Reutiliza el diagnóstico de M1 y M2 en el III, y los planes y la Gantt de M3 en el IV.",
+    first:"Revisa qué versiones de M1, M2 y M3 están disponibles y escribe la introducción.",
+    destinations:["Introducción · Fuentes del borrador", "Capítulos I a III · Generalidades, política y diagnóstico", "Capítulos IV a VI · Planes, investigación y compromiso", "Capítulos VII y VIII · Contratación y evaluación", "Capítulos I a VIII · Pendientes de revisión", "Capítulos I a VIII y anexos · Cotejo con los instrumentos"],
     result:"Un primer borrador del PSST que integra el diagnóstico, los planes, el cronograma y el registro de lo que falta validar.",
     supplies:"Verifica qué entregas de M1, M2 y M3 están disponibles. Ten a mano las referencias a tus evidencias y documentos internos.",
     next:"La entrega queda disponible para revisión técnica. Conserva la copia descargada y vuelve al módulo para consultar la devolución.",
@@ -81,11 +93,11 @@ export const tutorials = {
         "Si falta una fuente importante, vuelve al módulo de origen para completarla. Escribe una introducción breve que indique dónde y cómo se preparó el borrador.",
       ],"El borrador de Centro Norte usa el levantamiento de despacho, la matriz con el hallazgo R-01 y el plan PL-01. Falta comprobar el turno de relevo.","Sabes qué fuentes respaldan el borrador y qué información aún debes validar."],
       ["Redacta los capítulos I a III",[
-        "Identifica la entidad, el centro, los objetivos, el alcance y los responsables. Registra la política disponible y su estado de revisión o firma.",
-        "Explica el flujo, los procesos, la forma en que evaluaste los riesgos y cómo se contrastó el levantamiento. Usa los registros de los módulos anteriores como respaldo.",
+        "Abre Capítulo 1 · Generalidades y registra los datos de la entidad, los objetivos, el alcance y los responsables. Abre Capítulo 2 para preparar la política o identificar su versión vigente.",
+        "Abre Capítulo 3 para explicar el flujo, la evaluación y la validación. Usa como respaldo el levantamiento de M1 y la matriz de M2, que se incorporan al borrador.",
       ],"En el capítulo III, describe el flujo F-01, ubica P-01 y T-01 y vincula R-01 con el croquis E-01.","Los capítulos dejan claro a quién aplica el PSST, qué política lo orienta y cómo se preparó el diagnóstico."],
       ["Redacta los capítulos IV a VI",[
-        "En el capítulo IV vincula los planes, recursos y cronograma con los hallazgos que deben atenderse.",
+        "Abre Capítulo 4 · Planes de trabajo. Usa los planes y la Gantt de M3 y explica sus prioridades, recursos y seguimiento.",
         "En el capítulo V indica cómo se investigarán accidentes y enfermedades y dónde estarán los formatos. En el capítulo VI prepara o referencia la carta compromiso y registra su estado.",
       ],"R-01 queda vinculado a PL-01 y a su actividad de febrero. La carta compromiso permanece en borrador hasta la revisión y suscripción correspondientes.","Los planes y sus fechas pueden localizarse y queda documentado el estado de los procedimientos y la carta."],
       ["Redacta los capítulos VII y VIII",[
@@ -98,7 +110,7 @@ export const tutorials = {
       ],"Capítulo III · falta observar el cruce durante el relevo. Acción: programar un recorrido, registrar lo observado y actualizar E-01.","Cada pendiente importante tiene una acción concreta y una referencia para darle seguimiento."],
       ["Contrasta, descarga y entrega",[
         "Abre los criterios de cada capítulo. Registra su estado y evidencia o justificación. Usa Ir al campo del borrador para corregir lo que falte.",
-        "Vuelve al primer paso para descargar el Word o imprimir el PDF. Revisa el documento completo y pulsa Entregar para revisión cuando esté listo.",
+        "Pulsa Revisar entregable para ver el avance de los capítulos, descargar el Word y entregar la versión revisada.",
       ],"Criterio de evidencia del diagnóstico: E-01 respalda el turno observado; el relevo sigue pendiente. Deja esa diferencia visible en el borrador.","El PSST incluye los ocho capítulos, sus referencias, la carta Gantt y los pendientes de validación identificados."],
     ],
   },

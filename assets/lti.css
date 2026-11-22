@@ -169,3 +169,33 @@ button#deliver{background:var(--teal);color:white}
 #preview-content .note{white-space:pre-wrap}
 #preview-content p{overflow-wrap:anywhere}
 #builder-checks p{margin:.3rem 0}
+
+/* Participant's guide and step navigation */
+.module-start {background:#fff;border:1px solid var(--line);border-radius:16px;padding:clamp(18px,4vw,30px);margin-bottom:18px}
+.module-start h2,.module-close h2 {color:var(--navy);margin:0 0 .9rem}
+.module-summary {display:grid;gap:.75rem;margin:0 0 1.2rem}
+.module-summary div {padding:.7rem .9rem;border-radius:8px;background:#f1f8f7}
+.module-summary dt {font-weight:800;color:#175960}
+.module-summary dd {line-height:1.5;margin:.2rem 0 0}
+.primary-button {background:var(--teal);color:white}
+.quiet-button {border-color:transparent;color:#175960}
+.quiet-button:hover {background:#eaf5f3}
+.step-controls {display:flex;flex-wrap:wrap;align-items:center;gap:.3rem 1rem;padding:6px 12px}
+.step-controls p {margin:0}
+.step-controls details {margin-left:auto;color:#175960}
+.step-controls summary {cursor:pointer;font-weight:700;min-height:44px;align-content:center}
+#step-nav {margin:.2rem 0 .6rem;padding-left:1.7rem}
+#step-nav button {white-space:normal;text-align:left;padding:.35rem .5rem}
+.step-controls:has(details[open]) {align-items:flex-start}
+.module-close {padding-top:1.25rem}
+.module-close #closing-checks {margin-top:1rem}
+.module-close #closing-checks details {padding:0 10px;box-shadow:none;margin-bottom:.45rem}
+.step-destination {color:#175960;font-weight:750;font-size:.91rem}
+.action-panel {position:static;box-shadow:none;margin-bottom:1rem}
+.project-panel summary {cursor:pointer;color:#175960;font-weight:750}
+.project-panel .project-actions {margin-top:.7rem}
+@media(max-width:600px) {
+  .step-actions .primary-button {flex:1 1 230px;text-align:left}
+  .step-controls details {margin-left:0}
+  .module-start .primary-button {width:100%}
+}

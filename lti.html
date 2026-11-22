@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
-  <title>Módulo 1 · Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=exposicion-1">
-  <script src="assets/lti.mjs?v=bound-1" type="module"></script>
+  <title>Constructor de PSST</title>
+  <link rel="stylesheet" href="assets/lti.css?v=ruta-1">
+  <script src="assets/lti.mjs?v=ruta-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -17,9 +17,8 @@
     </header>
     <main>
       <div class="hero">
-        <p class="eyebrow">Constructor de PSST · Módulo 1</p>
-        <h1>Proceso productivo, procesos de trabajo y tareas</h1>
-        <p>Organiza la mesa, inventaría los procesos y documenta las tareas reales. Usa los aportes de los trabajadores y las evidencias de campo para preparar el levantamiento que continuarás en el Módulo 2.</p>
+        <p class="eyebrow">Constructor de PSST</p>
+        <h1>Taller práctico de PSST</h1>
         <p class="workspace" id="workspace" hidden></p>
       </div>
       <p id="startup" class="startup" role="status" aria-live="polite">Verificando el acceso desde Moodle…</p>
@@ -40,37 +39,16 @@
             <button type="button" id="export-archive-package" hidden>Descargar ZIP de la versión entregada</button></div>
         </div>
 
-        <div id="tutorial-overview"></div>
-        <section class="project-panel" id="project-panel" hidden aria-labelledby="project-heading">
-          <div class="project-heading"><h2 id="project-heading">Mi PSST</h2><span id="saved-time" role="status"></span></div>
-          <div id="project-progress" class="project-grid"></div>
-          <div class="actions project-actions"><button type="button" id="resume-step">Continuar donde quedé</button>
-            <a href="https://movidasst.org/course/view.php?id=154" class="back">Abrir otro módulo en Moodle</a></div>
-          <p id="draft-conflict" hidden></p>
-          <div class="actions"><button type="button" id="copy-recovery" hidden>Descargar copia de recuperación</button>
-            <button type="button" id="restore-recovery" hidden>Recuperar cambios de esta pestaña</button></div>
-        </section>
-        <details class="card module-details" id="rubric-panel">
-          <summary>Rúbrica y comprobaciones</summary><div id="learner-rubric"></div><div id="learner-checks"></div>
-        </details>
-
+        <section id="tutorial-overview" class="module-start" aria-label="Guía del módulo"></section>
         <div id="step-controls" class="step-controls" hidden>
+          <button type="button" class="quiet-button" id="step-overview">← Guía del módulo</button>
           <p id="step-status" role="status" aria-live="polite"></p>
-          <nav id="step-nav" aria-label="Pasos del módulo"></nav>
+          <details id="step-menu">
+            <summary>Ver todos los pasos</summary>
+            <ol id="step-nav"></ol>
+          </details>
         </div>
 
-        <fieldset class="card module-guide" data-module="m1">
-          <legend>Cómo trabajar este módulo</legend>
-          <div class="step-help">
-            <p><strong>Qué hacer.</strong> Organiza el levantamiento</p>
-            <p><strong>Por qué importa.</strong> Delimitar el trabajo permite comprobar qué procesos cubre el borrador y qué falta observar.</p>
-            <details><summary>Ejemplo y referencia</summary>
-              <p>Una mesa acuerda levantar recepción, almacenamiento y despacho en dos turnos.</p><p class="reference">NT-04-2023, arts. 7, 8 y 14.</p>
-            </details>
-          </div>
-          <p><strong>Entregable.</strong> Ficha del proceso, registro de participación y bitácora. El registro de campo servirá para preparar la validación formal con su acta.</p>
-          <p class="reference">NT-04-2023, arts. 7, 8 y 14. Instrumento de revisión, capítulo III.</p>
-        </fieldset>
         <fieldset id="m1-mesa" class="card" data-module="m1">
           <legend>Mesa de trabajo y alcance</legend>
           <div id="project-fields" class="fields"></div>
@@ -302,8 +280,12 @@
             <label>Centro<select id="filter-center"></select></label><label>Plan<select id="filter-plan"></select></label>
             <label>Responsable<select id="filter-owner"></select></label>
           </div>
-          <div class="actions"><button id="export-gantt" type="button">Descargar carta Gantt (HTML)</button><button id="export-excel" type="button">Descargar Excel</button>
-          <button id="export-plans-gantt" type="button">Descargar planes y carta Gantt</button></div>
+          <button id="export-excel" type="button">Descargar carta Gantt en Excel</button>
+          <details class="module-details">
+            <summary>Otros formatos de descarga</summary>
+            <div class="actions"><button id="export-gantt" type="button">Descargar carta Gantt (HTML)</button>
+            <button id="export-plans-gantt" type="button">Descargar planes y carta Gantt</button></div>
+          </details>
           <details class="module-details">
             <summary>Planes y cronograma de una versión anterior</summary>
             <label>Planes prioritarios<textarea name="m3.planes" maxlength="8000"></textarea></label>
@@ -315,9 +297,9 @@
         </fieldset>
 
         <fieldset class="card" data-module="m4" hidden disabled>
-          <legend>Primer borrador del PSST</legend>
+          <legend>Fuentes e introducción del PSST</legend>
           <div class="step-help">
-            <p><strong>Qué hacer.</strong> Comprueba las fuentes antes de redactar los capítulos. Puedes descargar una versión en cualquier momento.</p>
+            <p><strong>Qué hacer.</strong> Comprueba qué registros se incorporan al PSST y redacta la introducción.</p>
             <p><strong>Por qué importa.</strong> El borrador conserva la procedencia de los datos y deja visible lo que falta completar.</p>
             <details><summary>Ejemplo y referencia</summary>
               <p>M1 y M2 tienen entrega; M3 aún usa su borrador guardado. Registra la diferencia en la revisión.</p><p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82.</p>
@@ -326,19 +308,12 @@
           <div class="integration-panel">
             <h2>Fuentes y documento de trabajo</h2>
             <div id="integration-sources"></div>
-          <h2>Avance de los capítulos</h2><div id="chapter-readiness"></div>
-            <button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
-            <button id="export-word" type="button">Descargar Word</button>
-            <button id="preview-psst" type="button">Vista previa por capítulo</button>
-            <button id="export-package" type="button">Descargar expediente ZIP</button>
-            <p id="package-version" role="status"></p>
             <div class="fields" id="dossier-fields">
               <label>Estado del expediente<select name="m4.estadoExpediente"><option value="">Borrador del taller</option>
                 <option value="borrador">Borrador del taller</option><option value="revision">Revisión interna</option>
                 <option value="preparacion">Preparación para consignación</option></select></label>
               <label class="wide">Responsable, fecha y soportes de la revisión<textarea name="m4.referenciaExpediente" maxlength="1400"></textarea></label>
             </div>
-            <button id="export-pdf" type="button">Imprimir o guardar PDF</button>
           </div>
           <p class="reference">LOPCYMAT, art. 61. Reglamento Parcial, arts. 80–82. Orden de capítulos según el instrumento de revisión.</p>
           <p class="section-guide">Completa cada apartado con un texto breve o una referencia precisa al documento que lo desarrolla. Lo que quede vacío aparecerá como pendiente en la descarga.</p>
@@ -470,6 +445,28 @@
           <div id="review-items"></div>
         </fieldset>
 
+        <section class="card module-close" id="module-close" aria-labelledby="close-heading" hidden>
+          <h2 id="close-heading" tabindex="-1">Revisa tu entregable</h2>
+          <p id="close-result"></p>
+          <p id="close-next"></p>
+          <div id="final-document" hidden>
+            <h3>Avance de los capítulos</h3>
+            <div id="chapter-readiness"></div>
+            <button id="preview-psst" type="button">Vista previa por capítulo</button>
+            <button id="export-word" type="button">Descargar Word</button>
+            <details class="module-details">
+              <summary>Más opciones de descarga</summary>
+              <div class="actions"><button id="export-psst" type="button">Guardar y descargar borrador del PSST</button>
+                <button id="export-pdf" type="button">Imprimir o guardar PDF</button>
+                <button id="export-package" type="button">Descargar expediente ZIP</button>
+              </div>
+              <p id="package-version" role="status"></p>
+            </details>
+          </div>
+          <div id="closing-checks">
+            <details class="card module-details" id="rubric-panel">
+              <summary>Rúbrica y comprobaciones</summary><div id="learner-rubric"></div><div id="learner-checks"></div>
+            </details>
         <details class="card module-details" id="trace-panel">
           <summary>Trazabilidad de tareas, hallazgos y planes</summary>
           <div class="table-scroll" id="trace-table"></div>
@@ -485,20 +482,31 @@
           <div id="builder-checks"></div>
           <div id="coherence"></div>
         </details>
+          </div>
+        </section>
         <div id="step-actions" class="step-actions" hidden>
-          <button type="button" id="step-back">Anterior</button>
-          <button type="button" id="step-next">Siguiente</button>
-          <button type="button" id="step-finish" hidden>Ir a guardar o entregar</button>
+          <button type="button" class="quiet-button" id="step-back">← Anterior</button>
+          <button type="button" id="step-next" class="primary-button">Siguiente</button>
+          <button type="button" id="step-finish" class="primary-button" hidden>Revisar entregable</button>
         </div>
-        <div class="action-panel">
+        <div class="action-panel" id="action-panel" hidden>
           <div class="action-copy">
             <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Puedes guardar tu avance y volver después.</p>
           </div>
           <div class="actions">
-            <button type="submit" formnovalidate>Guardar borrador</button>
-            <button type="button" id="deliver">Entregar para revisión</button>
+            <button type="submit" class="quiet-button" formnovalidate>Guardar borrador</button>
+            <button type="button" id="deliver" hidden>Entregar para revisión</button>
           </div>
         </div>
+        <details class="project-panel module-details" id="project-panel" hidden>
+          <summary id="project-heading">Avance del proyecto y recuperación</summary>
+          <p id="saved-time" role="status"></p>
+          <div id="project-progress" class="project-grid"></div>
+          <div class="actions project-actions"><a href="https://movidasst.org/course/view.php?id=154" class="back">Abrir otro módulo en Moodle</a></div>
+          <p id="draft-conflict" hidden></p>
+          <div class="actions"><button type="button" id="copy-recovery" hidden>Descargar copia de recuperación</button>
+            <button type="button" id="restore-recovery" hidden>Recuperar cambios de esta pestaña</button></div>
+        </details>
       </form>
       <dialog id="psst-preview" aria-labelledby="preview-heading">
         <div class="preview-bar"><h2 id="preview-heading">Vista previa del PSST</h2>
