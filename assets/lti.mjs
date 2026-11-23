@@ -7,9 +7,9 @@ import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=capitulos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=capitulos-1";
-import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, planReviewNotes } from "./psst-coach.mjs?v=art18-1";
-import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=art18-1";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=sve-1";
+import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=sve-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -320,6 +320,28 @@ function showRowHelp(row,key,value) {
     });
     box.append(text,reference("Consultar NT-04-2023, "+template.clause,sources.nt+"#page="+template.page),button);
     const storage=row.querySelector('[data-key="revisionArt18"]');
+    const questions=surveillanceFields(family);
+    if (questions.length) {
+      const section=element("fieldset");
+      section.append(element("legend","Ficha de vigilancia epidemiológica articulada"));
+      section.append(element("p","Selecciona los hallazgos vinculados arriba. Completa estos cinco pasos con datos de campo. Las respuestas se incorporan al plan del capítulo IV."));
+      const namespace="vigilancia/"+family;
+      for (const {key,label,help} of questions) {
+        const wrapper=element("label",label);
+        const input=element("textarea");
+        input.rows=2;
+        input.value=planReviewNotes(storage.value)[namespace]?.[key] || "";
+        input.addEventListener("input",()=>{
+          const record=planReviewNotes(storage.value);
+          record[namespace]={...record[namespace],[key]:input.value};
+          storage.value=JSON.stringify(record);
+          rowChanged();
+        });
+        wrapper.append(element("small",help),input);
+        section.append(wrapper);
+      }
+      box.append(section);
+    }
     const notes=planReviewNotes(storage.value,family);
     const checklist=element("details");
     const summary=element("summary");
