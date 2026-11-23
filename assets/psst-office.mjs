@@ -1,4 +1,5 @@
-import {investmentRows} from "./psst-coverage.mjs?v=capitulos-1";
+import {annualInvestment} from "./psst-coverage.mjs?v=anual-1";
+import {annualTraining} from "./psst-coach.mjs?v=anual-1";
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
 import { operationalSchedule, recordsOf, technicalChecks } from "./psst-builder.mjs?v=exposicion-1";
 import { schedule } from "./psst-program.mjs?v=coach-1";
@@ -145,6 +146,8 @@ export function workbookForPSST({inputs={},draft={}}){
   const plans=recordsOf(three.planesDetallados);
   const tasks=recordsOf(one.tarea?.actividades);
   const name=(records,id)=>records.find(row=>row.id===id)?.codigo??"";
+  const budget=annualInvestment(recordsOf(three.partidas),plans,recordsOf(three.filas));
+  const training=annualTraining(recordsOf(three.filas),plans,three.gruposFormacion,two.gruposExpuestos);
   return excelBook([
     ["Carta Gantt 2027",ganttRows(three.filas,plans),true],
     ["Matriz de riesgos",[["Código","Tarea","Condición","Daño posible","Situación de trabajo","Puestos y personas expuestas","Controles existentes","Valoración","Prioridad","Evidencia","Dato pendiente","Estado","Responsable","Fecha prevista","Control propuesto"],
@@ -157,8 +160,10 @@ export function workbookForPSST({inputs={},draft={}}){
       ...recordsOf(three.filas).filter(row=>row.actividad).map(row=>[name(plans,row.planRef)||row.plan,row.actividad,row.responsable,row.estado||"Pendiente",
         row.fechaInicio||row.inicio,row.fechaFin||row.fin,row.inicioReal,row.cierreReal,row.nuevoInicio,row.nuevoFin,row.motivoReprogramacion,
         row.evidenciaEsperada,row.evidenciaReal,row.eficacia,row.resultadoEficacia,row.verificacionEficacia,row.notaEficacia])]],
-    ["Presupuesto",[["Plan","Recurso","Cantidad","Unidad","Costo unitario","Importe","Moneda","Fuente","Responsable"],
-      ...investmentRows(recordsOf(three.partidas),plans).map(row=>[row.plan,row.concepto,row.cantidad,row.unidad,row.unitario,row.total,row.moneda,row.fuente,row.responsable])],false,[2,4,5]],
+    ["Capacitación 2027",[["Grupo","T1","T2","T3","T4","Año","Pendientes"],...training.map(r=>[r.group,...r.quarters,r.total,r.gaps.join(", ")])],false,[1,2,3,4,5]],
+    ["Inversión anual",[["Alcance","Moneda","T1","T2","T3","T4","Sin mes","Total conocido","Por estimar"],...budget.summary.map(s=>[s.scope,s.currency,...s.quarters,s.undated,s.total,s.pending])],false,[2,3,4,5,6,7,8]],
+    ["Presupuesto",[["Plan","Recurso","Cantidad","Unidad","Costo unitario","Importe","Moneda","Fuente","Responsable","Actividad","Mes"],
+      ...budget.rows.map(row=>[row.plan,row.concepto,row.cantidad,row.unidad,row.unitario,row.total,row.moneda,row.fuente,row.responsable,row.actividad,row.mes])],false,[2,4,5]],
     ["Anexos",[["Código","Soporte","Capítulo o referencia","Versión","Ubicación","Estado","Custodio","Responsable","Revisión de acceso"],
       ...recordsOf(four.soportes).map(row=>[row.codigo,row.nombre,row.capitulo,row.version,row.ubicacion,row.estado,row.custodio,row.responsable,row.revisionAcceso])]],
     ["Pendientes",[["Registro","Pendiente","Acción","Responsable","Plazo"],
