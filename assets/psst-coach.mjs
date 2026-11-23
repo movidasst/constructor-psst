@@ -206,3 +206,11 @@ export function surveillanceFields(family) {
       key:"sve"+(index+1),label,help:examples[index]
     }));
 }
+
+export function annualTraining(activities,plans,declared="",exposures=[]) {
+  const identified=exposures.filter(row=>row.puesto).map(row=>[row.puesto,row.turno].filter(Boolean).join(" · "));
+  return trainingHours(activities,plans,[declared,...identified].filter(Boolean).join("\n")).map(({group,quarters})=>({
+    group,quarters,total:quarters.reduce((sum,h)=>sum+h,0),
+    gaps:quarters.flatMap((h,i)=>h<16?["T"+(i+1)+" faltan "+(16-h)+" h"]:[])
+  }));
+}

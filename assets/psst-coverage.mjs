@@ -80,3 +80,25 @@ export const workingFormats = [
   ["enfermedad","Ficha interna de investigación de enfermedad ocupacional",["Código del caso y responsable del SSST","Historia ocupacional y exposiciones","Fuentes y valoraciones reservadas","Declaración y constancia","Medidas colectivas y seguimiento"]],
   ["seguimiento","Registro de evaluación del PSST",["Período, participantes y acta","Indicador, fuente, meta y resultado","Medidas, responsable y plazo","Seguimiento","Constancia del informe del CSSL"]],
 ];
+
+export function annualInvestment(parts,plans,activities) {
+  const totals=new Map();
+  const rows=investmentRows(parts,plans).map(part=>{
+    const activity=activities.find(item=>item.id===part.actividadRef);
+    const month=Number(part.mesGasto);
+    const quarter=month>=1&&month<=12?Math.ceil(month/3):0;
+    const currency=String(part.moneda||"Sin moneda").trim().toUpperCase();
+    for(const scope of ["Total anual","Plan "+(part.plan||"sin identificar")]){
+      const key=JSON.stringify([scope,currency]);
+      if(!totals.has(key)) totals.set(key,{scope,currency,quarters:[0,0,0,0],undated:0,total:0,pending:0});
+      const summary=totals.get(key);
+      if(part.total==="Por estimar"){summary.pending++;continue;}
+      const value=Math.round(Number(part.total)*100);
+      summary.total+=value;
+      if(quarter) summary.quarters[quarter-1]+=value; else summary.undated+=value;
+    }
+    return {...part,actividad:activity?.actividad||"",mes:quarter?String(month):"Por programar"};
+  });
+  return {rows,summary:[...totals.values()].map(s=>({...s,total:(s.total/100).toFixed(2),
+    undated:(s.undated/100).toFixed(2),quarters:s.quarters.map(v=>(v/100).toFixed(2))}))};
+}

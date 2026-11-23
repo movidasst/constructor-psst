@@ -1,7 +1,7 @@
-import {investmentRows, sectionCoverage, sourceSections, structuredSections} from "./psst-coverage.mjs?v=capitulos-1";
+import {annualInvestment, investmentRows, sectionCoverage, sourceSections, structuredSections} from "./psst-coverage.mjs?v=anual-1";
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
 import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
-import { coherenceIssues, familyTemplates, planReviewNotes, surveillanceFields, trainingHours } from "./psst-coach.mjs?v=sve-1";
+import { coherenceIssues, familyTemplates, planReviewNotes, surveillanceFields, annualTraining, trainingHours } from "./psst-coach.mjs?v=anual-1";
 import { projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
@@ -53,9 +53,10 @@ function activityEvidence(activities) {
     ["Evidencia esperada","evidenciaEsperada"],["Criterio de eficacia","eficacia"],["Evidencia registrada","evidenciaReal"]],entries);
 }
 
-function educationSchedule(activities,plans,groups) {
-  return table([["Grupo","group"],["T1","t1"],["T2","t2"],["T3","t3"],["T4","t4"]],
-    trainingHours(activities,plans,groups).map(({group,quarters})=>({
+function educationSchedule(activities,plans,groups,exposures=[]) {
+  return table([["Grupo","group"],["T1","t1"],["T2","t2"],["T3","t3"],["T4","t4"],["Año","total"],["Pendientes","gaps"]],
+    annualTraining(activities,plans,groups,exposures).map(({group,quarters,total,gaps})=>({
+      total:total+" h",gaps:gaps.join(", ")||"Cuatro trimestres cubiertos",
       group,t1:quarters[0]+" h",t2:quarters[1]+" h",t3:quarters[2]+" h",t4:quarters[3]+" h",
     })));
 }
@@ -191,7 +192,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   const evaluationTable=table([["Hallazgo","codigo"],["Estado","estadoEvaluacion"],["Medida propuesta","controlPropuesto"],
     ["Justificación","justificacionControl"],["Responsable de verificar","responsableEvaluacion"],["Fecha prevista","fechaEvaluacion"]],pendingRiskEntries);
   const evaluationCriteria=activityEvidence(activities);
-  const education=educationSchedule(activities,planRows,three.gruposFormacion);
+  const education=educationSchedule(activities,planRows,three.gruposFormacion,two.gruposExpuestos);
   const issues=[...coherenceIssues({one,two,three,four}),...technicalChecks({one,two,three,four})];
   const annexTable = table([["Código","codigo"],["Soporte","nombre"],["Capítulo","capitulo"],["Versión","version"],
     ["Ubicación","ubicacion"],["Estado","estado"],["Responsable","responsable"],["Grupo","grupo"],["Custodio y acceso","custodio"],["Revisión de acceso","revisionAcceso"]],rows(four.soportes).map(row=>({...row,grupo:annexStructure.find(([key])=>key===row.familia)?.[1]})));
@@ -199,18 +200,26 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     rows(two.verificaciones).map(row=>({...row,tarea:labelFor(taskRows,row.tareaRef)})));
   const fieldLog=table([["Fecha","fecha"],["Actividad","actividad"],["Horas","horas"],["Método","tipo"],["Referencia","evidencia"],["Tarea","tarea"]],
     rows(one.bitacora?.registros).map(row=>({...row,tarea:labelFor(taskRows,row.tareaRef)})));
-  const investment = table([["Plan","plan"],["Recurso","concepto"],["Cantidad","cantidad"],["Unidad","unidad"],
+  const budget=annualInvestment(rows(three.partidas),planRows,activities);
+  const budgetSummary=table([["Alcance","scope"],["Moneda","currency"],["T1","q1"],["T2","q2"],["T3","q3"],["T4","q4"],["Sin mes","undated"],["Importe conocido","total"],["Partidas por estimar","pending"]],
+    budget.summary.map(s=>({...s,q1:s.quarters[0],q2:s.quarters[1],q3:s.quarters[2],q4:s.quarters[3]})));
+  const lessons=activities.filter(a=>planRows.find(p=>p.id===a.planRef)?.familia==="Educación e información");
+  const trainingSheets=lessons.map(a=>"<h3>"+escape(a.actividad)+"</h3>"+facts([
+    ["Grupo y turno",a.grupo],["Fecha prevista",a.fechaInicio],["Horas programadas por persona",a.horasPersona],
+    ["Teoría y práctica",a.contenidoForm],["Facilitador, lugar y currículo",a.facilitadorForm],["Evaluación",a.evaluacionForm],
+    ["Asistencia y horas recibidas",a.asistenciaForm],["Nivelación",a.nivelacionForm],["Evidencia",a.evidenciaReal]])).join("");
+  const investment = table([["Plan","plan"],["Actividad","actividad"],["Mes","mes"],["Recurso","concepto"],["Cantidad","cantidad"],["Unidad","unidad"],
     ["Costo unitario","unitario"],["Importe","total"],["Moneda","moneda"],["Fuente","fuente"],["Responsable","responsable"]],
-    investmentRows(rows(three.partidas),planRows));
+    budget.rows);
   const extras = {
     0: objectives,
     2: process + diagramSections(one) + (productionMap ? "<h3>Descripción del proceso productivo</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos de trabajo</h3>"+inventory+elements : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
       (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
-    3: (investment ? "<h3>Presupuesto por plan</h3>"+investment : "") + (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + (unassignedActivities ? "<h3>Actividades sin ficha de plan vinculada</h3>"+unassignedActivities : "") +
+    3: (investment ? "<h3>Plan anual de inversión 2027</h3>"+budgetSummary+investment : "") + (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + (unassignedActivities ? "<h3>Actividades sin ficha de plan vinculada</h3>"+unassignedActivities : "") +
       (evaluationCriteria ? "<h3>Enfoques y evidencias de las actividades</h3>"+evaluationCriteria : "") +
-      (education ? "<h3>Horas de formación programadas por persona</h3>"+education : "") + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
+      (education ? "<h3>Plan anual de capacitación 2027 · horas programadas por persona</h3>"+education : "") + trainingSheets + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
       facts([["Planes anteriores",three.planes],["Cronograma anterior",three.gantt],["Responsables",three.responsables],["Recursos",three.recursos],["Seguimiento",three.seguimiento]]),
     5: note(four.compromiso),
     6: contractorTable,
