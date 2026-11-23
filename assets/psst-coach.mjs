@@ -27,7 +27,7 @@ export const familyTemplates = {
   "Inspecciones":entry("art. 18.2.5",9,["Áreas, equipos, turnos y enfoque","Frecuencia y participantes","Instrumento y elementos a inspeccionar","Informe de hallazgos y discusión en el CSSL en dos días continuos","Medida, responsable, plazo y verificación firmada y fechada"]),
   "Monitoreo de riesgos y condiciones de trabajo":entry("art. 18.2.5.5",9,["Exposición priorizada","Puestos, personas y condiciones","Variable, método e instrumento","Frecuencia y criterio de evaluación","Participación del CSSL en el monitoreo","Registro actualizado, medidas y seguimiento"]),
   "Vigilancia epidemiológica de la salud":entry("art. 18.2.6",9,["Población y exposiciones","Fuentes agregadas","Análisis y frecuencia","Responsables, reporte y medidas","Seguimiento de resultados"]),
-  "Utilización del tiempo libre":entry("art. 18.2.7",10,["Población y necesidades","Actividades de recreación, descanso o turismo social","Cronograma y responsables","Registro de participación y evaluación"]),
+  "Utilización del tiempo libre":entry("art. 18.2.7",10,["Población y necesidades","Jornada, alimentación, descansos y vacaciones previstos y disfrutados","Cronograma y responsables","Registro de participación y evaluación"]),
   "Reglas y procedimientos de trabajo seguro":entry("art. 18.2.8",10,["Tareas y riesgos aplicables","Documento, versión y responsable","Difusión y práctica","Verificación de aplicación y actualización"]),
   "Protección personal y colectiva":entry("art. 18.2.9",10,["Riesgo y controles existentes","Criterios de selección","Dotación, uso, mantenimiento y reposición","Responsable y registro","Verificación del control"]),
   "Atención preventiva de la salud":entry("art. 18.2.10",10,["Puestos, exposiciones y población","Evaluaciones previstas","Cronograma y responsable","Seguimiento y registro agregado"]),
@@ -42,7 +42,10 @@ export function planReviewNotes(value, family) {
   try { record=JSON.parse(value || "{}"); } catch { return {}; }
   if (!record || typeof record !== "object" || Array.isArray(record)) return {};
   if (family === undefined) return record;
-  const notes=record[family];
+  const notes={...record[family]};
+  if(family==="Utilización del tiempo libre"){
+    notes["Jornada, alimentación, descansos y vacaciones previstos y disfrutados"] ??= notes["Actividades de recreación, descanso o turismo social"];
+  }
   return Object.fromEntries((familyTemplates[family]?.fields ?? [])
     .filter(key=>typeof notes?.[key]==="string").map(key=>[key,notes[key]]));
 }
@@ -168,4 +171,38 @@ export function coherenceIssues({one={},two={},three={},four={}}) {
     !rowList(four.soportes).some(item=>/investigaci|accidente|enfermedad/i.test(item.nombre ?? "")))
     add("anexos","Capítulo V · Identifica el formato de investigación en anexos.");
   return issues;
+}
+
+const surveillanceExamples = {
+  "Monitoreo de riesgos y condiciones de trabajo": [
+    "¿En cuáles estaciones sigue siendo insuficiente el control después de la intervención? Vincula arriba los hallazgos del módulo 2.",
+    "Ejemplo: se verificaron 4 de 6 compresores intervenidos. De los 4 verificados, 3 cumplieron. Indica período, unidad, fuentes y ambos denominadores.",
+    "Define la medición inicial, el método comparable y el criterio técnico que obliga a intervenir.",
+    "Identifica la actividad del plan, quién la ejecuta y en qué fecha. Prográmala en la carta Gantt.",
+    "Compara antes y después. En el ejemplo, un equipo requiere otra intervención y dos siguen pendientes. Registra la nueva medición y comunica el resultado al CSSL."
+  ],
+  "Vigilancia epidemiológica de la salud": [
+    "¿En qué puestos o turnos se observa la señal de salud y con qué exposición conviene contrastarla?",
+    "Distingue consultas de personas únicas. Registra período, población de referencia y fuentes agregadas. Omite nombres, diagnósticos individuales e historias clínicas.",
+    "Define la línea base y qué variación activará una investigación. Un reporte aislado requiere contraste antes de atribuir una causa.",
+    "Indica quién analizará la señal con los delegados de prevención y qué actividad con fecha incorporarás al cronograma.",
+    "Describe la verificación posterior y la publicación mensual de estadísticas agregadas. Protege la identidad incluso en grupos pequeños."
+  ],
+  "Utilización del tiempo libre": [
+    "¿Qué turnos presentan diferencias entre descanso programado y efectivamente disfrutado?",
+    "Contrasta jornada, horas extras, pausas de alimentación, descansos obligatorios y convencionales y vacaciones. Registra período, unidad y fuentes de programación y disfrute real.",
+    "Documenta la línea base y qué desviación activará una revisión con las personas afectadas.",
+    "Asigna responsable y fecha para corregir la programación y vincula la actividad con el cronograma.",
+    "Comprueba el disfrute efectivo en el período siguiente. Registra pendientes y comunica resultados agregados."
+  ]
+};
+
+export function surveillanceFields(family) {
+  const examples=surveillanceExamples[family];
+  if (!examples) return [];
+  return ["¿Qué se vigilará y por qué?","¿Qué se medirá, en quiénes y durante qué período?",
+    "¿Qué resultado activará una decisión?","¿Quién actuará y cuándo?",
+    "¿Cómo se verificará la eficacia y a quién se informará?"].map((label,index)=>({
+      key:"sve"+(index+1),label,help:examples[index]
+    }));
 }
