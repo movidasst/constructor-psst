@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Constructor de PSST</title>
   <link rel="stylesheet" href="assets/lti.css?v=capitulos-1">
-  <script src="assets/lti.mjs?v=elementos-1" type="module"></script>
+  <script src="assets/lti.mjs?v=anual-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -304,7 +304,7 @@
           <p class="section-guide">El cronograma se actualiza al completar los meses de inicio y cierre de cada actividad.</p>
           <div id="gantt-view" class="gantt-view"></div>
           <p>La carta se genera con las fechas previstas, incluso para actividades pendientes. Registra quién se encargará y actualiza el estado a medida que avance.</p>
-          <div class="fields"><label class="wide">Grupos de formación previstos (uno por línea)<textarea name="m3.gruposFormacion" maxlength="2000"></textarea></label></div>
+          <h3>Plan anual de capacitación 2027</h3><p>Revisa los puestos y turnos identificados en la evaluación. Añade las poblaciones que falten. Cada trimestre requiere al menos 16 horas programadas por persona.</p><datalist id="training-populations"></datalist><div id="annual-hours"></div><div class="fields"><label class="wide">Grupos de formación previstos (uno por línea)<textarea name="m3.gruposFormacion" maxlength="2000"></textarea></label></div>
           <div id="gantt-filters" class="fields">
             <label>Centro<select id="filter-center"></select></label><label>Plan<select id="filter-plan"></select></label>
             <label>Responsable<select id="filter-owner"></select></label>
@@ -326,10 +326,10 @@
         </fieldset>
 
         <fieldset id="m3-inversion" class="card" data-module="m3" hidden disabled>
-          <legend>Calcula la inversión de los planes</legend>
+          <legend>Plan anual de inversión 2027</legend>
           <p>Vincula cada gasto a su plan. Escribe la cantidad y el costo por unidad para calcular el importe.</p>
           <div class="row-editor" data-editor="inversion"><div data-rows></div><button type="button" data-add>Agregar partida</button></div>
-          <label>Revisión de recursos por el SSST y el CSSL<textarea name="m3.revisionInversion" maxlength="2200" placeholder="Registra la fuente de los precios, qué recursos están disponibles y el acta o la revisión pendiente."></textarea></label>
+          <div id="annual-budget"></div><label>Revisión de recursos por el SSST y el CSSL<textarea name="m3.revisionInversion" maxlength="2200" placeholder="Registra la fuente de los precios, qué recursos están disponibles y el acta o la revisión pendiente."></textarea></label>
         </fieldset>
 
         <fieldset class="card" data-module="m4" hidden disabled>
