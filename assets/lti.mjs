@@ -545,6 +545,16 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   } else row.append(remove);
   editor.querySelector("[data-rows]").append(row);
   updateRowLabels(editorKey, editor);
+  if (editorKey==="productivos" || editorKey==="procesos") {
+    const product=editorKey==="productivos";
+    row.append(actionButton(product?"Agregar proceso de trabajo vinculado":"Agregar tarea de este proceso",()=>{
+      const name=row.querySelector('[data-key="nombre"]');
+      if(!name.value.trim()){name.focus();tell("Escribe el nombre antes de continuar.","error");return;}
+      const target=product?"procesos":"tareas";
+      const values=product?{productivoRef:row.dataset.id}:{procesoRef:row.dataset.id};
+      newLinkedRow(target,{...values,codigo:nextCode(product?"P":"T",rowValues(target))});
+    }));
+  }
   if (editorKey==="mapa") addStageOrder(row,editor);
   if (editorKey==="planes") addPlanActivity(row);
   if (editorKey==="m2" && document.getElementById("exposure-panel")?.tagName==="SECTION") {
@@ -1745,7 +1755,10 @@ function renderIncoming(info){
     line.append(element("strong",[item.codigo,item.nombre||item.riesgo].filter(Boolean).join(" · ")));
     if(item.evidencia) line.append(element("p","Fuente: "+item.evidencia));
     if(isTask){
-      line.append(actionButton("Crear hallazgo",()=>newLinkedRow("m2",{
+      const process=info.inputs?.m1?.data?.flujo?.procesos?.find(entry=>entry.id===item.procesoRef);
+      const context=[process?.nombre,process?.area,item.puestos,item.organizacion,item.descripcion].filter(Boolean);
+      if(context.length) line.append(element("p",context.join(" · ")));
+      line.append(actionButton("Evaluar esta tarea",()=>newLinkedRow("m2",{
         codigo:nextCode("R",rowValues("m2")),tareaRef:item.id,etapa:item.etapa||item.nombre,
         evidencia:item.evidencia||"",
       })));
@@ -1953,10 +1966,14 @@ function projectSnapshot(){
 
 function openDraftPreview(){
   const model=projectSnapshot(), dialog=document.getElementById("psst-preview");
+  if(moduleId==="m1"||moduleId==="m2"){
+    model.inputs={...model.inputs,[moduleId]:{data:model.draft}};
+    model.draft={};
+  }
   document.getElementById("preview-heading").textContent=draftFingerprint()===savedValues
     ?"Vista previa · Revisión "+revision:"Vista previa · Cambios todavía sin guardar";
   const doc=new DOMParser().parseFromString(buildPsstDocument(model),"text/html");
-  const sections=[...doc.querySelectorAll("section[data-chapter-preview]")];
+  const sections=[...doc.querySelectorAll(moduleId==="m4"?"section[data-chapter-preview]":'section[data-chapter-preview="3"]')];
   const select=document.getElementById("preview-chapter"), content=document.getElementById("preview-content");
   select.replaceChildren(...sections.map((section,index)=>new Option(section.querySelector("h2").textContent,String(index))));
   function paint(){
@@ -2022,9 +2039,16 @@ function setupBuilder(info){
       downloadBlob(workbookForPSST(model),"Seguimiento_PSST.xlsx");
     });
   }
+  if(moduleId==="m1"||moduleId==="m2"){
+    document.getElementById("edit-preview-chapter").hidden=true;
+    const button=document.getElementById("preview-work-chapter");
+    button.hidden=false;
+    button.addEventListener("click",openDraftPreview);
+  }
+    document.getElementById("close-preview")?.addEventListener("click",()=>document.getElementById("psst-preview").close());
   if(moduleId==="m4"){
     document.getElementById("preview-psst")?.addEventListener("click",openDraftPreview);
-    document.getElementById("close-preview")?.addEventListener("click",()=>document.getElementById("psst-preview").close());
+
     document.getElementById("edit-preview-chapter")?.addEventListener("click",()=>{
       const number=Number(document.getElementById("preview-chapter").value)+1;
       document.getElementById("psst-preview").close();
