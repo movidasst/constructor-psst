@@ -17,8 +17,8 @@ export const tutorials = {
         "Distingue los resultados que quieres lograr de las actividades que vas a programar. Indica quién responde por cada resultado.",
       ],"Objetivo específico: verificar los puntos de cruce con equipos móviles en ambos turnos y corregir las condiciones detectadas.","El capítulo I describe la entidad, el ámbito de aplicación y quién hace qué."],
       ["Describe el proceso productivo",[
-        "Pulsa Agregar proceso productivo. Escribe qué bien o servicio entrega el centro y separa las etapas con comas. Verás el diagrama al escribir.",
-        "Pulsa Agregar proceso de trabajo para registrar cada proceso que revisarás. Vincúlalo con el proceso productivo.",
+        "Pulsa Describir el proceso productivo del centro. Escribe qué bien o servicio entrega el centro y separa las etapas con comas. Verás el diagrama al escribir.",
+        "Pulsa Agregar proceso de trabajo para registrar cada proceso que revisarás. Indica el objeto o sujeto, los medios, la actividad, la organización y la división del trabajo.",
       ],"F-01 · Distribución de materiales (recepción → almacenamiento → despacho). P-01 · Preparación de pedidos, vinculado al proceso productivo F-01.","Puedes ubicar cada proceso de trabajo dentro del proceso productivo al que pertenece."],
       ["Describe una tarea observada",[
         "Pulsa Agregar tarea, asígnale un código y elige el proceso de trabajo que registraste.",
