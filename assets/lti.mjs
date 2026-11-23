@@ -9,7 +9,7 @@ import { checksLabels, changedSources, modules, projectState, rubrics, technical
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=anual-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=iperc-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, scheduledActivities } from "./psst-document.mjs?v=contratistas-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -58,9 +58,13 @@ const rowSchemas = {
     ["planRef","Plan relacionado",false,"planesEntregados"],["indicadorRef","Indicador de seguimiento",false,"indicadores"],
   ]},
   contratistas: {group:"m4",key:"contratistas",singular:"Obra o servicio de terceros",fields:[
-    ["nombre","Obra o servicio",true],["parte","Parte contratante o contratista"],["procesos","Procesos y áreas que comparten"],
+    ["nombre","Obra o servicio",true],["parte","Empresas que participan en la obra o servicio"],["procesos","Procesos y áreas que comparten"],
     ["riesgoRef","Hallazgo registrado en M2",false,"riesgos"],["controles","Coordinación y controles de la interacción"],
-    ["responsable","Responsable de verificar"],["evidencia","Soporte y estado"],
+    ["referenteInterno","Responsable de la empresa contratante"],["referenteExterno","Responsable de la empresa contratista"],
+    ["acuerdoInicio","Antes · ¿qué acuerdan ambas partes y quién confirma que pueden comenzar?"],
+    ["acuerdoEjecucion","Durante · ¿quién verifica los controles y cómo comunican un cambio o una desviación?"],
+    ["acuerdoCierre","Al cierre · ¿quién registra pendientes, asigna plazos y verifica las correcciones?"],
+    ["responsable","Responsable de verificar"],["evidencia","Referencia del acuerdo y estado: previsto, acordado o verificado"],
   ]},
   indicadores: {group:"m4",key:"indicadores",singular:"Indicador",fields:[
     ["codigo","Código",true],["nombre","Indicador",true],["planRef","Plan o actividad que se evalúa",false,"planesEntregados"],
@@ -443,7 +447,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
     const wrapper = element("label", label);
     const isInput = !type || ["date","verification-date","hours","headcount"].includes(type);
-    const long = ["detalleFamilia","detalleEnfoque","observacion","consulta","devolucion","contraste","controlPropuesto","justificacionControl"].includes(key);
+    const long = ["acuerdoInicio","acuerdoEjecucion","acuerdoCierre","detalleFamilia","detalleEnfoque","observacion","consulta","devolucion","contraste","controlPropuesto","justificacionControl"].includes(key);
     const field = element(long ? "textarea" : isInput ? "input" : "select");
     const value = key==="riesgoRefs" ? recordRefs(values)
       : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
@@ -516,6 +520,18 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   row.append(element("legend"));
   if (editorKey === "m2") row.append(document.getElementById("iperc-guide").content.cloneNode(true));
   row.append(fields);
+  if (editorKey === "contratistas") {
+    row.append(actionButton("Descargar esta ficha en Word",()=>{
+      const agreement = rowValues("contratistas").find(item=>item.id===row.dataset.id);
+      if (!agreement?.nombre.trim()) {
+        tell("Escribe el nombre de la obra o servicio para descargar su ficha.","error");
+        row.querySelector('[data-key="nombre"]').focus();
+        return;
+      }
+      const sheet = contractorSheet(agreement,integrationInputs?.m2?.data?.m2?.filas ?? []);
+      downloadBlob(wordFromReport(sheet),"Ficha_coordinacion_"+agreement.nombre.replace(/[^\p{L}\p{N}-]+/gu,"_").slice(0,80)+".docx");
+    }));
+  }
   if (editorKey === "inversion") {
     const total = element("p");
     total.dataset.investmentTotal = "";
