@@ -1,4 +1,4 @@
-import { annexRoute, chapterRoute, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=capitulos-1";
+import { annexRoute, chapterRoute, annualInvestment, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=anual-1";
 import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=documento-2";
@@ -6,10 +6,10 @@ import { executionStats, followupLabels, nextCode, operationalSchedule, orderedF
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=elementos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=capitulos-1";
-import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=sve-1";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=anual-1";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=anual-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=elementos-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=anual-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -98,7 +98,7 @@ const rowSchemas = {
     ["observacion","Observación directa"], ["consulta","Aporte del personal consultado"], ["contraste","Diferencias y aspectos por confirmar"],
   ] },
   inversion: {group:"m3",key:"partidas",singular:"Partida",fields:[
-    ["planRef","Plan que necesita el recurso",true,"planes"],["concepto","Recurso o compra",true],
+    ["planRef","Plan que necesita el recurso",true,"planes"],["actividadRef","Actividad financiada",false,"actividadesPlan"],["mesGasto","Mes previsto del gasto",false,"budgetMonth"],["concepto","Recurso o compra",true],
     ["cantidad","Cantidad",true],["unidad","Unidad",false],["unitario","Costo por unidad",true],
     ["moneda","Moneda",true],["fuente","Fuente del precio"],["responsable","Responsable"],
   ]},
@@ -138,7 +138,7 @@ const rowSchemas = {
     ["inicioReal","Fecha real de inicio",false,"verification-date"],["cierreReal","Fecha real de cierre",false,"verification-date"],["estado","Estado de ejecución",false,"estados"], ["inicio","Mes de inicio guardado",false,"month"], ["fin","Mes de cierre guardado",false,"month"],
     ["enfoque","Enfoque de la actividad",false,"enfoques"], ["detalleEnfoque","Procedimiento y criterio según el enfoque"],
     ["evidenciaEsperada","Evidencia esperada"], ["eficacia","Criterio de eficacia"], ["evidenciaReal","Evidencia de ejecución"],
-    ["grupo","Grupo de formación (si aplica)"], ["horasPersona","Horas de formación por persona (si aplica)",false,"hours"],
+    ["grupo","Grupo o puesto y turno"],["contenidoForm","Contenido teórico y práctica en el puesto"],["facilitadorForm","Facilitador, lugar y referencia de su currículo"],["evaluacionForm","Aprendizaje esperado y cómo se comprobará"],["asistenciaForm","Horas recibidas por persona y referencia al registro de asistencia"],["nivelacionForm","Nivelación y verificación posterior"], ["horasPersona","Horas de formación por persona (si aplica)",false,"hours"],
     ...Array.from({length:4},(_,i)=>["horasT"+(i+1),"Horas por persona en trimestre "+(i+1)+" (si cruza trimestres)",false,"hours"]), ["objetivo","Objetivo, meta y alcance"], ["frecuencia","Frecuencia"],
     ["procedimiento","Procedimiento e instrumento"], ["recursos","Recursos y presupuesto"],
     ["seguimiento","Indicador o evidencia de ejecución"],
@@ -194,6 +194,7 @@ function rowValues(key) {
 }
 
 function choices(type) {
+  if(type==="actividadesPlan") return rowValues("m3").filter(r=>r.actividad).map(r=>[r.id,r.actividad]);
   if (type === "anexoFamilias") return annexStructure;
   if (optionLists[type]) return optionLists[type].map(name=>[name,name]);
   const data = ["procesos","planes","productivos","indicadores"].includes(type) ? rowValues(type)
@@ -230,6 +231,13 @@ function refreshLinks() {
       const available = type === "cargos"
         ? cargoOptions.filter(([candidate]) => candidate !== id && !structure.get(candidate).ancestors.includes(id))
         : choices(type);
+      if(type==="actividadesPlan"){
+        const planId=control.closest(".row-card").querySelector('[data-key="planRef"]').value;
+        const matches=rowValues("m3").filter(a=>a.planRef===planId && a.actividad).map(a=>[a.id,a.actividad]);
+        const selected=matches.some(([id])=>id===control.value)?control.value:"";
+        fillSelect(control,matches,selected);
+        continue;
+      }
       const previous=fieldValue(control);
       const single=type==="productivos" && available.length===1 && (!previous || previous===available[0][0]);
       fillSelect(control,available,single?available[0][0]:previous);
@@ -322,6 +330,13 @@ function showRowHelp(row,key,value) {
       field.focus();
     });
     box.append(text,reference("Consultar NT-04-2023, "+template.clause,sources.nt+"#page="+template.page),button);
+    if(family==="Educación e información"){
+      box.prepend(element("h3","Plan anual de capacitación 2027"));
+      box.append(actionButton("Ver los cuatro trimestres y los grupos pendientes",()=>{
+        const control=form.elements.namedItem("m3.gruposFormacion");
+        revealControl(control);control.focus();
+      }));
+    }
     const storage=row.querySelector('[data-key="revisionArt18"]');
     const questions=surveillanceFields(family);
     if (questions.length) {
@@ -400,7 +415,7 @@ function rowChanged(event) {
     const stage = event.target.closest(".row-card")?.querySelector('[data-key="etapa"]');
     if (task && stage) stage.value = task.etapa ?? "";
   }
-  if (!event || key === "codigo" || key === "nombre" || key === "riesgo" || key === "reportaA") refreshLinks();
+  if (!event || key==="planRef" || key==="actividad" || key === "codigo" || key === "nombre" || key === "riesgo" || key === "reportaA") refreshLinks();
   if (key === "nombre" || !event) {
     const organization = editors.get("estructura");
     if (organization) updateRowLabels("estructura",organization);
@@ -432,7 +447,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     const value = key==="riesgoRefs" ? recordRefs(values)
       : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
       : typeof values?.[key] === "string" ? values[key] : type==="headcount" && Number.isSafeInteger(values[key]) ? String(values[key]) : "";
-    if (type === "month") {
+    if (type === "month" || type==="budgetMonth") {
       field.add(new Option("Elige un mes", ""));
       months.forEach((month,index) => field.add(new Option(month, String(index + 1))));
     } else if (type === "date" || type === "verification-date") {
@@ -557,6 +572,26 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
       const target=product?"procesos":"tareas";
       const values=product?{productivoRef:row.dataset.id}:{procesoRef:row.dataset.id};
       newLinkedRow(target,{...values,codigo:nextCode(product?"P":"T",rowValues(target))});
+    }));
+  }
+  if(editorKey==="m3"){
+    const planField=row.querySelector('[data-key="planRef"]');
+    const updateTraining=()=>{
+      const education=rowValues("planes").find(p=>p.id===planField.value)?.familia==="Educación e información";
+      for(const key of ["contenidoForm","facilitadorForm","evaluacionForm","asistenciaForm","nivelacionForm"]){
+        const control=row.querySelector('[data-key="'+key+'"]');
+        control.closest("label").hidden=!education && !control.value;
+      }
+    };
+    updateTraining();
+    planField.addEventListener("change",updateTraining);
+    row.querySelector('[data-key="grupo"]').setAttribute("list","training-populations");
+    row.append(actionButton("Agregar partida para esta actividad",()=>{
+      if(!planField.value||!row.querySelector('[data-key="actividad"]').value.trim()){
+        tell("Selecciona el plan y escribe la actividad antes de presupuestarla.","error");return;
+      }
+      const date=row.querySelector('[data-key="fechaInicio"]').value;
+      newLinkedRow("inversion",{planRef:planField.value,actividadRef:row.dataset.id,mesGasto:date?String(Number(date.slice(5,7))):""});
     }));
   }
   if (editorKey==="mapa") addStageOrder(row,editor);
@@ -1796,6 +1831,17 @@ function renderBuilder(){
   if (moduleId === "m1") renderDiagrams();
   if(!projectInfo?.projectKey||!draft) return;
   if (moduleId === "m3") {
+    const exposures=integrationInputs?.m2?.data?.m2?.gruposExpuestos||[];
+    const plans=rowValues("planes"), activities=rowValues("m3");
+    const declared=form.elements.namedItem("m3.gruposFormacion")?.value||"";
+    const hours=annualTraining(activities,plans,declared,exposures);
+    const options=document.getElementById("training-populations");
+    options.replaceChildren(...hours.map(row=>new Option(row.group,row.group)));
+    document.getElementById("annual-hours").replaceChildren(...hours.map(row=>element("p",
+      row.group+" · "+row.quarters.map((h,i)=>"T"+(i+1)+": "+h+" h").join(" · ")+" · Año: "+row.total+" h · "+(row.gaps.join(", ")||"Cuatro trimestres cubiertos"))));
+    const budget=annualInvestment(rowValues("inversion"),plans,activities);
+    document.getElementById("annual-budget").replaceChildren(...budget.summary.map(s=>element("p",
+      s.scope+" · "+s.currency+" "+s.total+" · "+s.quarters.map((v,i)=>"T"+(i+1)+": "+v).join(" · ")+" · Sin mes: "+s.undated+" · Por estimar: "+s.pending)));
     renderExecution();
     const totals = new Map(investmentRows(rowValues("inversion")).map(row=>[row.id,row]));
     for (const part of editors.get("inversion")?.querySelectorAll(".row-card") ?? []) {
