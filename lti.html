@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Constructor de PSST</title>
   <link rel="stylesheet" href="assets/lti.css?v=capitulos-1">
-  <script src="assets/lti.mjs?v=sve-1" type="module"></script>
+  <script src="assets/lti.mjs?v=recorrido-3" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -96,7 +96,7 @@
         </fieldset>
         <fieldset id="m1-inventario" class="card" data-module="m1">
           <legend>Proceso productivo y procesos de trabajo</legend>
-          <p class="section-guide">Registra qué produce el centro o qué servicio presta. Después agrega los procesos de trabajo que hacen posible ese resultado.</p>
+          <p class="section-guide">Primero describe qué recibe tu empresa, qué hace y qué bien o servicio entrega. Después usa «Agregar proceso de trabajo vinculado» para registrar cada proceso, por ejemplo recepción o despacho. Desde cada proceso agrega sus tareas observadas.</p>
           <div class="row-editor" data-editor="productivos"><div data-rows></div><button type="button" data-add>Agregar proceso productivo</button></div>
           <div class="step-help">
             <p><strong>Qué hacer.</strong> Agrega los procesos del centro que abarcará el PSST y usa un código distinto por proceso.</p>
@@ -547,6 +547,7 @@
           <div class="actions"><button type="button" id="copy-recovery" hidden>Descargar copia de recuperación</button>
             <button type="button" id="restore-recovery" hidden>Recuperar cambios de esta pestaña</button></div>
         </details>
+      <button id="preview-work-chapter" type="button" hidden>Ver cómo quedó mi capítulo III</button>
       </form>
       <dialog id="psst-preview" aria-labelledby="preview-heading">
         <div class="preview-bar"><h2 id="preview-heading">Vista previa del PSST</h2>
