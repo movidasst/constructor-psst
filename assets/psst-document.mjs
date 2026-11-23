@@ -185,10 +185,10 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   const indicators = table([["Código","codigo"],["Indicador","nombre"],["Plan","plan"],["Criterio","formula"],["Línea base","base"],
     ["Meta","meta"],["Fuente","fuente"],["Frecuencia","frecuencia"],["Responsable","responsable"],["Respuesta","respuesta"]],
     rows(four.indicadores).map(row=>({...row,plan:labelFor(planRows,row.planRef)})));
-  const fieldNotes=taskRows.filter(row=>[row.observacion,row.consulta,row.contraste].some(hasValue));
+  const fieldNotes=taskRows.filter(row=>[row.observacion,row.consulta,row.devolucion,row.contraste].some(hasValue));
   const pendingRiskEntries=matrix.filter(row=>[row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,
     row.controlPropuesto,row.justificacionControl].some(hasValue));
-  const observationTable=table([["Tarea","codigo"],["Observación","observacion"],["Consulta","consulta"],["Por contrastar","contraste"]],fieldNotes);
+  const observationTable=table([["Tarea","codigo"],["Fecha","fechaCampo"],["Observación","observacion"],["Consulta","consulta"],["Confirmación o corrección","devolucion"],["Por contrastar","contraste"],["Fuente","evidencia"]],fieldNotes);
   const evaluationTable=table([["Hallazgo","codigo"],["Estado","estadoEvaluacion"],["Medida propuesta","controlPropuesto"],
     ["Justificación","justificacionControl"],["Responsable de verificar","responsableEvaluacion"],["Fecha prevista","fechaEvaluacion"]],pendingRiskEntries);
   const evaluationCriteria=activityEvidence(activities);

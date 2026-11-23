@@ -9,7 +9,7 @@ import { checksLabels, changedSources, modules, projectState, rubrics, technical
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=anual-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=anual-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=anual-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=campo-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -95,7 +95,7 @@ const rowSchemas = {
     ["etapa","Etapa",true], ["nombre","Tarea observada",true], ["descripcion","Secuencia real de la tarea",true],
     ["puestos","Puestos y personal expuesto"], ["medios","Herramientas, equipos y objetos"],
     ["organizacion","Turnos, ritmo y organización"], ["evidencia","Fuente o evidencia"],
-    ["observacion","Observación directa"], ["consulta","Aporte del personal consultado"], ["contraste","Diferencias y aspectos por confirmar"],
+    ["fechaCampo","Fecha de observación",false,"verification-date"], ["observacion","1. Observar · hechos vistos en el puesto"], ["consulta","2. Conversar · aporte de quien hace la tarea"], ["devolucion","3. Devolver · qué confirmó o corrigió la persona al leerle la descripción"], ["contraste","Diferencias y aspectos por confirmar"],
   ] },
   inversion: {group:"m3",key:"partidas",singular:"Partida",fields:[
     ["planRef","Plan que necesita el recurso",true,"planes"],["actividadRef","Actividad financiada",false,"actividadesPlan"],["mesGasto","Mes previsto del gasto",false,"budgetMonth"],["concepto","Recurso o compra",true],
@@ -442,7 +442,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
     const wrapper = element("label", label);
     const isInput = !type || ["date","verification-date","hours","headcount"].includes(type);
-    const long = ["detalleFamilia","detalleEnfoque","observacion","consulta","contraste","controlPropuesto","justificacionControl"].includes(key);
+    const long = ["detalleFamilia","detalleEnfoque","observacion","consulta","devolucion","contraste","controlPropuesto","justificacionControl"].includes(key);
     const field = element(long ? "textarea" : isInput ? "input" : "select");
     const value = key==="riesgoRefs" ? recordRefs(values)
       : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
