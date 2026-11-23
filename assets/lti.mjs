@@ -1,16 +1,17 @@
+import { annexRoute, chapterRoute, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=capitulos-1";
 import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
 import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationImport, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
-import { fieldHelp, productionFromM1 } from "./psst-field-help.mjs?v=organigrama-1";
-import { tutorials, glossary } from "./psst-tutorial.mjs?v=organigrama-1";
+import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=capitulos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=exposicion-1";
-import { approaches, chapterTemplates, coherenceIssues, familyTemplates, investigationTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=capitulos-1";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=organigrama-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=capitulos-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
-import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=program-1";
+import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
 const status = document.getElementById("status");
@@ -68,7 +69,7 @@ const rowSchemas = {
     ["respuesta","Qué hacer si hay desviación"],
   ]},
   anexos: {group:"m4",key:"soportes",singular:"Anexo",fields:[
-    ["codigo","Código",true],["nombre","Documento o evidencia",true],["capitulo","Capítulo o código al que respalda"],
+    ["codigo","Código",true],["nombre","Documento o evidencia",true],["familia","Grupo de anexo",false,"anexoFamilias"],["capitulo","Capítulo o código al que respalda"],
     ["version","Versión y fecha"],["ubicacion","Ubicación o referencia"],["estado","Estado del soporte",false,"soportes"],
     ["responsable","Responsable de completarlo"],["custodio","Custodio y personas autorizadas"],
     ["revisionAcceso","Fecha de revisión del acceso",false,"verification-date"],
@@ -96,6 +97,11 @@ const rowSchemas = {
     ["organizacion","Turnos, ritmo y organización"], ["evidencia","Fuente o evidencia"],
     ["observacion","Observación directa"], ["consulta","Aporte del personal consultado"], ["contraste","Diferencias y aspectos por confirmar"],
   ] },
+  inversion: {group:"m3",key:"partidas",singular:"Partida",fields:[
+    ["planRef","Plan que necesita el recurso",true,"planes"],["concepto","Recurso o compra",true],
+    ["cantidad","Cantidad",true],["unidad","Unidad",false],["unitario","Costo por unidad",true],
+    ["moneda","Moneda",true],["fuente","Fuente del precio"],["responsable","Responsable"],
+  ]},
   planes: { group:"m3", key:"planesDetallados", singular:"Plan", fields:[
     ["codigo","Código del plan",true], ["nombre","Nombre del plan",true],
     ["familia","Familia de plan",true,"familias"], ["riesgoRefs","Hallazgos vinculados",false,"riesgos-multiple"],
@@ -188,6 +194,7 @@ function rowValues(key) {
 }
 
 function choices(type) {
+  if (type === "anexoFamilias") return annexStructure;
   if (optionLists[type]) return optionLists[type].map(name=>[name,name]);
   const data = ["procesos","planes","productivos","indicadores"].includes(type) ? rowValues(type)
     : type==="cargos" ? rowValues("estructura")
@@ -355,6 +362,7 @@ function rowChanged(event) {
   tell("Tienes cambios en el borrador.");
   refreshDelivery();
   renderProjectDetails();
+  if (stage === "closing") renderChapterCoverage();
   queueAutosave();
 }
 
@@ -438,6 +446,11 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     rowChanged();
   });
   row.append(element("legend"), fields);
+  if (editorKey === "inversion") {
+    const total = element("p");
+    total.dataset.investmentTotal = "";
+    row.append(total);
+  }
   if (editorKey === "planes" || editorKey === "m3") {
     const help=element("div");
     help.dataset.rowHelp="";
@@ -502,7 +515,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
 function setupRows(info) {
   moduleId = info.moduleId;
   integrationInputs = info.inputs ?? {};
-  const keys = {m1:["estructura","productivos","mapa","procesos","tareas","campo"],m2:["verificacion","m2","expuestos"],m3:["planes","m3"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
+  const keys = {m1:["estructura","productivos","mapa","procesos","tareas","campo"],m2:["verificacion","m2","expuestos"],m3:["planes","m3","inversion"],m4:["m4","objetivos","contratistas","indicadores","anexos"]};
   for (const key of keys[moduleId] ?? []) {
     const editor = form.querySelector('[data-editor="' + key + '"]');
     if (!editor) continue;
@@ -546,6 +559,16 @@ function renderTutorial(guide, resumeIndex) {
   start.type = "button";
   start.className = "primary-button";
   start.addEventListener("click", () => showStep(currentStep, true));
+  const map = element("details");
+  map.className = "module-details";
+  const route = element("ul");
+  route.className = "chapter-route";
+  for (const [number, title, owner, description] of chapterRoute) {
+    const item = element("li");
+    item.append(element("strong", number + " · " + title + " (" + owner + ")"), element("p", description));
+    route.append(item);
+  }
+  map.append(element("summary","Dónde se construyen los ocho capítulos"),route,element("p",annexRoute));
   const terms = element("details");
   terms.className = "module-details";
   terms.append(element("summary", "Qué necesitas y términos útiles"), element("p", guide.supplies));
@@ -554,7 +577,7 @@ function renderTutorial(guide, resumeIndex) {
     definitions.append(element("dt", term), element("dd", definition));
   }
   terms.append(definitions);
-  overview.replaceChildren(heading, summary, start, terms);
+  overview.replaceChildren(heading, summary, start, map, terms);
   return start;
 }
 
@@ -586,9 +609,12 @@ function setupSteps() {
   let resumed = 0;
   if (recoveryKey) {
     try {
-      const saved = sessionStorage.getItem(recoveryKey + ":ruta");
-      const previous = Number(sessionStorage.getItem(recoveryKey + ":step")) || 0;
-      resumed = saved === null ? Math.max(0, previous - (moduleId === "m1" ? 1 : 0)) : Number(saved);
+      const saved = sessionStorage.getItem(recoveryKey + ":capitulos");
+      const oldRoute = sessionStorage.getItem(recoveryKey + ":ruta");
+      const previous = oldRoute === null
+        ? Math.max(0, (Number(sessionStorage.getItem(recoveryKey + ":step")) || 0) - (moduleId === "m1" ? 1 : 0))
+        : Number(oldRoute);
+      resumed = saved === null ? previous + (moduleId === "m1" && previous > 0 ? 1 : 0) : Number(saved);
     } catch {}
   }
   currentStep = steps[resumed] ? resumed : 0;
@@ -635,6 +661,7 @@ function setupSteps() {
     document.getElementById("step-finish").hidden = name !== "step" || currentStep !== steps.length - 1;
     document.getElementById("step-back").hidden = name === "step" && currentStep === 0;
     document.getElementById("step-menu").open = false;
+    if (name === "closing") renderChapterCoverage();
     refreshDeliveryVisibility();
   }
   displayStage = screen;
@@ -675,12 +702,60 @@ function showStep(index, focus) {
   const nextTitle = tutorials[moduleId].steps[index + 1]?.[0];
   document.getElementById("step-next").textContent = nextTitle ? "Siguiente: " + nextTitle : "Siguiente";
   if (recoveryKey) {
-    try { sessionStorage.setItem(recoveryKey + ":ruta", String(index)); } catch {}
+    try { sessionStorage.setItem(recoveryKey + ":capitulos", String(index)); } catch {}
   }
   if (focus) {
     steps[index].querySelector("legend").focus({preventScroll:true});
     steps[index].scrollIntoView({block:"start"});
   }
+}
+
+function currentInputs(record) {
+  return moduleId === "m4" ? integrationInputs : {
+    ...integrationInputs, [moduleId]: {data:record},
+  };
+}
+
+function renderChapterCoverage() {
+  const view = document.getElementById("chapter-coverage");
+  const draft = collectDraft();
+  const inputs = currentInputs(draft);
+  const finalFields = moduleId === "m4" ? draft.m4 : {};
+  const sections = sectionCoverage(chapterStructure,finalFields,sourceSections(inputs),structuredSections(inputs,finalFields));
+  const owns = {m1:[1,3],m2:[3],m3:[4],m4:[1,2,3,4,5,6,7,8]};
+  const list = element("ul");
+  for (const chapter of owns[moduleId]) {
+    const fields = sections.filter(section=>section.chapter===chapter);
+    const pending = fields.filter(section=>section.status==="Por completar");
+    const item = element("li");
+    const details = element("details");
+    const qualifier = chapter === 3 && moduleId !== "m4" ? " · diagnóstico compartido entre M1 y M2" : "";
+    details.append(element("summary",chapterRoute[chapter-1][0] + " · " + fields[0].title +
+      qualifier + " · " + (fields.length-pending.length) + "/" + fields.length + " apartados con avance"));
+    const parts = element("ul");
+    for (const field of fields) {
+      const row = element("li",field.label + " · " + field.status);
+      const input = form.elements.namedItem((moduleId==="m4"?"m4.":"generalidades.") +
+        (moduleId==="m4"?field.id:field.id.slice(5)));
+      if (input) row.append(" ",actionButton("Abrir apartado",()=>{revealControl(input);input.focus();}));
+      parts.append(row);
+    }
+    details.append(parts);
+    item.append(details);
+    list.append(item);
+  }
+  const children = [element("h3","Avance por apartados"),list];
+  if (moduleId === "m4") {
+    const missing = annexStructure.filter(([key,title]) =>
+      !finalFields?.["anexo_"+key]?.trim() && !finalFields?.soportes?.some(row=>row.familia===key && row.nombre && row.ubicacion));
+    const annexes = element("details");
+    annexes.append(element("summary","Anexos · "+(annexStructure.length-missing.length)+"/"+annexStructure.length+" grupos con referencia"));
+    const checklist = element("ul");
+    for (const [key,title] of missing) checklist.append(element("li",title+" · Por revisar"));
+    annexes.append(checklist);
+    children.push(annexes);
+  }
+  view.replaceChildren(...children);
 }
 
 function renderPlanCoverage() {
@@ -692,8 +767,14 @@ function renderPlanCoverage() {
   for (const family of families) {
     const matches = plans.filter(row=>row.nombre && row.familia===family);
     const scheduled = matches.some(plan=>recordRefs(plan).length && activities.some(row=>row.planRef===plan.id));
-    list.append(element("li", family + " · " +
-      (scheduled ? "Con vínculo y actividad programada" : matches.length ? "Ficha en preparación" : "Por documentar")));
+    const item = element("li", family + " · " +
+      (scheduled ? "Con vínculo y actividad programada" : matches.length ? "Ficha en preparación" : "Por documentar"));
+    const existing = matches[0];
+    item.append(" ",actionButton(existing ? "Abrir ficha" : "Crear ficha",() => {
+      if (existing) focusRecord("planes",existing.id);
+      else newLinkedRow("planes",{codigo:nextCode("PL",rowValues("planes")),familia:family,nombre:family});
+    }));
+    list.append(item);
   }
   const linked = new Set(plans.flatMap(recordRefs));
   const pending = (integrationInputs?.m2?.data?.m2?.filas ?? []).filter(row=>row.prioridad==="Inmediata" && !linked.has(row.id));
@@ -759,105 +840,86 @@ function showReadiness() {
   if (moduleId !== "m4" || !panel?.replaceChildren) return;
   const current=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
   for (const key of ["contratistas","indicadores"]) current[key]=rowValues(key);
-  const list=element("ul");
-  for (const [title,ready] of draftReadiness(current,integrationInputs ?? {})) {
-    list.append(element("li",title+" · "+(ready?"Con avance registrado":"Pendiente de desarrollar")));
-  }
-  panel.replaceChildren(list);
-}
-
-function insertOutline(name,fields) {
-  if (busy) return;
-  const field=form.elements.namedItem(name);
-  if (!field) return;
-  if (!field.value.trim()) { field.value=outline(fields); rowChanged(); }
-  else tell("La plantilla se puede insertar en un campo vacío. Conservé el texto que ya escribiste.");
-  field.focus();
-}
-
-function putDraftText(control, text) {
-  if (busy) return;
-  if (control.value.trim()) {
-    tell("El campo ya tiene contenido. Puedes usar el ejemplo de la ayuda para completar lo que te falte.");
-  } else if (!text || text.length > control.maxLength) {
-    tell("Resume el material de origen en el campo y conserva el resto como referencia.");
-  } else {
-    control.value = text;
-    rowChanged();
-    tell("Texto de partida incorporado. Revísalo y complétalo con tus datos.");
-  }
-  control.focus();
-}
-
-function makeFieldHelp(kind, control, previous) {
-  const guide = fieldHelp[kind];
-  const box = element("details");
-  box.className = "field-workshop";
-  const steps = element("ol");
-  for (const step of guide.steps) steps.append(element("li",step));
-  const example = element("p",guide.example);
-  example.className = "workshop-example";
-  const check = element("p");
-  check.append(element("strong","Revisa tu avance. "),guide.check);
-  box.append(element("summary",guide.title),steps,element("strong","Ejemplo · Centro Norte"),example,check);
-  if (guide.reference) box.append(reference(...guide.reference));
-  if (control) {
-    const actions=element("div");
-    actions.className="actions workshop-actions";
-    const template=element("button","Insertar plantilla editable");
-    template.type="button";
-    template.addEventListener("click",()=>putDraftText(control,guide.template));
-    actions.append(template);
-    const source=element("button","Traer mi registro de Módulo 1");
-    source.type="button";
-    source.hidden=true;
-    if (previous) {
-      source.addEventListener("click",()=>putDraftText(control,previous()));
-      actions.append(source);
-    }
-    box.append(actions);
-    return {box,source};
-  }
-  return {box};
+  const fields = sectionCoverage(chapterStructure,current,sourceSections(integrationInputs),structuredSections(integrationInputs,current));
+  const pending = fields.filter(field=>field.status==="Por completar");
+  panel.textContent = (fields.length-pending.length) + " de " + fields.length +
+    " apartados con redacción o datos de origen. Revisa su detalle en Avance por apartados.";
 }
 
 function setupFieldHelp(info) {
-  const contextGuide={m2:"risk",m3:"action"}[info.moduleId];
-  if (contextGuide) {
-    const mount=document.getElementById(contextGuide+"-help");
-    if (mount?.append) mount.append(makeFieldHelp(contextGuide).box);
-    return;
-  }
-  if (info.moduleId !== "m4" || !form.elements?.namedItem) return;
-  const prior=info.inputs?.m1?.data;
-  const organization = form.elements.namedItem("m4.cap3_organigrama");
-  const organizationRows = organizationTree(prior?.alcance?.estructura);
-  if (organization?.parentElement && organizationRows.length) {
-    organization.parentElement.before(element("p","Se incorporará el organigrama de M1 (" +
-      organizationRows.length + " cargos o áreas). Describe aquí la estructura del SSST y la coordinación con el CSSL si falta precisarlas."));
-  }
-  for (const [name,kind,previous] of [
-    ["m4.cap2_politica","policy",null],
-    ["m4.cap3_proceso_productivo","production",()=>productionFromM1(prior)],
-  ]) {
-    const control=form.elements.namedItem(name);
-    if (!control?.parentElement) continue;
-    const wrapper=element("div");
-    wrapper.className="wide";
-    control.parentElement.before(wrapper);
-    wrapper.append(control.parentElement);
-    const {box,source}=makeFieldHelp(kind,control,previous);
-    if (previous) {
-      const text=previous();
-      source.hidden=!text.trim() || text.length>control.maxLength;
-    }
-    wrapper.append(box);
-  }
+  const helper = {m2:"risk",m3:"action"}[info.moduleId];
+  if (!helper) return;
+  const guide = fieldHelp[helper];
+  const details = element("details");
+  details.className = "field-workshop";
+  const steps = element("ol");
+  for (const step of guide.steps) steps.append(element("li",step));
+  details.append(element("summary",guide.title),steps,element("p",guide.example),
+    reference(...guide.reference));
+  document.getElementById(helper+"-help").append(details);
+}
+
+const writingPrompts = {
+  cap2_politica: [
+    ["Compromiso preventivo","Qué riesgos de tu centro atenderás primero y qué condiciones quieres mejorar"],
+    ["Cumplimiento y recursos","Qué compromisos asume la entidad y qué medios pondrá a disposición"],
+    ["Consulta y mejora","Cómo participarán los trabajadores, el CSSL y los delegados de prevención"],
+  ],
+  cap5_accidentes: [
+    ["Aviso y activación","Quién recibe el aviso, atiende la situación y activa al SSST"],
+    ["Notificación y declaración","Quién comunica, a quién, por qué medio y cómo deja constancia"],
+    ["Investigación y evidencias","Quién participa y cómo reúne hechos, reconstruye y analiza causas"],
+    ["Medidas y verificación","Cómo registra responsables, plazos y evidencia de eficacia"],
+  ],
+  cap5_enfermedades: [
+    ["Activación y responsable","Cómo recibe el caso el SSST y quién coordina"],
+    ["Historia ocupacional y exposición","Qué registros de puestos, tareas, períodos y evaluaciones se revisan"],
+    ["Declaración y resguardo","Cómo se declara cuando corresponda y dónde se resguarda el expediente"],
+    ["Medidas y seguimiento","Qué decisiones se registran y cómo se verifica su efecto"],
+  ],
+  cap8_cronograma: [
+    ["Ciclo y responsables","Qué se revisa, cuándo y quién toma las decisiones"],
+    ["Participación","Cómo intervienen las personas trabajadoras y el CSSL"],
+    ["Informe mensual del CSSL","Quién prepara el informe, cuándo se presenta y dónde queda la constancia"],
+  ],
+};
+
+function writingAid(key, target) {
+  const details = element("details");
+  details.className = "module-details chapter-aid";
+  details.append(element("summary","Redactar con los datos de tu entidad"));
+  const fields = writingPrompts[key].map(([heading,placeholder])=>{
+    const label = element("label",heading);
+    const input = element("textarea");
+    input.maxLength = 480;
+    input.placeholder = placeholder;
+    label.append(input);
+    details.append(label);
+    return [heading,input];
+  });
+  const message = element("p");
+  message.setAttribute("role","status");
+  details.append(actionButton("Incorporar texto al apartado",()=>{
+    if (busy) return;
+    const pieces = fields.filter(([,input])=>input.value.trim()).map(([heading,input])=>heading + ": " + input.value.trim());
+    const addition = pieces.join("\n");
+    if (!addition) { message.textContent = "Escribe al menos un dato para incorporarlo."; return; }
+    const next = [target.value.trim(),addition].filter(Boolean).join("\n\n");
+    if (next.length > target.maxLength) { message.textContent = "El texto supera el espacio del apartado. Resume el contenido antes de agregarlo."; return; }
+    target.value = next;
+    fields.forEach(([,input])=>{input.value="";});
+    details.open = false;
+    rowChanged();
+    target.focus();
+  }),message);
+  return details;
 }
 
 function setupChapterFields() {
-  if (moduleId !== "m4") return;
-  for (const container of form.querySelectorAll("[data-chapter]")) {
+  if (moduleId !== "m1" && moduleId !== "m4") return;
+  const prefix = moduleId === "m1" ? "generalidades." : "m4.";
+  const origin = sourceSections(integrationInputs);
+  for (const container of form.querySelectorAll('fieldset[data-module="' + moduleId + '"] [data-chapter]')) {
     const number = Number(container.dataset.chapter);
     const definition = chapterStructure[number - 1];
     if (!definition) continue;
@@ -867,7 +929,18 @@ function setupChapterFields() {
       const label = element("label",title);
       label.className = "wide";
       const control = element("textarea");
-      control.name = "m4." + chapterKey(number,key);
+      const fullKey = chapterKey(number,key);
+      control.name = prefix + (moduleId === "m1" ? key : fullKey);
+      const source = origin[fullKey];
+      if (moduleId === "m4" && source) {
+        control.placeholder = "Se incorpora desde el módulo de origen. Escribe aquí solo si debes ajustar el texto.";
+        const previous = element("details");
+        previous.className = "module-details";
+        previous.append(element("summary","Ver texto del módulo de origen"),element("p",source));
+        fields.append(previous);
+      }
+      if (moduleId === "m1" && key === "basamento") control.placeholder =
+        "Ej. LOPCYMAT, Reglamento Parcial, NT-04-2023 y normas aplicables a los trabajos del centro.";
       control.maxLength = 2400;
       const help = element("small",guide);
       help.className = "field-guide";
@@ -875,28 +948,30 @@ function setupChapterFields() {
       control.setAttribute("aria-describedby",help.id);
       label.append(help,control);
       fields.append(label);
+      if (moduleId === "m4" && writingPrompts[fullKey]) fields.append(writingAid(fullKey,control));
     }
     container.append(fields);
     const definitionTemplate=chapterTemplates[number];
     const toolbar=element("div");
     toolbar.className="field-help";
-    const general=element("button","Usar plantilla");
-    general.type="button";
-    general.addEventListener("click",()=>insertOutline("m4.cap"+number,definitionTemplate.fields));
     const url=number===1 ? sources.guia : sources.nt;
-    toolbar.append(reference(definitionTemplate.clause,url+"#page="+definitionTemplate.page),general);
-    if (number===5) {
-      for (const [key,fields] of Object.entries(investigationTemplates)) {
-        const button=element("button",key==="accidentes" ? "Plantilla de accidentes" : "Plantilla de enfermedades ocupacionales");
-        button.type="button";
-        button.addEventListener("click",()=>insertOutline("m4.cap5_"+key,fields));
-        toolbar.append(button);
-      }
-    }
+    toolbar.append(reference(definitionTemplate.clause,url+"#page="+definitionTemplate.page));
     container.append(toolbar);
   }
+  if (moduleId !== "m4") return;
   const annexes = document.getElementById("chapter-annexes");
   if (!annexes?.append) return;
+  const formats = document.getElementById("annex-formats");
+  const select = element("select");
+  select.setAttribute("aria-label","Formato editable");
+  for (const [id,title] of workingFormats) select.add(new Option(title,id));
+  formats.append(select,actionButton("Descargar formato en Word",()=>{
+    const [id,title,fields] = workingFormats.find(([key])=>key===select.value);
+    const report = document.implementation.createHTMLDocument(title);
+    report.body.append(element("h1",title));
+    for (const label of fields) report.body.append(element("h3",label),element("p","____________________________________________"));
+    downloadBlob(wordFromReport(report.documentElement.outerHTML),"PSST_Formato_"+id+".docx");
+  }));
   for (const [key,title] of annexStructure) {
     const label = element("label",title);
     const control = element("textarea");
@@ -1178,7 +1253,7 @@ deliver.addEventListener("click", () => {
   if (moduleId === "m4") {
     const recorded=Object.fromEntries(formValues().filter(([key])=>key.startsWith("m4.")).map(([key,value])=>[key.slice(3),value]));
     for (const key of ["contratistas","indicadores"]) recorded[key]=rowValues(key);
-    const missing = draftReadiness(recorded,integrationInputs ?? {}).filter(([,ready])=>!ready);
+    const missing = draftReadiness({...sourceSections(integrationInputs),...Object.fromEntries(Object.entries(recorded).filter(([,value])=>value))},integrationInputs ?? {}).filter(([,ready])=>!ready);
     if (missing.length) {
       tell("Antes de entregar, desarrolla o referencia estos capítulos: "+missing.map(([title])=>title).join(", ")+".", "error");
       return;
@@ -1264,24 +1339,28 @@ function setupDocument(info) {
     list.append(element("li", "Módulo " + number + " · " + status));
   }
   sources.replaceChildren(list);
-  const profile=integrationInputs.m1?.data?.proyecto ?? {};
-  const entity=(String(profile.entidad ?? "").trim() || "[Entidad]");
-  const center=(String(profile.centro ?? "").trim() || "[Centro de trabajo]");
-  const version=String(profile.version ?? "").trim() || "[Versión]";
-  const sections=[
-    ["compose-letter","m4.compromiso",
-      "Borrador para revisión y suscripción\nEntidad: "+entity+"\nCentro: "+center+"\nVersión del PSST: "+version+"\nRepresentante: [completar]\nDirigida al Comité de Seguridad y Salud Laboral.\n\nSe propone asumir el compromiso de ejecutar y revisar los planes del PSST, proporcionar los recursos previstos, facilitar la participación y hacer seguimiento de las medidas preventivas.\n\nCompromisos específicos y responsables: [incorporar los planes, recursos y plazos].\nFecha y firma: [pendientes de validación y suscripción]."],
-  ];
-  for(const [id,name,content] of sections) {
-    document.getElementById(id).addEventListener("click",()=>{
-      if (busy) return;
-      const field=form.elements.namedItem(name);
-      if (field.value.trim()) { field.focus(); return; }
-      field.value=content;
-      rowChanged();
-      field.focus();
-    });
-  }
+  const profile = integrationInputs.m1?.data?.proyecto ?? {};
+  document.getElementById("compose-letter").addEventListener("click",()=>{
+    if (busy) return;
+    const formField = name => form.elements.namedItem("m4."+name);
+    const field = formField("compromiso");
+    if (field.value.trim()) { field.focus(); return; }
+    const associative = document.getElementById("letter-kind").value === "asociacion";
+    const established = formField("cap6_compromisos").value.trim();
+    const resources = formField("cap6_recursos").value.trim();
+    field.value = [
+      "Borrador para revisión y suscripción · " + (associative ? "Asociación o cooperativa" : "Entidad de trabajo o contratista"),
+      "Entidad: " + (profile.entidad || "por indicar") + " · Centro: " + (profile.centro || "por indicar"),
+      "Responsable: " + (formField("cap6_responsable").value.trim() || "por identificar"),
+      associative ? "Acta de la Asamblea y decisión de las personas asociadas: por verificar."
+        : "Destinatarios: Comité de Seguridad y Salud Laboral y presentación al INPSASEL.",
+      "Nos comprometemos a cumplir las disposiciones de SST, mejorar los procesos y puestos, proporcionar formación preventiva, facilitar la participación, vigilar la salud y las condiciones de trabajo, asegurar la coordinación con contratistas cuando corresponda y promover el descanso y la recreación.",
+      established,resources,
+      "Fecha, revisión, firma y sello: pendientes hasta su suscripción.",
+    ].filter(Boolean).join("\n\n").slice(0,field.maxLength);
+    rowChanged();
+    field.focus();
+  });
   const button = document.getElementById("export-psst");
   button.addEventListener("click", () => void update("Preparando el borrador…", async () => {
     await saveIfChanged();
@@ -1658,7 +1737,23 @@ function renderIncoming(info){
 function renderBuilder(){
   if (moduleId === "m1") renderDiagrams();
   if(!projectInfo?.projectKey||!draft) return;
-  if(moduleId==="m3") renderExecution();
+  if (moduleId === "m3") {
+    renderExecution();
+    const totals = new Map(investmentRows(rowValues("inversion")).map(row=>[row.id,row]));
+    for (const part of editors.get("inversion")?.querySelectorAll(".row-card") ?? []) {
+      const row = totals.get(part.dataset.id);
+      part.querySelector("[data-investment-total]").textContent = row
+        ? "Importe: " + row.total + (row.total === "Por estimar" ? "" : " " + row.moneda)
+        : "";
+    }
+  }
+  if (moduleId === "m2") {
+    const view = document.getElementById("diagnosis-summary");
+    const findings = rowValues("m2").filter(row=>row.riesgo);
+    const immediate = findings.filter(row=>row.prioridad==="Inmediata");
+    view.replaceChildren(element("p",findings.length+" hallazgos registrados. "+immediate.length+
+      " con prioridad inmediata."+(immediate.length ? " Revisa "+immediate.map(row=>row.codigo||row.riesgo).join(", ")+ "." : "")));
+  }
   if(moduleId==="m2"){
     const groups=exposureRows({filas:rowValues("m2"),gruposExpuestos:rowValues("expuestos")});
     for(const row of editors.get("m2")?.querySelectorAll(".row-card")??[]){
@@ -1675,7 +1770,7 @@ function renderBuilder(){
   const current=collectDraft();
   const notices=technicalChecks({...data,four:current.m4}).filter(item=>
     moduleId==="m4"||({
-      m1:["estructura"],m2:["m2","expuestos"],m3:["planes","m3"],
+      m1:["estructura"],m2:["m2","expuestos"],m3:["planes","m3","inversion"],
     }[moduleId]??[]).includes(item.target));
   target.replaceChildren();
   if(!notices.length) return;
@@ -1941,6 +2036,7 @@ async function start() {
   draft = info.draft ?? {};
   moduleId = info.moduleId;
   setupProjectFields();
+  integrationInputs = info.inputs ?? {};
   setupChapterFields();
   setupFieldHelp(info);
   setupReview();

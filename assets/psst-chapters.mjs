@@ -1,9 +1,9 @@
 export const chapterStructure = [
   ["Generalidades", [
-    ["entidad","Entidad y centro de trabajo","Indica la razón social, centros cubiertos y actividad de producción o servicio."],
+    ["entidad","Entidad y centro de trabajo","Indica razón social, RIF, NIL, centro, dirección y actividad. La ficha de M1 aporta datos si dejas este campo vacío."],
     ["objetivo_general","Objetivo general","Define qué busca lograr el programa, a qué población beneficia y dónde se aplicará."],
     ["objetivos_especificos","Objetivos específicos","Escribe resultados concretos que ayuden a lograr el objetivo general."],
-    ["alcance","Alcance y aplicación","Delimita centros, áreas, turnos, personas cubiertas y responsables de la aplicación."],
+    ["alcance","Alcance y aplicación","Indica centros, áreas, turnos, población propia y de terceros, límites y quién aplica el programa."],
     ["basamento","Basamento legal","Identifica la ley, el reglamento, la norma técnica y las disposiciones propias de sus actividades."],
     ["responsabilidades","Responsabilidades y corresponsabilidades","Registra los roles del empleador, el SSST, el CSSL, los delegados y los trabajadores."],
     ["definiciones","Definiciones","Incluye un glosario breve con los términos que usa el programa."],
@@ -28,8 +28,8 @@ export const chapterStructure = [
     ["cronograma","Cronograma y seguimiento","Registra cómo se revisarán las fechas, las responsabilidades y las evidencias de ejecución. La carta Gantt se incorpora desde M3."],
   ]],
   ["Investigación de accidentes de trabajo y enfermedades ocupacionales", [
-    ["accidentes","Investigación de accidentes de trabajo","Describe activación, responsables, recolección de hechos, análisis de causas, medidas y registro. Identifica el procedimiento."],
-    ["enfermedades","Investigación de enfermedades ocupacionales","Indica responsables, información requerida, remisión al procedimiento y formato aplicable."],
+    ["accidentes","Investigación de accidentes de trabajo","Describe aviso a los responsables, notificación y declaración por los canales aplicables, levantamiento de hechos, investigación y verificación de las medidas."],
+    ["enfermedades","Investigación de enfermedades ocupacionales","Indica cómo el SSST investiga la sospecha o diagnóstico, reconstruye la historia ocupacional y la exposición, gestiona la declaración y resguarda datos clínicos."],
     ["activacion","Activación, funciones y comunicación","Identifica quién recibe el aviso, activa cada procedimiento y coordina la revisión. Indica los canales y formatos aplicables."],
     ["registros","Formatos y registros","Identifica las versiones de los formatos y dónde se resguardan los registros."],
     ["seguimiento","Seguimiento de medidas","Define cómo se verificará el cierre de las acciones y quién revisará su eficacia."],
@@ -42,12 +42,12 @@ export const chapterStructure = [
   ]],
   ["Otras consideraciones para la elaboración del PSST", [
     ["contratacion","Contratistas, subcontratistas e intermediarias","Identifica qué situaciones aplican y explica su relación con los procesos de la entidad."],
-    ["coordinacion","Coordinación y controles de las interfaces","Registra responsables, información previa, riesgos de interacción, controles y seguimiento."],
+    ["coordinacion","Coordinación y controles de las interfaces","Registra coordinación entre los servicios de SST, información previa al inicio, riesgos de interacción, controles, vigilancia y responsables."],
     ["situaciones","Situaciones particulares y soporte","Documenta las condiciones de obras o servicios, cooperativas u otras figuras aplicables, o sustenta los apartados que no correspondan."],
   ]],
   ["Evaluación del programa", [
     ["criterios","Criterios e indicadores","Define qué se evaluará, cómo se medirá y qué evidencias servirán de respaldo."],
-    ["cronograma","Cronograma y responsables de evaluación","Indica periodicidad, hitos, responsables, participación y registros de revisión."],
+    ["cronograma","Cronograma y responsables de evaluación","Indica quién revisa, con qué frecuencia y recursos, cómo participan los trabajadores y qué actividades comunica el CSSL en su informe mensual al INPSASEL."],
     ["mejora","Revisión de resultados y mejora","Explica cómo se comunicarán los resultados, cómo se registrarán acuerdos con el CSSL y cómo se verificará su cierre."],
   ]],
 ];

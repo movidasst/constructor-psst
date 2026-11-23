@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=organigrama-1">
-  <script src="assets/lti.mjs?v=organigrama-1" type="module"></script>
+  <link rel="stylesheet" href="assets/lti.css?v=capitulos-1">
+  <script src="assets/lti.mjs?v=capitulos-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -88,6 +88,11 @@
               <label>Referencia del organigrama o estructura del SSST<textarea name="alcance.organigrama" maxlength="500" placeholder="Ej. Organigrama ORG-01, marzo de 2027. El SSST reporta a la Dirección y coordina con el CSSL."></textarea></label>
             </details>
           </section>
+        </fieldset>
+        <fieldset id="m1-generalidades" class="card" data-module="m1">
+          <legend>Redacta las generalidades</legend>
+          <p>Usa la información de la entidad y del centro. Completa estos apartados aquí y pasarán al capítulo I del borrador.</p>
+          <div data-chapter="1"></div>
         </fieldset>
         <fieldset id="m1-inventario" class="card" data-module="m1">
           <legend>Proceso productivo y procesos de trabajo</legend>
@@ -231,6 +236,16 @@
           </details>
         </fieldset>
 
+        <fieldset id="m2-cierre" class="card" data-module="m2" hidden disabled>
+          <legend>Prepara el cierre del diagnóstico</legend>
+          <p>Usa la descripción de M1 y la matriz de este módulo para preparar la validación. Si todavía falta la asamblea, registra el estado y quién dará seguimiento.</p>
+          <div class="fields">
+            <label class="wide">Resumen de hallazgos y prioridades<textarea name="m2.sintesis" maxlength="2400" placeholder="Indica los códigos que requieren atención inmediata y los que necesitan verificación antes de planificar."></textarea></label>
+            <label class="wide">Validación del diagnóstico<textarea name="m2.validacionDiagnostico" maxlength="2400" placeholder="Registra fecha, acta, nómina general, asistencia y resultado de aprobación si constan. Si está pendiente, indica responsable y fecha prevista."></textarea></label>
+          </div>
+          <div id="diagnosis-summary"></div>
+        </fieldset>
+
         <fieldset class="card" data-module="m3" hidden disabled>
           <legend>Ficha del plan · Artículo 17</legend>
           <div class="step-help">
@@ -310,6 +325,13 @@
           </details>
         </fieldset>
 
+        <fieldset id="m3-inversion" class="card" data-module="m3" hidden disabled>
+          <legend>Calcula la inversión de los planes</legend>
+          <p>Vincula cada gasto a su plan. Escribe la cantidad y el costo por unidad para calcular el importe.</p>
+          <div class="row-editor" data-editor="inversion"><div data-rows></div><button type="button" data-add>Agregar partida</button></div>
+          <label>Revisión de recursos por el SSST y el CSSL<textarea name="m3.revisionInversion" maxlength="2200" placeholder="Registra la fuente de los precios, qué recursos están disponibles y el acta o la revisión pendiente."></textarea></label>
+        </fieldset>
+
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Fuentes e introducción del PSST</legend>
           <div class="step-help">
@@ -343,19 +365,19 @@
             </details>
           </div>
           <div class="chapter-grid">
-            <details class="module-details" open>
-              <summary>Capítulo 1 · Generalidades</summary>
+            <details class="module-details">
+              <summary>Capítulo I · Revisa las generalidades de M1</summary>
               <div data-chapter="1"></div>
               <div class="row-editor" data-editor="objetivos"><div data-rows></div><button type="button" data-add>Agregar objetivo específico</button></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap1" maxlength="1500"></textarea></label>
             </details>
-            <details class="module-details">
+            <details class="module-details" open>
               <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
               <div data-chapter="2"></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap2" maxlength="1500"></textarea></label>
             </details>
             <details class="module-details">
-              <summary>Capítulo 3 · Proceso productivo, procesos de trabajo y procesos peligrosos</summary>
+              <summary>Capítulo III · Revisa el diagnóstico de M1 y M2</summary>
               <div data-chapter="3"></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap3" maxlength="1500"></textarea></label>
             </details>
@@ -372,11 +394,11 @@
           </div>
           <div class="chapter-grid">
             <details class="module-details">
-              <summary>Capítulo 4 · Planes de trabajo</summary>
+              <summary>Capítulo IV · Revisa los planes de M3</summary>
               <div data-chapter="4"></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap4" maxlength="1500"></textarea></label>
             </details>
-            <details class="module-details">
+            <details class="module-details" open>
               <summary>Capítulo 5 · Investigación de accidentes y enfermedades ocupacionales</summary>
               <div data-chapter="5"></div>
               <label>Notas generales o referencia adicional<textarea name="m4.cap5" maxlength="1500"></textarea></label>
@@ -384,11 +406,12 @@
             <details class="module-details">
               <summary>Capítulo 6 · Compromiso de cumplimiento</summary>
               <div data-chapter="6"></div>
-              <p><button id="compose-letter" type="button">Preparar un borrador de carta compromiso</button></p>
+              <label>Modelo de carta<select id="letter-kind"><option value="entidad">Entidad de trabajo o contratista</option><option value="asociacion">Asociación o cooperativa</option></select></label>
+              <p><button id="compose-letter" type="button">Preparar la carta con mis datos</button></p>
+              <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="3000"></textarea></label>
               <label>Notas generales o referencia adicional<textarea name="m4.cap6" maxlength="1500"></textarea></label>
             </details>
           </div>
-          <label>Carta compromiso o referencia<textarea name="m4.compromiso" maxlength="2000"></textarea></label>
         </fieldset>
         <fieldset class="card" data-module="m4" hidden disabled>
           <legend>Capítulos VII y VIII</legend>
@@ -400,7 +423,7 @@
             </details>
           </div>
           <div class="chapter-grid">
-            <details class="module-details">
+            <details class="module-details" open>
               <summary>Capítulo 7 · Otras consideraciones para la elaboración del PSST</summary>
               <div data-chapter="7"></div>
               <div class="row-editor" data-editor="contratistas"><div data-rows></div><button type="button" data-add>Agregar obra o servicio</button></div>
@@ -454,6 +477,8 @@
             <summary>Índice de anexos y soportes</summary>
             <p>Indica el código, nombre y ubicación de cada soporte. Usa referencias a los formatos y evidencias de tu equipo.</p>
             <div id="chapter-annexes" class="fields"></div>
+            <div id="annex-formats" class="actions"></div>
+            <p>Utiliza los formularios oficiales que correspondan para declarar accidentes o enfermedades ocupacionales. Las fichas descargables sirven para el trabajo interno.</p>
             <div class="row-editor" data-editor="anexos"><div data-rows></div><button type="button" data-add>Agregar anexo o soporte</button></div>
           </details>
           <div id="review-items"></div>
@@ -462,6 +487,7 @@
         <section class="card module-close" id="module-close" aria-labelledby="close-heading" hidden>
           <h2 id="close-heading" tabindex="-1">Revisa tu entregable</h2>
           <p id="close-result"></p>
+          <div id="chapter-coverage"></div>
           <p id="close-next"></p>
           <div id="final-document" hidden>
             <h3>Avance de los capítulos</h3>

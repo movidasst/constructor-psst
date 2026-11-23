@@ -1,3 +1,4 @@
+import {investmentRows} from "./psst-coverage.mjs?v=capitulos-1";
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
 import { operationalSchedule, recordsOf, technicalChecks } from "./psst-builder.mjs?v=exposicion-1";
 import { schedule } from "./psst-program.mjs?v=coach-1";
@@ -156,6 +157,8 @@ export function workbookForPSST({inputs={},draft={}}){
       ...recordsOf(three.filas).filter(row=>row.actividad).map(row=>[name(plans,row.planRef)||row.plan,row.actividad,row.responsable,row.estado||"Pendiente",
         row.fechaInicio||row.inicio,row.fechaFin||row.fin,row.inicioReal,row.cierreReal,row.nuevoInicio,row.nuevoFin,row.motivoReprogramacion,
         row.evidenciaEsperada,row.evidenciaReal,row.eficacia,row.resultadoEficacia,row.verificacionEficacia,row.notaEficacia])]],
+    ["Presupuesto",[["Plan","Recurso","Cantidad","Unidad","Costo unitario","Importe","Moneda","Fuente","Responsable"],
+      ...investmentRows(recordsOf(three.partidas),plans).map(row=>[row.plan,row.concepto,row.cantidad,row.unidad,row.unitario,row.total,row.moneda,row.fuente,row.responsable])],false,[2,4,5]],
     ["Anexos",[["Código","Soporte","Capítulo o referencia","Versión","Ubicación","Estado","Custodio","Responsable","Revisión de acceso"],
       ...recordsOf(four.soportes).map(row=>[row.codigo,row.nombre,row.capitulo,row.version,row.ubicacion,row.estado,row.custodio,row.responsable,row.revisionAcceso])]],
     ["Pendientes",[["Registro","Pendiente","Acción","Responsable","Plazo"],

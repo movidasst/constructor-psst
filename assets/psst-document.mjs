@@ -1,7 +1,8 @@
+import {investmentRows, sectionCoverage, sourceSections, structuredSections} from "./psst-coverage.mjs?v=capitulos-1";
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
 import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
 import { coherenceIssues, trainingHours } from "./psst-coach.mjs?v=project-2";
-import { draftReadiness, projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
+import { projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=chapters-1";
@@ -130,7 +131,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Proceso productivo",one.flujo?.proceso],["Secuencia",one.flujo?.secuencia],["Diagrama",one.flujo?.referencia],
     ["Etapa y tarea",one.tarea?.etapa],["Descripción",one.tarea?.descripcion],
     ["Participación",one.mesa?.metodo],["Aportes",one.mesa?.aportes],["Referencia",one.mesa?.referencia],["Asamblea",one.mesa?.asamblea],
-    ["Método de evaluación",two.metodo],["Alcance de evaluación",two.etapa],["Observaciones",two.procesos],
+    ["Método de evaluación",two.metodo],["Alcance de evaluación",two.etapa],["Observaciones",two.procesos],["Síntesis y prioridades",two.sintesis],
   ]);
   const risks = table([
     ["ID","codigo"],["Tarea","tareaCodigo"],["Etapa","etapa"],["Proceso peligroso","proceso"],["Peligro","peligro"],["Riesgo / daño","riesgo"],
@@ -173,20 +174,23 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   const education=educationSchedule(activities,planRows,three.gruposFormacion);
   const issues=[...coherenceIssues({one,two,three,four}),...technicalChecks({one,two,three,four})];
   const annexTable = table([["Código","codigo"],["Soporte","nombre"],["Capítulo","capitulo"],["Versión","version"],
-    ["Ubicación","ubicacion"],["Estado","estado"],["Responsable","responsable"],["Custodio y acceso","custodio"],["Revisión de acceso","revisionAcceso"]],rows(four.soportes));
+    ["Ubicación","ubicacion"],["Estado","estado"],["Responsable","responsable"],["Grupo","grupo"],["Custodio y acceso","custodio"],["Revisión de acceso","revisionAcceso"]],rows(four.soportes).map(row=>({...row,grupo:annexStructure.find(([key])=>key===row.familia)?.[1]})));
   const verification=table([["Tarea","tarea"],["Estado","estado"],["Fuente","evidencia"],["Justificación","justificacion"],["Responsable","responsable"],["Verificación prevista","fecha"]],
     rows(two.verificaciones).map(row=>({...row,tarea:labelFor(taskRows,row.tareaRef)})));
   const fieldLog=table([["Fecha","fecha"],["Actividad","actividad"],["Horas","horas"],["Método","tipo"],["Referencia","evidencia"],["Tarea","tarea"]],
     rows(one.bitacora?.registros).map(row=>({...row,tarea:labelFor(taskRows,row.tareaRef)})));
   const scheduledDetails=table([["Centro","centro"],["Plan","plan"],["Actividad","actividad"],["Inicio real","inicioReal"],
     ["Cierre real","cierreReal"],["Estado","estado"],["Responsable","responsable"],["Recursos","recursos"]],activities);
+  const investment = table([["Plan","plan"],["Recurso","concepto"],["Cantidad","cantidad"],["Unidad","unidad"],
+    ["Costo unitario","unitario"],["Importe","total"],["Moneda","moneda"],["Fuente","fuente"],["Responsable","responsable"]],
+    investmentRows(rows(three.partidas),planRows));
   const extras = {
     0: objectives,
     2: process + diagramSections(one) + (productionMap ? "<h3>Descripción del proceso productivo</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos de trabajo</h3>"+inventory : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
       (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
-    3: (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + plans +
+    3: (investment ? "<h3>Presupuesto por plan</h3>"+investment : "") + (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + plans +
       (evaluationCriteria ? "<h3>Enfoques y evidencias de las actividades</h3>"+evaluationCriteria : "") +
       (education ? "<h3>Horas de formación programadas por persona</h3>"+education : "") + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
       facts([["Planes anteriores",three.planes],["Cronograma anterior",three.gantt],["Responsables",three.responsables],["Recursos",three.recursos],["Seguimiento",three.seguimiento]]),
@@ -200,19 +204,11 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     activities.filter(row=>row.inicioReal||row.cierreReal||row.evidenciaReal||row.resultadoEficacia||row.nuevoInicio||row.estado==="Ejecutada"||row.estado==="Reprogramada"));
   if(actuals) extras[7]+="<h3>Seguimiento de ejecución y eficacia</h3>"+actuals;
   const stage=statusLabels[four.estadoExpediente]??statusLabels.borrador;
-  const recovered = {
-    cap3_organigrama: hasValue(one.alcance?.organigrama) || organizationTree(one.alcance?.estructura).some(row=>!row.orphan&&!row.cycle),
-    cap3_diagramas: orderedFlows(one).some(process=>process.stages.length) || hasValue(one.flujo?.referencia) || processRows.some(row=>hasValue(row.evidencia)),
-    cap3_riesgos: matrix.length>0 || hasValue(two.matriz),
-    cap3_validacion: hasValue(one.mesa?.asamblea),
-    cap4_prioridades: activities.some(row=>hasValue(row.hallazgo)),
-    cap4_estructura: planRows.length>0,
-    cap4_presupuesto: planRows.some(row=>hasValue(row.recursos)),
-    cap4_cronograma: Boolean(gantt) || hasValue(three.gantt),
-    cap6_carta: hasValue(four.compromiso),
-  };
+  const recovered = structuredSections(inputs,four);
+  const fromModules = sourceSections(inputs);
   const profile = facts(projectFields.map(([key,title])=>[title,one.proyecto?.[key]]));
-  const readiness = facts(draftReadiness(four,inputs).map(([title,ready])=>[title,ready ? "Con avance registrado" : "Pendiente de desarrollar"]));
+  const readiness = table([["Capítulo","chapter"],["Apartado","label"],["Estado","status"]],
+    sectionCoverage(chapterStructure,four,fromModules,recovered));
   const chapterSections = chapterStructure.map(([title,sections], index) => {
     const number = index+1;
     const legacy = note(four["cap"+number]);
@@ -221,13 +217,15 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
       const placeholder = recovered[field]
         ? "Hay información de apoyo incorporada en este capítulo. Completa o valida la redacción del apartado."
         : "Pendiente de completar o indicar su referencia.";
-      return "<h3>"+escape(section)+"</h3>"+(note(four[field]) || '<p class="pending">'+placeholder+'</p>');
+      return "<h3>"+escape(section)+"</h3>"+(note(four[field]) || note(fromModules[field]) || '<p class="pending">'+placeholder+'</p>');
     }).join("");
     return '<section data-chapter-preview="'+number+'" id="capitulo-'+number+'"><h2>Capítulo '+number+" · "+escape(title)+"</h2>"+
       (legacy ? "<h3>Notas generales o referencia adicional</h3>"+legacy : "")+content+(extras[index]??"")+"</section>";
   }).join("");
   const annexIndex = table([["Apartado","label"],["Referencia","value"]],annexStructure.map(([key,label])=>({
-    label,value:hasValue(four["anexo_"+key]) ? four["anexo_"+key] : "Pendiente de identificar",
+    label,value:hasValue(four["anexo_"+key]) ? four["anexo_"+key] :
+      rows(four.soportes).filter(row=>row.familia===key && row.nombre && row.ubicacion)
+        .map(row=>[row.codigo,row.nombre,row.ubicacion].filter(Boolean).join(" · ")).join("\n") || "Pendiente de identificar",
   })));
   return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Borrador del PSST</title>
 <style>body{font:15px system-ui,sans-serif;max-width:1020px;margin:2rem auto;padding:0 1.2rem;color:#183047}h1,h2,h3{color:#00205b}h2{border-bottom:1px solid #bad9d9;padding-bottom:.35rem}header{border-top:5px solid #007b85;padding-top:.8rem}.note,td{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:.86rem;margin:1rem 0}th,td{border:1px solid #d1e2e7;padding:.35rem;text-align:left;vertical-align:top}th{background:#e3f1f1}.pending{color:#6d4b08}@page{size:A4 landscape;margin:12mm}@media print{body{margin:0;padding:0;max-width:none}table{font-size:8pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>

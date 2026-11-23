@@ -220,3 +220,11 @@ button#deliver{background:var(--teal);color:white}
 .outline-file {max-width:100%;flex:1 1 14rem}
 #flow-view > section {margin:.85rem 0}
 @media(max-width:700px) {.organization-layout {grid-template-columns:minmax(0,1fr)}}
+
+.chapter-route {padding-left:1.25rem}
+.chapter-route li {margin:.5rem 0}
+.chapter-route p {margin:.15rem 0;color:#415669}
+.chapter-aid {grid-column:1/-1}
+.chapter-aid label {margin:.6rem 0}
+#chapter-coverage details > summary {cursor:pointer;color:#175960;font-weight:650;padding:.45rem 0}
+#plan-coverage li button {margin:.2rem .3rem}
