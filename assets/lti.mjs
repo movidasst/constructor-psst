@@ -1,4 +1,4 @@
-import { annexRoute, chapterRoute, annualInvestment, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=anual-1";
+import { annexRoute, chapterRoute, annualInvestment, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=investigacion-1";
 import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=documento-2";
@@ -970,10 +970,11 @@ const writingPrompts = {
     ["Consulta y mejora","Cómo participarán los trabajadores, el CSSL y los delegados de prevención"],
   ],
   cap5_accidentes: [
-    ["Aviso y activación","Quién recibe el aviso, atiende la situación y activa al SSST"],
-    ["Notificación y declaración","Quién comunica, a quién, por qué medio y cómo deja constancia"],
-    ["Investigación y evidencias","Quién participa y cómo reúne hechos, reconstruye y analiza causas"],
-    ["Medidas y verificación","Cómo registra responsables, plazos y evidencia de eficacia"],
+    ["1. Activación y comunicaciones","Indica quién recibe el aviso, coordina la atención, realiza la notificación y declaración aplicables y conserva sus constancias. ¿Cómo activa el SSST la investigación junto con los delegados de prevención?"],
+    ["2. Recopilación de hechos","Indica quién recoge datos en el sitio tan pronto sea posible y entrevista individualmente a los testigos. ¿Cómo registrarán cada hecho, su fuente y lo pendiente de comprobar?"],
+    ["3. Reconstrucción y causas","Describe cómo ordenarán los hechos y contrastarán la tarea prevista con el trabajo real, el equipo y la organización del turno. Si usan el Árbol de Causas, partan del hecho final y pregunten qué tuvo que ocurrir para que sucediera. Sustenten las causas inmediatas y básicas con evidencia."],
+    ["4. Medidas y eficacia","Explica cómo relacionarán cada medida con el hecho o barrera, quién la ejecutará, en qué plazo y cómo verificarán su eficacia en el puesto."],
+    ["5. Actualización del PSST","Indica quién revisará el proceso y la tarea del módulo 1, actualizará la evaluación de riesgos del módulo 2 y dará seguimiento a la medida en el plan y cronograma del módulo 3. Identifica el formato y dónde se archivará."],
   ],
   cap5_enfermedades: [
     ["Activación y responsable","Cómo recibe el caso el SSST y quién coordina"],
@@ -1069,13 +1070,15 @@ function setupChapterFields() {
   const select = element("select");
   select.setAttribute("aria-label","Formato editable");
   for (const [id,title] of workingFormats) select.add(new Option(title,id));
-  formats.append(select,actionButton("Descargar formato en Word",()=>{
-    const [id,title,fields] = workingFormats.find(([key])=>key===select.value);
+  function downloadFormat(formatId) {
+    const [id,title,fields] = workingFormats.find(([key])=>key===formatId);
     const report = document.implementation.createHTMLDocument(title);
     report.body.append(element("h1",title));
     for (const label of fields) report.body.append(element("h3",label),element("p","____________________________________________"));
     downloadBlob(wordFromReport(report.documentElement.outerHTML),"PSST_Formato_"+id+".docx");
-  }));
+  }
+  formats.append(select,actionButton("Descargar formato en Word",()=>downloadFormat(select.value)));
+  document.getElementById("download-accident-format").addEventListener("click",()=>downloadFormat("accidente"));
   for (const [key,title] of annexStructure) {
     const label = element("label",title);
     const control = element("textarea");
