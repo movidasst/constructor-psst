@@ -22,20 +22,30 @@ export const approaches = {
 
 const entry = (clause,page,fields) => ({clause,page,fields});
 export const familyTemplates = {
-  "Educación e información":entry("art. 18.1",8,["Necesidad y riesgos","Puestos, grupos y accesibilidad","Objetivo de aprendizaje","Contenido y actividades","Estrategia, facilitador y lugar","Duración por participante y trimestre","Evaluación, nivelación y evidencias"]),
+  "Educación e información":entry("art. 18.1",8,["Necesidad y riesgos","Puestos, grupos y accesibilidad","Objetivo de aprendizaje","Contenido y actividades","Estrategia, facilitador y lugar","Horas por persona y trimestre (mínimo 16; justificar aumentos por exposición)","Evaluación, nivelación y evidencias"]),
   "Inducción y cambios de puesto":entry("art. 18.2",8,["Ingreso o cambio que activa la inducción","Puestos y riesgos","Contenidos y recorrido","Práctica y verificación","Facilitador, registro y actualización"]),
-  "Inspecciones":entry("art. 18.2.5",9,["Áreas, equipos, turnos y enfoque","Frecuencia y participantes","Lista de verificación","Registro de hallazgos","Asignación, plazo y cierre eficaz"]),
-  "Monitoreo de riesgos y condiciones de trabajo":entry("art. 18.2.5.5",9,["Exposición priorizada","Puestos, personas y condiciones","Variable, método e instrumento","Frecuencia y criterio de evaluación","Respuesta, control y seguimiento"]),
+  "Inspecciones":entry("art. 18.2.5",9,["Áreas, equipos, turnos y enfoque","Frecuencia y participantes","Instrumento y elementos a inspeccionar","Informe de hallazgos y discusión en el CSSL en dos días continuos","Medida, responsable, plazo y verificación firmada y fechada"]),
+  "Monitoreo de riesgos y condiciones de trabajo":entry("art. 18.2.5.5",9,["Exposición priorizada","Puestos, personas y condiciones","Variable, método e instrumento","Frecuencia y criterio de evaluación","Participación del CSSL en el monitoreo","Registro actualizado, medidas y seguimiento"]),
   "Vigilancia epidemiológica de la salud":entry("art. 18.2.6",9,["Población y exposiciones","Fuentes agregadas","Análisis y frecuencia","Responsables, reporte y medidas","Seguimiento de resultados"]),
   "Utilización del tiempo libre":entry("art. 18.2.7",10,["Población y necesidades","Actividades de recreación, descanso o turismo social","Cronograma y responsables","Registro de participación y evaluación"]),
   "Reglas y procedimientos de trabajo seguro":entry("art. 18.2.8",10,["Tareas y riesgos aplicables","Documento, versión y responsable","Difusión y práctica","Verificación de aplicación y actualización"]),
   "Protección personal y colectiva":entry("art. 18.2.9",10,["Riesgo y controles existentes","Criterios de selección","Dotación, uso, mantenimiento y reposición","Responsable y registro","Verificación del control"]),
   "Atención preventiva de la salud":entry("art. 18.2.10",10,["Puestos, exposiciones y población","Evaluaciones previstas","Cronograma y responsable","Seguimiento y registro agregado"]),
-  "Ingeniería, ergonomía y mantenimiento":entry("art. 18.2.13",11,["Equipo, puesto y problema","Estudio o método de evaluación","Medida y responsables","Mantenimiento y criterio técnico","Verificación y revisión"]),
+  "Ingeniería, ergonomía y mantenimiento":entry("art. 18.2.13",11,["Equipo, puesto y problema","Estudio o método de evaluación","Medida y responsables","Registro del proyecto y revisión correspondiente","Mantenimiento predictivo, preventivo y correctivo con personal calificado","Verificación y revisión"]),
   "Contingencias y emergencias":entry("art. 18.2.11",10,["Escenarios y áreas","Organización, roles y comunicaciones","Medios y recursos","Preparación y ejercicios","Evaluación y acciones de mejora"]),
   "Desalojo de instalaciones":entry("art. 18.2.11 y Guía, capítulo IV",10,["Áreas, ocupación y apoyos","Rutas y puntos de encuentro","Roles, señal y comunicaciones","Ejercicio, evidencia y mejoras"]),
   "Recursos económicos":entry("art. 18.2.12",11,["Actividad financiada","Unidades requeridas","Costo unitario y total","Fuente y estado presupuestario","Responsable de revisión"]),
 };
+
+export function planReviewNotes(value, family) {
+  let record;
+  try { record=JSON.parse(value || "{}"); } catch { return {}; }
+  if (!record || typeof record !== "object" || Array.isArray(record)) return {};
+  if (family === undefined) return record;
+  const notes=record[family];
+  return Object.fromEntries((familyTemplates[family]?.fields ?? [])
+    .filter(key=>typeof notes?.[key]==="string").map(key=>[key,notes[key]]));
+}
 
 export const chapterTemplates = {
   1: entry("Guía de Elaboración, capítulo I",7,["Entidad, centros y alcance","Objetivos y procesos de referencia","Roles, base legal y definiciones"]),

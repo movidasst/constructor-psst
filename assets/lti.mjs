@@ -1,15 +1,15 @@
 import { annexRoute, chapterRoute, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=capitulos-1";
 import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
-import { pdfFromReport } from "./psst-pdf.mjs?v=constructor-1";
+import { pdfFromReport } from "./psst-pdf.mjs?v=documento-2";
 import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationImport, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=capitulos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=capitulos-1";
-import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours } from "./psst-coach.mjs?v=project-2";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, planReviewNotes } from "./psst-coach.mjs?v=art18-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=coach-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=capitulos-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=art18-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -319,6 +319,32 @@ function showRowHelp(row,key,value) {
       field.focus();
     });
     box.append(text,reference("Consultar NT-04-2023, "+template.clause,sources.nt+"#page="+template.page),button);
+    const storage=row.querySelector('[data-key="revisionArt18"]');
+    const notes=planReviewNotes(storage.value,family);
+    const checklist=element("details");
+    const summary=element("summary");
+    const updateSummary=()=> {
+      const count=template.fields.filter(criterion=>notes[criterion]?.trim()).length;
+      summary.textContent="Revisión de la ficha · "+count+" de "+template.fields.length+" criterios con referencia";
+    };
+    updateSummary();
+    checklist.append(summary,element("p","Indica dónde se desarrolla cada criterio, qué evidencia lo respalda o qué debes completar. La referencia registrada queda sujeta a revisión del SSST."));
+    for (const criterion of template.fields) {
+      const label=element("label",criterion);
+      const input=element("textarea");
+      input.rows=2;
+      input.placeholder="Apartado, actividad, soporte o pendiente";
+      input.value=notes[criterion] || "";
+      input.addEventListener("input",()=>{
+        notes[criterion]=input.value.trim();
+        storage.value=JSON.stringify({...planReviewNotes(storage.value),[family]:notes});
+        updateSummary();
+        rowChanged();
+      });
+      label.append(input);
+      checklist.append(label);
+    }
+    box.append(checklist);
   } else if (approach && approaches[approach]) {
     const [meaning,action,example]=approaches[approach];
     box.append(element("p",meaning),element("p",action),element("p","Ejemplo: "+example),
@@ -450,6 +476,13 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     const total = element("p");
     total.dataset.investmentTotal = "";
     row.append(total);
+  }
+  if (editorKey === "planes") {
+    const review=element("input");
+    review.type="hidden";
+    review.dataset.key="revisionArt18";
+    review.value=typeof values.revisionArt18 === "string" ? values.revisionArt18 : "";
+    row.append(review);
   }
   if (editorKey === "planes" || editorKey === "m3") {
     const help=element("div");
@@ -1606,22 +1639,8 @@ function setupProjectPanel(info){
   }));
   document.getElementById("export-pdf").addEventListener("click",()=>{
     const report=buildPsstDocument({label:info.label,inputs:integrationInputs,draft:collectDraft(),version:revision});
-    const tab=window.open("","_blank");
-    if(!tab){downloadHtml(report,"Vista_impresion_PSST.html");tell("Abre el archivo y usa Imprimir para guardarlo como PDF.");return;}
-    tab.opener=null;
-    tab.document.open();
-    const parsed=new DOMParser().parseFromString(report,"text/html");
-    const styles=parsed.querySelector("style")?.textContent??"";
-    parsed.querySelector("style")?.remove();
-    tab.document.write("<!doctype html>"+parsed.documentElement.outerHTML);
-    tab.document.close();
-    if(styles && typeof tab.CSSStyleSheet==="function"){
-      const sheet=new tab.CSSStyleSheet();
-      sheet.replaceSync(styles);
-      tab.document.adoptedStyleSheets=[sheet];
-    }
-    tab.focus();
-    tab.print();
+    downloadBlob(pdfFromReport(report),"Borrador_PSST_R"+revision+".pdf");
+    tell("Borrador PDF preparado.","success");
   });
 }
 
@@ -1941,6 +1960,7 @@ async function exportProjectPackage(archived=false){
       "01_PSST_editable.docx":wordFromReport(html),
       "02_PSST.pdf":pdfFromReport(html),
       "03_Matriz_cronograma_y_anexos.xlsx":workbookForPSST(model),
+      "06_Informe_revision.docx":wordFromReport(buildPsstDocument({...model,includeReview:true})),
       "04_Diagramas_editables.docx":wordFromReport(buildDiagramDocument(model)),
       "05_Estado_del_expediente.txt":model.label+"\nRevisión "+model.version+" · "+stage+
         "\n"+(model.draft.m4?.referenciaExpediente||"Revisión de la entidad por documentar.")+
