@@ -1,7 +1,7 @@
 import {investmentRows, sectionCoverage, sourceSections, structuredSections} from "./psst-coverage.mjs?v=capitulos-1";
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
 import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
-import { coherenceIssues, familyTemplates, planReviewNotes, trainingHours } from "./psst-coach.mjs?v=art18-1";
+import { coherenceIssues, familyTemplates, planReviewNotes, surveillanceFields, trainingHours } from "./psst-coach.mjs?v=sve-1";
 import { projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
@@ -42,7 +42,9 @@ function planSections(plans, riskLabel, trace=()=> "") {
     ["Familia",row.familia],["Hallazgos",riskLabel(row)],["Objetivo",row.objetivo],["Meta",row.meta],["Alcance",row.alcance],
     ["Frecuencia",row.frecuencia],["Responsables",row.responsable],["Procedimiento",row.procedimiento],
     ["Instrumentos",row.instrumentos],["Recursos",row.recursos],["Seguimiento",row.seguimiento],["Contenido específico",row.detalleFamilia],
-  ])+trace(row)).join("");
+  ])+facts(surveillanceFields(row.familia).map(({key,label})=>[
+    label,planReviewNotes(row.revisionArt18)["vigilancia/"+row.familia]?.[key]
+  ]))+trace(row)).join("");
 }
 
 function activityEvidence(activities) {
