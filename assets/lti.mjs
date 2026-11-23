@@ -6,10 +6,10 @@ import { executionStats, followupLabels, nextCode, operationalSchedule, orderedF
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=elementos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=anual-1";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=anual-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=campo-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=iperc-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -125,11 +125,12 @@ const rowSchemas = {
     ["etapa","Etapa o tarea",true], ["peligro","Peligro o condición observada",true],
     ["riesgo","Riesgo y posible consecuencia",true], ["situacion","Situación de trabajo",false,"situacionesTrabajo"],
     ["expuestos","Nota sobre personas expuestas o registro anterior"],
-    ["controles","Controles existentes"], ["valoracion","Valoración según el método elegido"],
+    ["controles","Controles existentes y evidencia de su funcionamiento"], ["valoracion","Valoración · criterio aplicado, datos y resultado"],
     ["evidencia","Referencia de la evidencia"], ["pendiente","Dato o medición que falta"],
     ["estadoEvaluacion","Estado de la evaluación",false,"evaluaciones"], ["responsableEvaluacion","Responsable de verificar"],
     ["fechaEvaluacion","Fecha prevista de verificación",false,"verification-date"],
     ["controlPropuesto","Medida propuesta según el hallazgo"], ["justificacionControl","Justificación del control y prioridad en la fuente"],
+    ["criterioEficacia","¿Qué resultado demostrará que la medida funciona?"],
   ] },
   m3: { group:"m3", key:"filas", singular: "Actividad", fields: [
     ["planRef","Plan de trabajo",true,"planes"], ["plan","Nombre del plan en una versión anterior"],
@@ -512,7 +513,9 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     editor.querySelector("[data-add]").focus();
     rowChanged();
   });
-  row.append(element("legend"), fields);
+  row.append(element("legend"));
+  if (editorKey === "m2") row.append(document.getElementById("iperc-guide").content.cloneNode(true));
+  row.append(fields);
   if (editorKey === "inversion") {
     const total = element("p");
     total.dataset.investmentTotal = "";
@@ -1575,7 +1578,7 @@ function caseDraft(){
 }
 
 function riskBaseline(risks){
-  return (risks??[]).map(risk=>[risk.id,risk.codigo,risk.tareaRef,risk.riesgo,risk.prioridad,risk.valoracion,risk.controlPropuesto]);
+  return (risks??[]).map(risk=>[risk.id,risk.codigo,risk.tareaRef,risk.riesgo,risk.prioridad,risk.valoracion,risk.controlPropuesto,...(risk.criterioEficacia ? [risk.criterioEficacia] : [])]);
 }
 
 function renderProjectDetails(){
@@ -1823,6 +1826,14 @@ function renderIncoming(info){
         fillSelect(field,choices("riesgos-multiple"),[...new Set([...fieldValue(field),item.id])]);
         rowChanged();
         focusRecord("planes",planId);
+      }));
+      line.append(actionButton("Programar medida en el plan elegido",()=>{
+        if (!select.value) { tell("Selecciona el plan donde programarás esta medida.","error"); return; }
+        const planRow=[...editors.get("planes").querySelectorAll(".row-card")].find(row=>row.dataset.id===select.value);
+        const links=planRow?.querySelector('[data-key="riesgoRefs"]');
+        if (!links || busy) return;
+        fillSelect(links,choices("riesgos-multiple"),[...new Set([...fieldValue(links),item.id])]);
+        newLinkedRow("m3",{planRef:select.value,riesgoRef:item.id,actividad:item.controlPropuesto||"",eficacia:item.criterioEficacia||""});
       }));
     }
     list.append(line);

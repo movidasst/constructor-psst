@@ -150,9 +150,9 @@ export function workbookForPSST({inputs={},draft={}}){
   const training=annualTraining(recordsOf(three.filas),plans,three.gruposFormacion,two.gruposExpuestos);
   return excelBook([
     ["Carta Gantt 2027",ganttRows(three.filas,plans),true],
-    ["Matriz de riesgos",[["Código","Tarea","Condición","Daño posible","Situación de trabajo","Puestos y personas expuestas","Controles existentes","Valoración","Prioridad","Evidencia","Dato pendiente","Estado","Responsable","Fecha prevista","Control propuesto"],
+    ["Matriz de riesgos",[["Código","Tarea","Condición","Daño posible","Situación de trabajo","Puestos y personas expuestas","Controles existentes","Valoración","Prioridad","Evidencia","Dato pendiente","Estado","Responsable","Fecha prevista","Control propuesto","Justificación","Criterio de eficacia"],
       ...recordsOf(two.filas).map(row=>[row.codigo,name(tasks,row.tareaRef),row.peligro,row.riesgo,row.situacion,exposureSummary(row,two),row.controles,row.valoracion,
-        row.prioridad,row.evidencia,row.pendiente,row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,row.controlPropuesto])]],
+        row.prioridad,row.evidencia,row.pendiente,row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,row.controlPropuesto,row.justificacionControl,row.criterioEficacia])]],
     ["Exposición por puesto",[["Hallazgo","Tarea","Puesto","Área o zona","Turno","Tipo de personal","Personas expuestas","Frecuencia","Duración","Fuente"],
       ...exposureRows(two,tasks).map(row=>[row.hallazgo,row.tarea,row.puesto,row.area,row.turno,row.grupo,row.cantidadVisible,row.frecuencia,row.duracion,row.fuente])],false,[6]],
     ["Seguimiento",[["Plan","Actividad","Responsable","Estado","Inicio previsto","Cierre previsto","Inicio real","Cierre real","Nuevo inicio","Nuevo cierre","Motivo",

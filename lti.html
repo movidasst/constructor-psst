@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Constructor de PSST</title>
   <link rel="stylesheet" href="assets/lti.css?v=capitulos-1">
-  <script src="assets/lti.mjs?v=investigacion-1" type="module"></script>
+  <script src="assets/lti.mjs?v=iperc-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -214,6 +214,22 @@
             <p>Registra qué tareas ya revisaste y qué falta verificar. Usa códigos de evidencia y evita datos personales en las referencias.</p>
             <div class="row-editor" data-editor="verificacion"><div data-rows></div><button type="button" data-add>Agregar revisión de tarea</button></div>
           </details>
+          <template id="iperc-guide">
+            <details class="field-workshop">
+              <summary>Evaluar esta tarea paso a paso</summary>
+              <ol>
+                <li><strong>Describe un escenario.</strong> Selecciona la tarea del módulo 1. ¿Qué fuente de peligro observaste? ¿En qué momento podría ocurrir el contacto o la exposición? Describe el posible daño. Si la misma tarea tiene otro escenario, agrega otro hallazgo vinculado a ella.</li>
+                <li><strong>Identifica a quién alcanza.</strong> En «Registrar puestos expuestos», indica puesto, turno, cantidad, frecuencia y duración. Pregunta a quienes hacen la tarea qué cambia durante un relevo, una limpieza o una avería.</li>
+                <li><strong>Sustenta la valoración.</strong> Indica qué control encontraste y qué evidencia muestra cómo funciona. En «Valoración» anota el criterio del método de tu empresa, los datos usados y el resultado. Si un dato decisivo falta, registra qué debes observar o medir, quién lo hará y cuándo.</li>
+                <li><strong>Elige y comprueba el control.</strong> Considera eliminar el peligro, sustituirlo o intervenir en la fuente antes de recurrir a medidas administrativas y protección personal. Justifica tu elección. Escribe qué resultado observable demostrará que la medida funciona. En el módulo 3 podrás programarla en el plan correspondiente.</li>
+              </ol>
+              <details><summary>Ejemplo resuelto · Cruce en despacho</summary>
+                <p>Durante el relevo, un montacargas y dos preparadores comparten un cruce. El posible daño es un atropello. En el recorrido de la mañana se observó una línea pintada. Para el relevo todavía falta verificar si evita la coincidencia.</p>
+                <p>En este ejemplo, el método de la empresa considera prioritaria una trayectoria compartida con posible lesión grave cuando se confirma que las personas y el equipo coinciden. El SSST observa el relevo y documenta esa coincidencia en E-02. Con ese dato justifica la prioridad. Si aún no ha observado el relevo, deja pendiente la valoración y programa la observación.</p>
+                <p>Medida propuesta: separar físicamente las rutas. Criterio de eficacia: en los relevos observados después del cambio, peatones y equipos circulan por rutas separadas. Registrar turnos y resultados, y revisar la medida si persiste algún cruce.</p>
+              </details>
+            </details>
+          </template>
           <div id="risk-help"></div>
           <div id="incoming-tasks" class="builder-panel"></div>
           <div class="row-editor" data-editor="m2"><div data-rows></div><button type="button" data-add>Agregar riesgo</button></div>

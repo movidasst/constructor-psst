@@ -187,10 +187,10 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     rows(four.indicadores).map(row=>({...row,plan:labelFor(planRows,row.planRef)})));
   const fieldNotes=taskRows.filter(row=>[row.observacion,row.consulta,row.devolucion,row.contraste].some(hasValue));
   const pendingRiskEntries=matrix.filter(row=>[row.estadoEvaluacion,row.responsableEvaluacion,row.fechaEvaluacion,
-    row.controlPropuesto,row.justificacionControl].some(hasValue));
+    row.controlPropuesto,row.justificacionControl,row.criterioEficacia].some(hasValue));
   const observationTable=table([["Tarea","codigo"],["Fecha","fechaCampo"],["Observación","observacion"],["Consulta","consulta"],["Confirmación o corrección","devolucion"],["Por contrastar","contraste"],["Fuente","evidencia"]],fieldNotes);
   const evaluationTable=table([["Hallazgo","codigo"],["Estado","estadoEvaluacion"],["Medida propuesta","controlPropuesto"],
-    ["Justificación","justificacionControl"],["Responsable de verificar","responsableEvaluacion"],["Fecha prevista","fechaEvaluacion"]],pendingRiskEntries);
+    ["Justificación","justificacionControl"],["Criterio de eficacia","criterioEficacia"],["Responsable de verificar","responsableEvaluacion"],["Fecha prevista","fechaEvaluacion"]],pendingRiskEntries);
   const evaluationCriteria=activityEvidence(activities);
   const education=educationSchedule(activities,planRows,three.gruposFormacion,two.gruposExpuestos);
   const issues=[...coherenceIssues({one,two,three,four}),...technicalChecks({one,two,three,four})];
