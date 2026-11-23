@@ -1,7 +1,7 @@
 import {investmentRows, sectionCoverage, sourceSections, structuredSections} from "./psst-coverage.mjs?v=capitulos-1";
 import { exposureRows, exposureSummary } from "./psst-exposure.mjs?v=exposicion-1";
 import { operationalSchedule, orderedFlows, organizationTree, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
-import { coherenceIssues, trainingHours } from "./psst-coach.mjs?v=project-2";
+import { coherenceIssues, familyTemplates, planReviewNotes, trainingHours } from "./psst-coach.mjs?v=art18-1";
 import { projectFields, recordRefs, schedule } from "./psst-program.mjs?v=coach-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 
@@ -37,12 +37,12 @@ function ganttTable(scheduled, includeDetails = false) {
   }));
 }
 
-function planSections(plans, riskLabel) {
+function planSections(plans, riskLabel, trace=()=> "") {
   return rows(plans).map(row=>"<h3>"+escape([row.codigo,row.nombre].filter(Boolean).join(" · "))+"</h3>"+facts([
     ["Familia",row.familia],["Hallazgos",riskLabel(row)],["Objetivo",row.objetivo],["Meta",row.meta],["Alcance",row.alcance],
     ["Frecuencia",row.frecuencia],["Responsables",row.responsable],["Procedimiento",row.procedimiento],
     ["Instrumentos",row.instrumentos],["Recursos",row.recursos],["Seguimiento",row.seguimiento],["Contenido específico",row.detalleFamilia],
-  ])).join("");
+  ])+trace(row)).join("");
 }
 
 function activityEvidence(activities) {
@@ -77,7 +77,7 @@ export function buildGanttDocument({ label, activities, plans = [], legacyRefere
 <style>@page{size:A4 landscape;margin:12mm}body{font:14px system-ui,sans-serif;color:#183047;max-width:1150px;margin:1.5rem auto;padding:0 1rem}
 header{border-top:5px solid #007b85;padding:.65rem 0}h1{color:#00205b;margin:.4rem 0}.note{white-space:pre-wrap;overflow-wrap:anywhere}.calendar{overflow-x:auto}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
 th,td{padding:5px;border:1px solid #bbced2;text-align:center;overflow-wrap:anywhere;vertical-align:top}th{background:#e3f1f1}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}th:nth-child(1){width:9%}th:nth-child(2){width:15%}th:nth-child(3){width:9%}th:nth-child(4),th:nth-child(5){width:7%}th:nth-child(6){width:8%}td:nth-child(n+7){color:#005861;font-weight:700}
-@media print{body{max-width:none;margin:0;padding:0}.calendar{overflow:visible}table{font-size:8.5pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>
+@media print{body{max-width:none;margin:0;padding:0}.calendar{overflow:visible}table{font-size:8.5pt}h2,h3{break-after:avoid}thead{display:table-header-group}tr{break-inside:avoid}}</style>
 <body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>${title}</h1><p>${escape(label)} · Cronograma de los planes de trabajo</p></header>
 ${includePlans ? planSections(plans,riskLabel)
   +(criteria ? "<h2>Enfoques y evidencias de las actividades</h2>"+criteria : "")
@@ -108,7 +108,7 @@ export function buildDiagramDocument({label,inputs={}},kind){
     escape(label)+'</p>'+(body||"<p>Diagrama pendiente de elaborar en el Módulo 1.</p>")+'</body></html>';
 }
 
-export function buildPsstDocument({ label, inputs = {}, draft = {}, version, submittedAt }) {
+export function buildPsstDocument({ label, inputs = {}, draft = {}, version, submittedAt, includeReview=false }) {
   const one = inputs.m1?.data ?? {};
   const two = inputs.m2?.data?.m2 ?? {};
   const three = inputs.m3?.data?.m3 ?? {};
@@ -140,11 +140,11 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
   ],matrix);
   const exposureDetail=table([["Hallazgo","hallazgo"],["Tarea","tarea"],["Puesto","puesto"],["Área o zona","area"],["Turno","turno"],
     ["Personal","grupo"],["Personas expuestas","cantidadVisible"],["Frecuencia","frecuencia"],["Duración","duracion"],["Fuente del conteo","fuente"]],exposureRows(two,taskRows));
-  const plans = table([
+  const unassignedActivities = table([
     ["Plan","plan"],["Actividad","actividad"],["Hallazgo","hallazgo"],["Objetivo / meta","objetivo"],
     ["Frecuencia","frecuencia"],["Procedimiento / instrumento","procedimiento"],["Responsable","responsable"],
     ["Recursos / presupuesto","recursos"],["Seguimiento","seguimiento"],
-  ],activities);
+  ],activities.filter(row=>!planRows.some(plan=>plan.id===row.planRef)));
   const inventory = table([
     ["Código","codigo"],["Proceso productivo","flujo"],["Proceso de trabajo","nombre"],["Área","area"],["Entradas","entradas"],["Secuencia","secuencia"],
     ["Salidas","salidas"],["Contratistas","contratistas"],["Evidencia","evidencia"],
@@ -153,7 +153,19 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Código","codigo"],["Proceso","proceso"],["Etapa","etapa"],["Tarea","nombre"],["Descripción","descripcion"],
     ["Puestos y exposición","puestos"],["Medios","medios"],["Organización","organizacion"],["Evidencia","evidencia"],
   ],taskRows.map(row=>({...row,proceso:labelFor(processRows,row.procesoRef)})));
-  const planSheets = planSections(planRows,row=>recordRefs(row).map(ref=>labelFor(riskRows,ref)).join(", "));
+  const planSheets = planSections(planRows,row=>recordRefs(row).map(ref=>labelFor(riskRows,ref)).join(", "),plan=>{
+    const trace = activities.filter(activity=>activity.planRef===plan.id).map(activity=>{
+      const risk=matrix.find(item=>item.id===activity.riesgoRef);
+      const task=taskRows.find(item=>item.id===risk?.tareaRef);
+      const process=processRows.find(item=>item.id===task?.procesoRef);
+      const dates=schedule(activity);
+      return {...activity,process:process?.nombre || task?.etapa,people:risk?.exposicionResumen,
+        finding:[risk?.codigo,risk?.situacion || risk?.riesgo].filter(Boolean).join(" · "),
+        dates:dates ? dates.from+" a "+dates.to : "Por programar"};
+    });
+    return table([["Proceso de trabajo","process"],["Puestos y exposición","people"],["Hallazgo","finding"],
+      ["Acción","actividad"],["Responsable","responsable"],["Fechas","dates"],["Verificación de eficacia","eficacia"]],trace);
+  });
   const productionMap = table([["Código","codigo"],["Bien o servicio","nombre"],["Entradas","entradas"],
     ["Secuencia","secuencia"],["Salidas","salidas"],["Evidencia","evidencia"]],productionFlows);
   const objectives = table([["Código","codigo"],["Resultado","nombre"],["Plan","plan"],["Indicador","indicador"]],
@@ -179,8 +191,6 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     rows(two.verificaciones).map(row=>({...row,tarea:labelFor(taskRows,row.tareaRef)})));
   const fieldLog=table([["Fecha","fecha"],["Actividad","actividad"],["Horas","horas"],["Método","tipo"],["Referencia","evidencia"],["Tarea","tarea"]],
     rows(one.bitacora?.registros).map(row=>({...row,tarea:labelFor(taskRows,row.tareaRef)})));
-  const scheduledDetails=table([["Centro","centro"],["Plan","plan"],["Actividad","actividad"],["Inicio real","inicioReal"],
-    ["Cierre real","cierreReal"],["Estado","estado"],["Responsable","responsable"],["Recursos","recursos"]],activities);
   const investment = table([["Plan","plan"],["Recurso","concepto"],["Cantidad","cantidad"],["Unidad","unidad"],
     ["Costo unitario","unitario"],["Importe","total"],["Moneda","moneda"],["Fuente","fuente"],["Responsable","responsable"]],
     investmentRows(rows(three.partidas),planRows));
@@ -190,7 +200,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
       (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
-    3: (investment ? "<h3>Presupuesto por plan</h3>"+investment : "") + (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + plans +
+    3: (investment ? "<h3>Presupuesto por plan</h3>"+investment : "") + (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + (unassignedActivities ? "<h3>Actividades sin ficha de plan vinculada</h3>"+unassignedActivities : "") +
       (evaluationCriteria ? "<h3>Enfoques y evidencias de las actividades</h3>"+evaluationCriteria : "") +
       (education ? "<h3>Horas de formación programadas por persona</h3>"+education : "") + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
       facts([["Planes anteriores",three.planes],["Cronograma anterior",three.gantt],["Responsables",three.responsables],["Recursos",three.recursos],["Seguimiento",three.seguimiento]]),
@@ -227,17 +237,25 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
       rows(four.soportes).filter(row=>row.familia===key && row.nombre && row.ubicacion)
         .map(row=>[row.codigo,row.nombre,row.ubicacion].filter(Boolean).join(" · ")).join("\n") || "Pendiente de identificar",
   })));
+  const reviewTable=table([["Capítulo","chapter"],["Criterio","label"],["Estado","state"],["Evidencia u observación","note"]],reviews);
+  const planReview=planRows.flatMap(plan=>{
+    const template=familyTemplates[plan.familia];
+    const notes=planReviewNotes(plan.revisionArt18,plan.familia);
+    return (template?.fields ?? []).map(criterion=>({
+      plan:[plan.codigo,plan.nombre].filter(Boolean).join(" · "),
+      clause:template.clause,criterion,note:notes[criterion]?.trim() || "Por documentar"
+    }));
+  });
+  if(includeReview) return '<!doctype html><html lang="es"><meta charset="utf-8"><body>'+
+    '<h1>Informe de revisión del taller</h1><p>'+escape(label)+'</p>'+
+    "<h2>Avance de elaboración</h2>"+readiness+"<h2>Revisión de los planes de trabajo</h2>"+
+    table([["Plan","plan"],["Referencia","clause"],["Criterio","criterion"],["Soporte u observación","note"]],planReview)+"<h2>Contraste con los instrumentos</h2>"+reviewTable+"</body></html>";
   return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Borrador del PSST</title>
-<style>body{font:15px system-ui,sans-serif;max-width:1020px;margin:2rem auto;padding:0 1.2rem;color:#183047}h1,h2,h3{color:#00205b}h2{border-bottom:1px solid #bad9d9;padding-bottom:.35rem}header{border-top:5px solid #007b85;padding-top:.8rem}.note,td{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:.86rem;margin:1rem 0}th,td{border:1px solid #d1e2e7;padding:.35rem;text-align:left;vertical-align:top}th{background:#e3f1f1}.pending{color:#6d4b08}@page{size:A4 landscape;margin:12mm}@media print{body{margin:0;padding:0;max-width:none}table{font-size:8pt}thead{display:table-header-group}tr{break-inside:avoid}}</style>
+<style>body{font:15px system-ui,sans-serif;max-width:1020px;margin:2rem auto;padding:0 1.2rem;color:#183047}h1,h2,h3{color:#00205b}h2{border-bottom:1px solid #bad9d9;padding-bottom:.35rem}header{border-top:5px solid #007b85;padding-top:.8rem}.note,td{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;font-size:.86rem;margin:1rem 0}th,td{border:1px solid #d1e2e7;padding:.35rem;text-align:left;vertical-align:top}th{background:#e3f1f1}.pending{color:#6d4b08}@page{size:A4 landscape;margin:12mm}@media print{body{margin:0;padding:0;max-width:none}table{font-size:8pt}h2,h3{break-after:avoid}thead{display:table-header-group}tr{break-inside:avoid}}</style>
 <body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>Borrador del Programa de Seguridad y Salud en el Trabajo</h1><p>${escape(label)} · ${escape(stage)}${version!==undefined ? " · Revisión " + escape(version) : ""}${submittedAt ? " · Entrega " + escape(submittedAt) : ""}</p>${profile}</header>
 <h2>Índice</h2><ol>${chapterStructure.map(([title],i)=>'<li><a href="#capitulo-'+(i+1)+'">'+escape(title)+'</a></li>').join("")}<li><a href="#anexos">Anexos y evidencias</a></li></ol>
 ${facts([["Estado del expediente",stage],["Responsable, fecha y soportes de revisión",four.referenciaExpediente]])}
 <h2>Introducción</h2>${note(four.introduccion) || '<p class="pending">Pendiente de redactar la introducción.</p>'}
-<h2>Fuentes del taller</h2>${facts([1,2,3].map(n => {
-  const source = inputs["m"+n];
-  return ["Módulo "+n,source?.submittedAt ? "Última entrega registrada" : "Borrador de trabajo, entrega por verificar"];
-}))}
-<h2>Avance de elaboración</h2>${readiness}
 ${chapterSections}
 <h2 id="anexos">Índice de anexos y soportes</h2>${annexIndex}${annexTable}
 ${issues.length ? "<h2>Revisión de coherencia</h2><ul>"+issues.map(item=>"<li>"+escape(item.message)+"</li>").join("")+"</ul>" : ""}
@@ -247,6 +265,5 @@ ${facts([["Organización de la mesa",one.mesa?.organizacion],["Bitácora",one.bi
  ["Registro de campo",one.bitacora?.evidencias],["Pendientes de campo",one.bitacora?.pendientes],["Evidencias",four.evidencia],
  ["Participación y revisión",four.validacion],["Revisión del SSST y Comité",four.cssl],["Resultado de la revisión",four.resultado],["Acciones pendientes",four.pendientes],
  ["Borrador anterior",four.borrador],["Brechas anteriores",four.brechas]])}
-${table([["Capítulo","capitulo"],["Brecha","brecha"],["Acción","accion"],["Responsable","responsable"],["Plazo","plazo"],["Evidencia","evidencia"]],rows(four.filas))}<h2>Anexo · Contraste con los instrumentos</h2>
-${table([["Capítulo","chapter"],["Criterio","label"],["Estado","state"],["Evidencia u observación","note"]],reviews)}</body></html>`;
+${table([["Capítulo","capitulo"],["Brecha","brecha"],["Acción","accion"],["Responsable","responsable"],["Plazo","plazo"],["Evidencia","evidencia"]],rows(four.filas))}</body></html>`;
 }
