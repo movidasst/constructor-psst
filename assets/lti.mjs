@@ -4,12 +4,12 @@ import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=documento-2";
 import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationImport, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
-import { tutorials, glossary } from "./psst-tutorial.mjs?v=capitulos-1";
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=elementos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=capitulos-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=sve-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=sve-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, scheduledActivities } from "./psst-document.mjs?v=elementos-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -77,7 +77,7 @@ const rowSchemas = {
   procesos: { group:"flujo", key:"procesos", singular:"Proceso de trabajo", fields:[
     ["codigo","Código (p. ej., P-01)",true], ["nombre","Nombre del proceso de trabajo",true],
     ["productivoRef","Proceso productivo",true,"productivos"], ["etapaMapaRef","Etapa del mapa",false,"etapasMapa"], ["area","Área o departamento"], ["entradas","Entradas, materiales y sustancias"],
-    ["secuencia","Etapas y organización del trabajo"], ["salidas","Productos, residuos y disposición"],
+    ["objetoSujeto","Objeto o sujeto · ¿sobre qué material, información o persona se realiza el trabajo?"], ["mediosProceso","Medios · ¿con qué equipos, herramientas o instalaciones se trabaja?"], ["actividadProceso","Actividad · ¿qué hacen realmente las personas para obtener el resultado?"], ["organizacionProceso","Organización · ¿cómo se establecen turnos, ritmo, pausas y coordinación?"], ["divisionProceso","División del trabajo · ¿quién hace cada parte y a quién entrega el resultado?"], ["secuencia","Secuencia y organización descritas"], ["salidas","Productos, residuos y disposición"],
     ["contratistas","Contratistas e interacciones"], ["evidencia","Diagrama, croquis u otra evidencia"],
   ] },
   campo: { group:"bitacora", key:"registros", singular:"Actividad de campo", fields:[
@@ -230,7 +230,10 @@ function refreshLinks() {
       const available = type === "cargos"
         ? cargoOptions.filter(([candidate]) => candidate !== id && !structure.get(candidate).ancestors.includes(id))
         : choices(type);
-      fillSelect(control,available,fieldValue(control));
+      const previous=fieldValue(control);
+      const single=type==="productivos" && available.length===1 && (!previous || previous===available[0][0]);
+      fillSelect(control,available,single?available[0][0]:previous);
+      if(type==="productivos") control.closest("label").hidden=single;
     }
   }
 }
@@ -386,6 +389,7 @@ function updateRowLabels(key, editor) {
   });
   const add = editor.querySelector("[data-add]");
   add.disabled = busy;
+  if (key==="productivos") add.hidden=rows.length>0;
   if (key === "estructura") add.textContent = rows.length ? "Agregar otro cargo" : "Agregar máxima autoridad";
 }
 
@@ -589,7 +593,7 @@ function setupRows(info) {
     const values = info.draft?.[schema.group]?.[schema.key];
     if (Array.isArray(values)) values.forEach(row => appendRow(key,editor,row));
     editor.querySelector("[data-add]").addEventListener("click", () => {
-      if (busy) return;
+      if (busy || (key==="productivos" && rowValues(key).length)) return;
       const productive = rowValues("productivos").filter(row => row.nombre);
       const parent = productive.length === 1 ? productive[0].id : "";
       const defaults = key === "productivos" ? {codigo:nextCode("F",rowValues(key))}
@@ -1756,7 +1760,7 @@ function renderIncoming(info){
     if(item.evidencia) line.append(element("p","Fuente: "+item.evidencia));
     if(isTask){
       const process=info.inputs?.m1?.data?.flujo?.procesos?.find(entry=>entry.id===item.procesoRef);
-      const context=[process?.nombre,process?.area,item.puestos,item.organizacion,item.descripcion].filter(Boolean);
+      const context=[process?.nombre,process?.area,...[["Objeto o sujeto",process?.objetoSujeto],["Medios",process?.mediosProceso],["Actividad",process?.actividadProceso],["Organización",process?.organizacionProceso],["División del trabajo",process?.divisionProceso]].filter(([,v])=>v).map(([k,v])=>k+": "+v),item.puestos,item.organizacion,item.descripcion].filter(Boolean);
       if(context.length) line.append(element("p",context.join(" · ")));
       line.append(actionButton("Evaluar esta tarea",()=>newLinkedRow("m2",{
         codigo:nextCode("R",rowValues("m2")),tareaRef:item.id,etapa:item.etapa||item.nombre,

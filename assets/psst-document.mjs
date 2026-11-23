@@ -147,6 +147,12 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Frecuencia","frecuencia"],["Procedimiento / instrumento","procedimiento"],["Responsable","responsable"],
     ["Recursos / presupuesto","recursos"],["Seguimiento","seguimiento"],
   ],activities.filter(row=>!planRows.some(plan=>plan.id===row.planRef)));
+  const elements=processRows.map(row=>{
+    const detail=facts([["Objeto o sujeto",row.objetoSujeto],["Medios de trabajo",row.mediosProceso],
+      ["Actividad real",row.actividadProceso],["Organización del trabajo",row.organizacionProceso],
+      ["División del trabajo",row.divisionProceso]]);
+    return detail?"<h3>"+escape([row.codigo,row.nombre].filter(Boolean).join(" · "))+"</h3>"+detail:"";
+  }).join("");
   const inventory = table([
     ["Código","codigo"],["Proceso productivo","flujo"],["Proceso de trabajo","nombre"],["Área","area"],["Entradas","entradas"],["Secuencia","secuencia"],
     ["Salidas","salidas"],["Contratistas","contratistas"],["Evidencia","evidencia"],
@@ -198,7 +204,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     investmentRows(rows(three.partidas),planRows));
   const extras = {
     0: objectives,
-    2: process + diagramSections(one) + (productionMap ? "<h3>Descripción del proceso productivo</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos de trabajo</h3>"+inventory : "") +
+    2: process + diagramSections(one) + (productionMap ? "<h3>Descripción del proceso productivo</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos de trabajo</h3>"+inventory+elements : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
       (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
