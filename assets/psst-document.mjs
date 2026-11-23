@@ -21,6 +21,20 @@ const rows = value => Array.isArray(value) ? value.filter(row => row && Object.v
 const facts = entries => table([["Dato","label"],["Registro","value"]],
   entries.filter(([,value]) => hasValue(value)).map(([label,value]) => ({label,value})));
 
+export function contractorSheet(row, risks = []) {
+  const risk = risks.find(item => item.id === row.riesgoRef);
+  const finding = risk ? [risk.codigo, risk.riesgo].filter(Boolean).join(" · ")
+    : row.riesgoRef ? "Referencia por verificar" : "";
+  const data = facts([
+    ["Obra o servicio",row.nombre],["Empresas participantes",row.parte],["Procesos y áreas compartidas",row.procesos],
+    ["Hallazgo del módulo 2",finding],["Controles acordados",row.controles],
+    ["Responsable de la contratante",row.referenteInterno],["Responsable de la contratista",row.referenteExterno],
+    ["Antes del inicio",row.acuerdoInicio],["Durante la ejecución",row.acuerdoEjecucion],
+    ["Al cierre",row.acuerdoCierre],["Responsable de verificar",row.responsable],["Soporte y estado del acuerdo",row.evidencia]
+  ]);
+  return data ? "<h3>Ficha de coordinación · "+escape(row.nombre || "Servicio por identificar")+"</h3>"+data : "";
+}
+
 export function scheduledActivities(activities) {
   return rows(activities).filter(row=>hasValue(row.actividad) && schedule(row));
 }
@@ -179,9 +193,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Secuencia","secuencia"],["Salidas","salidas"],["Evidencia","evidencia"]],productionFlows);
   const objectives = table([["Código","codigo"],["Resultado","nombre"],["Plan","plan"],["Indicador","indicador"]],
     rows(four.objetivos).map(row=>({...row,plan:labelFor(planRows,row.planRef),indicador:labelFor(rows(four.indicadores),row.indicadorRef)})));
-  const contractorTable=table([["Obra o servicio","nombre"],["Parte","parte"],["Procesos","procesos"],["Hallazgo","riesgo"],
-    ["Coordinación y controles","controles"],["Responsable","responsable"],["Evidencia","evidencia"]],
-    rows(four.contratistas).map(row=>({...row,riesgo:labelFor(riskRows,row.riesgoRef)})));
+  const contractorSheets = rows(four.contratistas).map(row => contractorSheet(row,riskRows)).join("");
   const indicators = table([["Código","codigo"],["Indicador","nombre"],["Plan","plan"],["Criterio","formula"],["Línea base","base"],
     ["Meta","meta"],["Fuente","fuente"],["Frecuencia","frecuencia"],["Responsable","responsable"],["Respuesta","respuesta"]],
     rows(four.indicadores).map(row=>({...row,plan:labelFor(planRows,row.planRef)})));
@@ -222,7 +234,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
       (education ? "<h3>Plan anual de capacitación 2027 · horas programadas por persona</h3>"+education : "") + trainingSheets + note(three.cobertura) + (gantt ? "<h3>Carta Gantt 2027</h3>"+gantt : "") +
       facts([["Planes anteriores",three.planes],["Cronograma anterior",three.gantt],["Responsables",three.responsables],["Recursos",three.recursos],["Seguimiento",three.seguimiento]]),
     5: note(four.compromiso),
-    6: contractorTable,
+    6: contractorSheets,
     7: indicators + (evaluationCriteria ? "<h3>Criterios de eficacia a verificar</h3>"+evaluationCriteria : ""),
   };
   const actuals=table([["Actividad","actividad"],["Estado","estado"],["Inicio real","inicioReal"],["Cierre real","cierreReal"],
