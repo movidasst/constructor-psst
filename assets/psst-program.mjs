@@ -9,7 +9,7 @@ export const planGuides = {
   "Inspecciones":"Define áreas y turnos, frecuencia, instrumento, participantes, hallazgos y verificación de las medidas.",
   "Monitoreo de riesgos y condiciones de trabajo":"Indica exposición, método de evaluación, responsable, seguimiento de resultados y fuente.",
   "Vigilancia epidemiológica de la salud":"Indica población, fuentes agregadas, frecuencia de análisis, responsable y reportes.",
-  "Utilización del tiempo libre":"Identifica población, actividades, cronograma, responsables y registro de participación.",
+  "Utilización del tiempo libre":"Compara jornada, horas extras, alimentación, descansos y vacaciones previstos con su disfrute efectivo. Documenta desviaciones y seguimiento.",
   "Reglas y procedimientos de trabajo seguro":"Identifica tareas, procedimientos, medio de difusión, verificación y vigencia.",
   "Protección personal y colectiva":"Registra selección por riesgo, dotación, mantenimiento y verificación de los controles.",
   "Atención preventiva de la salud":"Define programación, puestos y exposiciones, evaluaciones previstas y responsable del seguimiento.",
