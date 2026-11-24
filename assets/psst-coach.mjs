@@ -214,3 +214,110 @@ export function annualTraining(activities,plans,declared="",exposures=[]) {
     gaps:quarters.flatMap((h,i)=>h<16?["T"+(i+1)+" faltan "+(16-h)+" h"]:[])
   }));
 }
+
+export const planExamples = new Map([
+  [
+    "Educación e información",
+    [
+      "Hallazgos y puestos por turno",
+      "Programa prácticas trimestrales de circulación segura para los puestos expuestos y registra las horas por persona.",
+      "Comprueba en una práctica que cada participante identifica la ruta y sabe qué hacer si está bloqueada."
+    ]
+  ],
+  [
+    "Inducción y cambios de puesto",
+    [
+      "Ingresos, cambios y tareas nuevas",
+      "Antes de asignar a una persona a despacho, recorre con ella la ruta y practica cómo avisar de una desviación.",
+      "Registra la demostración y el refuerzo cuando la práctica quede incompleta."
+    ]
+  ],
+  [
+    "Inspecciones",
+    [
+      "Áreas, turnos y controles que requieren revisión",
+      "Programa recorridos de despacho para revisar barreras, visibilidad y obstrucciones durante el relevo.",
+      "Registra cada hallazgo, su revisión, la corrección y la comprobación en el turno afectado."
+    ]
+  ],
+  [
+    "Monitoreo de riesgos y condiciones de trabajo",
+    [
+      "Puestos expuestos, tiempos y mediciones previas",
+      "Define una campaña de ruido por puesto y turno con método, responsable y criterio de interpretación.",
+      "Documenta si la medición representa la exposición y qué acción corresponde según el resultado."
+    ]
+  ],
+  [
+    "Vigilancia epidemiológica de la salud",
+    [
+      "Exposiciones y registros agregados por grupo",
+      "Compara señales de salud y exposición entre grupos, con denominadores y períodos comparables.",
+      "Registra la decisión preventiva y cuándo se repetirá el análisis, con resguardo de los datos personales."
+    ]
+  ],
+  [
+    "Utilización del tiempo libre",
+    [
+      "Jornadas, descansos, vacaciones y necesidades por turno",
+      "Revisa con cada turno qué descansos se disfrutan y programa ajustes cuando la cobertura del servicio los dificulte.",
+      "Contrasta lo programado con lo efectivamente disfrutado y documenta el ajuste."
+    ]
+  ],
+  [
+    "Reglas y procedimientos de trabajo seguro",
+    [
+      "Tarea, secuencia observada y controles críticos",
+      "Redacta el procedimiento de descarga con los pasos previos y la actuación ante un cambio de maniobra.",
+      "Pide a quienes realizan el trabajo que lo apliquen en una práctica y registra los ajustes."
+    ]
+  ],
+  [
+    "Protección personal y colectiva",
+    [
+      "Riesgo, controles disponibles y condiciones de uso",
+      "Define la separación física de rutas y los criterios de selección y mantenimiento de la protección complementaria.",
+      "Verifica en el turno que las barreras separan efectivamente las rutas y que la protección se usa cuando corresponde."
+    ]
+  ],
+  [
+    "Atención preventiva de la salud",
+    [
+      "Puestos, exposiciones y población que orientan la atención",
+      "El SSST programa las evaluaciones que correspondan a cada grupo y define cómo dará seguimiento a los casos.",
+      "Verifica cobertura y seguimiento con registros agregados y custodia clínica separada."
+    ]
+  ],
+  [
+    "Ingeniería, ergonomía y mantenimiento",
+    [
+      "Equipos, condiciones observadas e historial de fallas",
+      "Evalúa la ruta de carga y modifica el cruce. Programa además la inspección y reparación de barreras.",
+      "Comprueba en operación que la intervención redujo la coincidencia de peatones y equipos."
+    ]
+  ],
+  [
+    "Contingencias y emergencias",
+    [
+      "Escenarios, personal por turno, medios y comunicaciones",
+      "Ensaya la respuesta ante una emergencia en despacho y asigna aviso, coordinación y acceso de ayuda.",
+      "Registra tiempos y problemas observados y programa otro ejercicio para comprobar las correcciones."
+    ]
+  ],
+  [
+    "Desalojo de instalaciones",
+    [
+      "Ocupación por turno, rutas, visitantes y apoyos requeridos",
+      "Practica el desalojo con personal propio y transportistas y verifica el recuento en el punto de encuentro.",
+      "Corrige obstrucciones o fallas de recuento y vuelve a comprobar el recorrido."
+    ]
+  ],
+  [
+    "Recursos económicos",
+    [
+      "Actividades, unidades, cotizaciones y meses de ejecución",
+      "Vincula la compra e instalación de barreras a la actividad de despacho y distribuye el gasto en el cronograma.",
+      "Comprueba los subtotales por cantidad y costo unitario e identifica las partidas pendientes de cotización."
+    ]
+  ]
+]);
