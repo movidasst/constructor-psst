@@ -1315,6 +1315,9 @@ function draftFingerprint(values = formValues()) {
 }
 
 function deliveryStatus(delivery) {
+  const state = delivery.gradeSync?.state;
+  if (state === "retry") return "Error de sincronización. El docente puede reintentar el envío a Moodle.";
+  if (state && state !== "sent") return "Revisión completada. Pendiente de confirmación de Moodle.";
   return delivery.review
     ? "Nota publicada en Moodle: " + delivery.review.score + " de 100 puntos. Revisión técnica: " +
       delivery.review.technicalPoints + " de 40 puntos. Retroalimentación: " + delivery.review.feedback
@@ -1584,6 +1587,18 @@ function renderChecklist(){
   if(!view?.replaceChildren) return;
   const checks=lastDelivery?.checks;
   view.replaceChildren(element("p",checks ? "Comprobaciones de la última entrega" : "Cada comprobación registrada aporta 12 puntos, hasta 60. La revisión técnica aporta hasta 40."));
+  const review = lastDelivery?.review;
+  if (Array.isArray(review?.scores)) {
+    const criteria = element("ol");
+    for (const [index,[name,guide]] of rubrics[moduleId].entries()) {
+      const points = review.scores[index];
+      if (!Number.isFinite(points)) continue;
+      const item = element("li",name+" · "+points+"/10");
+      if (points < 10) item.append(element("p","Qué revisar en este módulo: "+guide));
+      criteria.append(item);
+    }
+    view.append(element("h4","Revisión técnica por criterio"),criteria);
+  }
   if(!checks) return;
   const list=element("ul");
   for(const [id,has] of Object.entries(checks)) list.append(element("li",(checksLabels[id]||id)+" · "+(has?"12/12":"0/12")));
@@ -1774,6 +1789,15 @@ function setupProjectPanel(info){
   });
   window.addEventListener("pagehide",stashRecovery);
   window.addEventListener("online",queueAutosave);
+  document.getElementById("refresh-grade-status")?.addEventListener("click",()=>{
+    void update("Consultando la calificación…",async()=>{
+      const latest = await api("workspace");
+      if (latest.delivery) lastDelivery = latest.delivery;
+      refreshDelivery();
+      renderChecklist();
+      tell(lastDelivery ? deliveryStatus(lastDelivery) : "Todavía no hay una entrega registrada.");
+    });
+  });
   const rubric=document.getElementById("learner-rubric");
   const list=element("ol");
   for(const [name,guide] of rubrics[moduleId]){
