@@ -7,7 +7,7 @@ import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=elementos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-1";
-import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields } from "./psst-coach.mjs?v=anual-1";
+import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
 import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, scheduledActivities } from "./psst-document.mjs?v=contratistas-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
@@ -335,6 +335,29 @@ function showRowHelp(row,key,value) {
       field.focus();
     });
     box.append(text,reference("Consultar NT-04-2023, "+template.clause,sources.nt+"#page="+template.page),button);
+    const example = planExamples.get(family);
+    if (example) {
+      const guide = element("details");
+      guide.className = "module-details";
+      const context = element("ul");
+      const showInputs = () => {
+        const refs = fieldValue(row.querySelector('[data-key="riesgoRefs"]'));
+        const risks = recordsOf(integrationInputs?.m2?.data?.m2?.filas);
+        const linked = risks.filter(risk => refs.includes(risk.id));
+        context.replaceChildren(...linked.map(risk=>element("li",
+          [risk.codigo, risk.riesgo, risk.controlPropuesto, risk.criterioEficacia].filter(Boolean).join(" · "))));
+        if (!linked.length) context.append(element("li","Selecciona los hallazgos vinculados cuando el plan responda a uno o varios riesgos del módulo 2."));
+      };
+      guide.append(element("summary","Elaborar este plan paso a paso"),
+        element("h4","Insumos que debes reunir"),element("p",example[0]),context,
+        element("h4","Ejemplo de actividad"),element("p",example[1]),
+        element("h4","Cómo verificar el resultado"),element("p",example[2]),
+        element("p","Con los datos de tu empresa, completa objetivo, meta, responsables y recursos. Luego pulsa «Programar actividad» para llevarla al cronograma."));
+      showInputs();
+      row.querySelector('[data-key="riesgoRefs"]').onchange = showInputs;
+      guide.addEventListener("toggle",showInputs);
+      box.append(guide);
+    }
     if(family==="Educación e información"){
       box.prepend(element("h3","Plan anual de capacitación 2027"));
       box.append(actionButton("Ver los cuatro trimestres y los grupos pendientes",()=>{
