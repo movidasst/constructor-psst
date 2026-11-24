@@ -967,6 +967,77 @@ function showReadiness() {
   const pending = fields.filter(field=>field.status==="Por completar");
   panel.textContent = (fields.length-pending.length) + " de " + fields.length +
     " apartados con redacción o datos de origen. Revisa su detalle en Avance por apartados.";
+  const one = integrationInputs.m1?.data ?? {};
+  const two = integrationInputs.m2?.data?.m2 ?? {};
+  const three = integrationInputs.m3?.data?.m3 ?? {};
+  const checks = element("div");
+  const group = (title) => {
+    const details = element("details");
+    details.className = "module-details";
+    const list = element("ul");
+    details.append(element("summary",title),list);
+    checks.append(details);
+    return list;
+  };
+  const add = (list, message, chapter, control) => {
+    const item = element("li",message);
+    if (control) item.append(" ",actionButton("Abrir registro",()=>{
+      revealControl(control);
+      control.focus();
+    }));
+    if (chapter) item.append(" ",actionButton("Registrar brecha",()=>{
+      if (!rowValues("m4").some(row=>row.capitulo===chapter && row.brecha===message)) {
+        newLinkedRow("m4",{capitulo:chapter,brecha:message});
+      } else tell("Esta brecha ya está registrada.");
+    }));
+    list.append(item);
+  };
+  const findings = recordsOf(two.filas).filter(row=>row.riesgo);
+  const tasks = group("Tareas evaluadas");
+  for (const task of recordsOf(one.tarea?.actividades).filter(row=>row.nombre)) {
+    const count = findings.filter(row=>row.tareaRef===task.id).length;
+    const reviewed = recordsOf(two.verificaciones).some(row=>row.tareaRef===task.id && row.estado==="Evaluada");
+    const message = [task.codigo,task.nombre].filter(Boolean).join(" · ");
+    add(tasks,message+" — "+(count ? count+" hallazgo(s)" : reviewed ? "Evaluada sin hallazgos registrados" : "Evaluación pendiente"),count||reviewed ? "" : "III");
+  }
+  if (!tasks.children.length) add(tasks,"El módulo 1 aún no aporta tareas a esta revisión.","III");
+  const controls = group("Hallazgos prioritarios y medidas");
+  const priority = findings.filter(row=>["Inmediata","Programada"].includes(row.prioridad));
+  const plans = recordsOf(three.planesDetallados);
+  for (const risk of priority) {
+    const activities = recordsOf(three.filas).filter(row=>row.riesgoRef===risk.id && row.actividad);
+    const label = [risk.codigo,risk.riesgo].filter(Boolean).join(" · ");
+    if (!activities.length) add(controls,label+" — Falta una actividad vinculada.","IV");
+    for (const activity of activities) {
+      const missing = [
+        [!plans.some(plan=>plan.id===activity.planRef),"plan"],
+        [!activity.responsable?.trim(),"responsable"],
+        [!schedule(activity),"fechas"],
+        [!activity.eficacia?.trim(),"criterio de eficacia"],
+      ].filter(([absent])=>absent).map(([,name])=>name);
+      add(controls,label+" · "+activity.actividad+" — "+(missing.length ? "Falta "+missing.join(", ") : "Programada con responsable, fechas y criterio de eficacia"),missing.length ? "IV" : "");
+    }
+  }
+  if (!priority.length) add(controls,"Sin hallazgos con prioridad inmediata o programada en el módulo 2.");
+  const chapters = group("Capítulos, evidencia y justificación");
+  for (const [index,[title,criteria]] of reviewGroups.entries()) {
+    const chapter = String(index+1);
+    for (const [key,label] of criteria) {
+      const state = current["estado_"+key];
+      const note = current["nota_"+key]?.trim();
+      const complete = Boolean(note && ["Documentado","No aplica, con justificación"].includes(state));
+      const status = complete ? (state==="Documentado" ? "Documentado con referencia" : "No aplica, justificado")
+        : state==="Documentado" ? "Falta referencia de evidencia" : state?.startsWith("No aplica") ? "Falta justificar" : state || "Por revisar";
+      add(chapters,title+" · "+label+" — "+status,complete ? "" : chapter,
+        form.elements.namedItem("m4.nota_"+key));
+    }
+  }
+  const course = element("a","Abrir el curso de Moodle para corregir en el módulo de origen");
+  course.href = "https://movidasst.org/course/view.php?id=154";
+  course.target = "_blank";
+  course.rel = "noopener noreferrer";
+  panel.append(checks,course);
+
 }
 
 function setupFieldHelp(info) {
