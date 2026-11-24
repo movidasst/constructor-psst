@@ -88,12 +88,17 @@ function display(detail) {
   byId("review-save").hidden=Boolean(detail.review);
   const sent=detail.sync.filter(row=>row.state==="sent").length;
   const pending=detail.sync.length-sent;
+  const retry=detail.sync.filter(row=>row.state==="retry").length;
+  const latest=detail.sync.map(row=>row.attemptedAt).filter(Boolean).sort().at(-1);
   byId("grade-verify").hidden=sent===0;
   byId("grade-verify-status").textContent="";
   byId("review-publish").hidden=detail.review ? pending===0 : !detail.reviewDraft;
+  byId("review-publish").textContent=detail.review ? "Reintentar envío a Moodle" : "Publicar nota en Moodle";
   byId("grade-sync").textContent=detail.review
     ? "Notas registradas en Moodle: "+sent+" de "+detail.sync.length+(pending ? ". Pendientes de confirmación: "+pending+"." : ".")
     : "La nota se publica después de guardar la rúbrica.";
+  if (retry) byId("grade-sync").textContent += " Con error de envío: "+retry+".";
+  if (latest) byId("grade-sync").textContent += " Último intento: "+new Date(latest).toLocaleString("es-VE",{timeZone:"America/Caracas"})+" (VE).";
   total();
 }
 async function selectDelivery() {

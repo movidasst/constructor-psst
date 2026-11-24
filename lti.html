@@ -7,7 +7,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Constructor de PSST</title>
   <link rel="stylesheet" href="assets/lti.css?v=capitulos-1">
-  <script src="assets/lti.mjs?v=revision-final-1" type="module"></script>
+  <script src="assets/lti.mjs?v=acompanamiento-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -35,10 +35,21 @@
         <div class="receipt" id="receipt" hidden aria-live="polite">
           <p class="receipt-title" id="receipt-title"></p>
           <p id="receipt-detail"></p>
+          <button type="button" id="refresh-grade-status">Actualizar estado de la nota</button>
           <div class="actions"><button type="button" id="export-archive" hidden>Descargar Word de la versión entregada</button>
             <button type="button" id="export-archive-package" hidden>Descargar ZIP de la versión entregada</button></div>
         </div>
 
+        <details class="field-workshop">
+          <summary>Ejemplo completo · Despacho de mercancía</summary>
+          <p>Caso ficticio para consultar mientras elaboras el PSST de tu empresa.</p>
+          <ol>
+            <li><strong>Módulo 1.</strong> Registra T-01, traslado de pedidos a carga. Recorre la ruta con preparadores y transportista. Documenta el cruce en el croquis E-01 y registra las correcciones de quienes realizan la tarea.</li>
+            <li><strong>Módulo 2.</strong> Vincula R-01 con T-01. Describe el posible atropello, los puestos expuestos y el control observado. Si falta comprobar cómo funciona la demarcación durante el relevo, registra quién lo verificará y cuándo.</li>
+            <li><strong>Módulo 3.</strong> Programa la separación de rutas en el plan de despacho. Asigna responsable y fechas. Comprueba durante los relevos que peatones y equipos usan rutas separadas.</li>
+            <li><strong>Módulo 4.</strong> Registra el acuerdo de rutas y horarios con el transportista en el capítulo VII. Antes de entregar, verifica la cadena T-01, R-01, medida del plan y criterio de eficacia. Si falta acordar la franja de descarga, registra la brecha con responsable y plazo.</li>
+          </ol>
+        </details>
         <section id="tutorial-overview" class="module-start" aria-label="Guía del módulo"></section>
         <div id="step-controls" class="step-controls" hidden>
           <button type="button" class="quiet-button" id="step-overview">← Guía del módulo</button>
