@@ -6,8 +6,9 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self'; script-src 'self'; style-src 'self'; connect-src https://edeydaueyxilutczhazm.supabase.co; base-uri 'none'; form-action 'none'">
   <title>Constructor de PSST</title>
-  <link rel="stylesheet" href="assets/lti.css?v=capitulos-1">
-  <script src="assets/lti.mjs?v=planes-guiados-1" type="module"></script>
+  <link rel="stylesheet" href="assets/vendor/frappe-gantt/frappe-gantt.css">
+  <link rel="stylesheet" href="assets/lti.css?v=gantt-1">
+  <script src="assets/lti.mjs?v=gantt-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -332,6 +333,13 @@
             </details>
           </div>
           <p class="section-guide">El cronograma se actualiza al completar los meses de inicio y cierre de cada actividad.</p>
+          <div class="gantt-controls actions">
+            <label>Escala del cronograma<select id="gantt-scale"><option value="Month">Mes</option><option value="Week">Semana</option><option value="Year">Año</option></select></label>
+            <button type="button" id="print-gantt">Imprimir carta Gantt</button>
+          </div>
+          <p class="gantt-help">Selecciona una barra o el botón de la tabla para abrir la ficha. Actualiza fechas, estado y evidencias allí; para reprogramar conserva las fechas originales e indica las nuevas y el motivo. Acceso exclusivo desde la actividad de Moodle del taller.</p>
+          <div id="gantt-chart" aria-label="Cronograma interactivo 2027"></div>
+          <p class="gantt-help">Estados: pendiente (gris), en curso (azul), ejecutada (verde) y reprogramada (ámbar). El color indica el estado declarado, no la eficacia de la medida.</p>
           <div id="gantt-view" class="gantt-view"></div>
           <p>La carta se genera con las fechas previstas, incluso para actividades pendientes. Registra quién se encargará y actualiza el estado a medida que avance.</p>
           <h3>Plan anual de capacitación 2027</h3><p>Revisa los puestos y turnos identificados en la evaluación. Añade las poblaciones que falten. Cada trimestre requiere al menos 16 horas programadas por persona.</p><datalist id="training-populations"></datalist><div id="annual-hours"></div><div class="fields"><label class="wide">Grupos de formación previstos (uno por línea)<textarea name="m3.gruposFormacion" maxlength="2000"></textarea></label></div>
