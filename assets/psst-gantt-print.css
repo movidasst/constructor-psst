@@ -1,0 +1,4 @@
+@page{size:A4 landscape;margin:12mm}body{font:14px system-ui,sans-serif;color:#183047;max-width:1150px;margin:1.5rem auto;padding:0 1rem}
+header{border-top:5px solid #007b85;padding:.65rem 0}h1{color:#00205b;margin:.4rem 0}.note{white-space:pre-wrap;overflow-wrap:anywhere}.calendar{overflow-x:auto}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
+th,td{padding:5px;border:1px solid #bbced2;text-align:center;overflow-wrap:anywhere;vertical-align:top}th{background:#e3f1f1}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}.gantt-calendar th:nth-child(1){width:24%}.gantt-calendar th:nth-child(2){width:14%}.gantt-calendar th:nth-child(3){width:12%}.gantt-calendar td:nth-child(n+4){color:#005861;font-weight:700}
+@media print{body{max-width:none;margin:0;padding:0}.calendar{overflow:visible}table{font-size:8.5pt}h2,h3{break-after:avoid}thead{display:table-header-group}tr{break-inside:avoid}}

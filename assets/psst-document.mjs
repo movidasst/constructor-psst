@@ -40,15 +40,19 @@ export function scheduledActivities(activities) {
 }
 
 function ganttTable(scheduled, includeDetails = false) {
-  const columns = includeDetails
-    ? [["Plan","plan"],["Actividad","actividad"],["Responsable","responsable"],["Inicio","inicioPrevisto"],["Cierre","finPrevisto"],["Estado","estado"],["Enfoque","enfoque"]]
-    : [["Actividad","actividad"],["Responsable","responsable"],["Estado","estado"]];
-  return table([...columns,...months.map((month,index)=>[month,index+1])],scheduled.map(row=>{
-    const planned=schedule(row);
-    const current=operationalSchedule(row);
-    return {...row,inicioPrevisto:planned.from,finPrevisto:planned.to,estado:row.estado || "Pendiente",
-      ...Object.fromEntries(months.map((_,index)=>[index+1,index+1>=current.start && index+1<=current.end ? "●" : ""]))};
-  }));
+  if (!scheduled.length) return "";
+  const calendar = table([["Actividad","actividad"],["Responsable","responsable"],["Estado","estado"],
+    ...months.map((month,index)=>[month,index+1])],scheduled.map(row=>{
+      const current=operationalSchedule(row);
+      return {...row,estado:row.estado || "Pendiente",
+        ...Object.fromEntries(months.map((_,index)=>[index+1,index+1>=current.start && index+1<=current.end ? "●" : ""]))};
+    }));
+  const details = includeDetails ? table([["Actividad","actividad"],["Plan","plan"],["Fechas originales","original"],
+    ["Fechas vigentes","current"],["Motivo de reprogramación","motivoReprogramacion"]],scheduled.map(row=>{
+      const planned=schedule(row), current=operationalSchedule(row);
+      return {...row,original:planned.from+" a "+planned.to,current:current.from+" a "+current.to};
+    })) : "";
+  return '<div class="gantt-calendar">'+calendar+'</div>'+ (details ? '<h3>Fechas y reprogramaciones</h3>'+details : "");
 }
 
 function planSections(plans, riskLabel, trace=()=> "") {
@@ -93,14 +97,14 @@ export function buildGanttDocument({ label, activities, plans = [], legacyRefere
   return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
 <style>@page{size:A4 landscape;margin:12mm}body{font:14px system-ui,sans-serif;color:#183047;max-width:1150px;margin:1.5rem auto;padding:0 1rem}
 header{border-top:5px solid #007b85;padding:.65rem 0}h1{color:#00205b;margin:.4rem 0}.note{white-space:pre-wrap;overflow-wrap:anywhere}.calendar{overflow-x:auto}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
-th,td{padding:5px;border:1px solid #bbced2;text-align:center;overflow-wrap:anywhere;vertical-align:top}th{background:#e3f1f1}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}th:nth-child(1){width:9%}th:nth-child(2){width:15%}th:nth-child(3){width:9%}th:nth-child(4),th:nth-child(5){width:7%}th:nth-child(6){width:8%}td:nth-child(n+7){color:#005861;font-weight:700}
+th,td{padding:5px;border:1px solid #bbced2;text-align:center;overflow-wrap:anywhere;vertical-align:top}th{background:#e3f1f1}td:nth-child(-n+3),th:nth-child(-n+3){text-align:left}.gantt-calendar th:nth-child(1){width:24%}.gantt-calendar th:nth-child(2){width:14%}.gantt-calendar th:nth-child(3){width:12%}.gantt-calendar td:nth-child(n+4){color:#005861;font-weight:700}
 @media print{body{max-width:none;margin:0;padding:0}.calendar{overflow:visible}table{font-size:8.5pt}h2,h3{break-after:avoid}thead{display:table-header-group}tr{break-inside:avoid}}</style>
 <body><header><p>Academia Movida de SST · Taller práctico de PSST</p><h1>${title}</h1><p>${escape(label)} · Cronograma de los planes de trabajo</p></header>
 ${includePlans ? planSections(plans,riskLabel)
   +(criteria ? "<h2>Enfoques y evidencias de las actividades</h2>"+criteria : "")
   +(education ? "<h2>Horas de formación programadas por persona</h2>"+education : "")
   +"<h2>Carta Gantt 2027</h2>" : ""}
-${chart ? '<p>● Mes de ejecución programado</p><div class="calendar">'+chart+'</div>' : ""}
+${chart ? '<p>● Mes de ejecución según fechas vigentes. Las fechas originales y reprogramaciones se detallan debajo.</p><div class="calendar">'+chart+'</div>' : ""}
 ${pendingList ? "<h2>Actividades pendientes de fechar</h2>"+pendingList : ""}
 ${hasValue(legacyReference) ? "<h2>Referencia al cronograma anterior</h2>"+note(legacyReference) : ""}
 </body></html>`;

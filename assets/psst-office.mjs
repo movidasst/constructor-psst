@@ -63,11 +63,14 @@ export function wordFromReport(report, parse=html=>new DOMParser().parseFromStri
     if(node.tagName==="TABLE"){
       const rows=[...node.rows];
       const cols=Math.max(1,...rows.map(row=>row.cells.length));
-      const width=Math.floor(15500/cols);
+      const calendar=[...rows[0].cells].slice(-12).map(cell=>cell.textContent.trim()).join(",")==="Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic";
+      const weights=calendar&&cols===15?[180,112,72,...Array(12).fill(23)]:Array(cols).fill(1);
+      const total=weights.reduce((sum,value)=>sum+value,0);
+      const widths=weights.map(value=>Math.floor(15500*value/total));
       content+='<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:bottom w:val="single" w:sz="4" w:color="B6D8DC"/><w:insideH w:val="single" w:sz="4" w:color="B6D8DC"/></w:tblBorders></w:tblPr><w:tblGrid>'+
-        Array.from({length:cols},()=>'<w:gridCol w:w="'+width+'"/>').join("")+'</w:tblGrid>'+
+        widths.map(width=>'<w:gridCol w:w="'+width+'"/>').join("")+'</w:tblGrid>'+
         rows.map((row,i)=>'<w:tr>'+(i===0?'<w:trPr><w:tblHeader/></w:trPr>':"")+
-          [...row.cells].map(cell=>'<w:tc><w:tcPr><w:tcW w:w="'+width+'" w:type="dxa"/>'+(i===0?'<w:shd w:fill="DDF1F0"/>':"")+'</w:tcPr>'+
+          [...row.cells].map((cell,column)=>'<w:tc><w:tcPr><w:tcW w:w="'+widths[column]+'" w:type="dxa"/>'+(i===0?'<w:shd w:fill="DDF1F0"/>':"")+'</w:tcPr>'+
             paragraph(cell.textContent,"Small")+"</w:tc>").join("")+"</w:tr>").join("")+"</w:tbl>";
     } else if(node.tagName==="DL"){
       for(const item of node.children) content+=paragraph(item.textContent,item.tagName==="DT"?"Heading3":"");
@@ -117,10 +120,10 @@ function sheetXml(rows,gantt,numberColumns=[]){
     return '<c r="'+ref+'" s="'+(i===0?1:0)+'" t="inlineStr"><is><t xml:space="preserve">'+xml(value)+'</t></is></c>';
   }).join("")+"</row>").join("");
   const end=letters[rows[0].length-1];
-  return declaration+'<worksheet xmlns="'+ns+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
+  return declaration+'<worksheet xmlns="'+ns+'">'+(gantt?'<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>':'')+'<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
     (gantt?'<cols><col min="1" max="12" width="23" customWidth="1"/><col min="13" max="24" width="6" customWidth="1"/></cols>':
       '<cols><col min="1" max="'+rows[0].length+'" width="27" customWidth="1"/></cols>')+
-    '<sheetData>'+data+'</sheetData><autoFilter ref="A1:'+end+rows.length+'"/></worksheet>';
+    '<sheetData>'+data+'</sheetData><autoFilter ref="A1:'+end+rows.length+'"/>'+ (gantt?'<printOptions horizontalCentered="1"/><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>':'')+'</worksheet>';
 }
 
 function excelBook(sheets){

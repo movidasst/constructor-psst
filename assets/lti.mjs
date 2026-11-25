@@ -1,3 +1,4 @@
+import { renderTimeline } from "./psst-gantt.mjs?v=1";
 import { annexRoute, chapterRoute, annualInvestment, investmentRows, sectionCoverage, sourceSections, structuredSections, workingFormats } from "./psst-coverage.mjs?v=investigacion-1";
 import { readProof, clearProof } from "./lti-proof.mjs?v=bound-1";
 import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
@@ -6,10 +7,10 @@ import { executionStats, followupLabels, nextCode, operationalSchedule, orderedF
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=elementos-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-1";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=gantt-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, scheduledActivities } from "./psst-document.mjs?v=contratistas-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, scheduledActivities } from "./psst-document.mjs?v=gantt-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
 
@@ -273,6 +274,10 @@ function redrawGantt() {
     if(options.includes(before)) input.value=before;
   }
   const rows = scheduledActivities(filteredActivities());
+  renderTimeline(document.getElementById("gantt-chart"), rows, {
+    mode: document.getElementById("gantt-scale").value,
+    open: id => focusRecord("m3", id),
+  });
   if (!rows.length) {
     view.replaceChildren(element("p", "Agrega una actividad con fechas previstas para ver el cronograma."));
     return;
@@ -280,7 +285,7 @@ function redrawGantt() {
   const table = element("table");
   table.setAttribute("aria-label", "Carta Gantt 2027");
   const header = table.createTHead().insertRow();
-  for (const label of ["Actividad","Responsable","Estado", ...months]) {
+  for (const label of ["Actividad","Responsable","Estado", ...months,"Ficha"]) {
     const cell = element("th", label);
     cell.scope = "col";
     header.append(cell);
@@ -302,6 +307,9 @@ function redrawGantt() {
         cell.setAttribute("aria-label", "Programada en " + months[month - 1]);
       }
     }
+    const edit = line.insertCell();
+    edit.className = "gantt-edit";
+    edit.append(actionButton("Editar actividad", () => focusRecord("m3", row.id)));
   }
   view.replaceChildren(table);
 }
@@ -1526,6 +1534,17 @@ function downloadHtml(documentText,filename){
 
 function setupGanttDownload(info) {
   if (info.moduleId !== "m3") return;
+  document.getElementById("gantt-scale").addEventListener("change", redrawGantt);
+  document.getElementById("print-gantt").addEventListener("click", () => {
+    const html = buildGanttDocument({label:info.label, activities:filteredActivities(), plans:rowValues("planes")});
+    if (!html) { tell("Registra actividades con fechas para imprimir.","error"); return; }
+    const preview = window.open("", "_blank");
+    if (!preview) { tell("Permite abrir la vista de impresión o descarga la carta Gantt en HTML.","error"); return; }
+    preview.opener = null;
+    const printable = html.replace(/<style>[\s\S]*?<\/style>/, '<link rel="stylesheet" href="'+new URL("./psst-gantt-print.css?v=1",import.meta.url).href+'">');
+    preview.document.open(); preview.document.write(printable); preview.document.close();
+    preview.addEventListener("load", () => { preview.focus(); preview.print(); }, {once:true});
+  });
   function downloadSchedule(includePlans) {
     if (busy) return;
     const documentText = buildGanttDocument({
