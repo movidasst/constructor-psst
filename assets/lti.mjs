@@ -7,10 +7,10 @@ import { executionStats, followupLabels, nextCode, operationalSchedule, orderedF
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=secuencia-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-5x5";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-listas-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, planTrace, scheduledActivities } from "./psst-document.mjs?v=participacion-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, planTrace, scheduledActivities } from "./psst-document.mjs?v=iperc-listas-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=secuencia-1";
 
@@ -131,9 +131,10 @@ const rowSchemas = {
     ["elementoProceso","3 · Elemento del proceso de trabajo",false,"elementosIPERC"],
     ["proceso","4 · Proceso peligroso"], ["peligro","5 · Peligro",true],
     ["evento","6 · Evento posible"], ["expuestos","7 · Personas expuestas"],
-    ["interaccion","Exposición · vía, frecuencia, duración y magnitud"],
+    ["interaccion","Exposición · vía o forma de interacción"],
+    ["detalleExposicion","Detalle de exposición · frecuencia, duración y magnitud"],
     ["riesgo","Consecuencia posible · daño",true],
-    ["probabilidad","8 · Probabilidad inicial (1 a 5)",false,"escalaIPERC"], ["consecuencia","Consecuencia inicial (1 a 5)",false,"escalaIPERC"],
+    ["probabilidad","8 · Probabilidad inicial (1 a 5)",false,"probabilidadIPERC"], ["consecuencia","Consecuencia inicial (1 a 5)",false,"consecuenciaIPERC"],
     ["metodoHallazgo","Método, versión y escala para este hallazgo"],
     ["valoracion","Valoración inicial · factores, fundamento y resultado"],
     ["prioridad","Prioridad de actuación",false,"prioridades"],
@@ -144,7 +145,7 @@ const rowSchemas = {
     ["controlPropuesto","Factor de protección adicional y nivel en la jerarquía"], ["justificacionControl","Qué variable cambia y por qué"],
     ["criterioEficacia","¿Qué resultado demostrará que la medida funciona?"],
     ["estadoResidual","10 · Estado del riesgo residual",false,"estadosResiduales"],
-    ["probabilidadResidual","Probabilidad residual (1 a 5)",false,"escalaIPERC"], ["consecuenciaResidual","Consecuencia residual (1 a 5)",false,"escalaIPERC"],
+    ["probabilidadResidual","Probabilidad residual (1 a 5)",false,"probabilidadIPERC"], ["consecuenciaResidual","Consecuencia residual (1 a 5)",false,"consecuenciaIPERC"],
     ["valoracionResidual","Fundamento de la valoración residual"],
     ["evidenciaResidual","Evidencia de eficacia · registro, fecha y resultado observado"],
   ] },
@@ -187,7 +188,6 @@ function element(tag, content) {
 const families = Object.keys(planGuides);
 const optionLists = {
   familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
-  escalaIPERC:["1","2","3","4","5"],
   elementosIPERC:["Objeto o sujeto","Medios","Actividad","Organización del trabajo","División del trabajo"],
   estadosResiduales:["Pendiente","Previsto","Verificado"],
   enfoques:Object.keys(approaches), evaluaciones:["En evaluación","Valorada","Pendiente de medición"],
@@ -213,7 +213,50 @@ function rowValues(key) {
   }));
 }
 
+const ipercScales = {
+  probabilidadIPERC:["Muy improbable","Improbable","Posible","Probable","Muy probable"],
+  consecuenciaIPERC:["Menor · primeros auxilios","Leve · sin días perdidos","Moderada · con días perdidos",
+    "Grave · discapacidad parcial","Catastrófica · muerte o discapacidad total"],
+};
+
+const ipercOptions = {
+  evento:["Caída al mismo nivel","Caída a distinto nivel","Atropello","Golpe por objeto","Atrapamiento",
+    "Contacto eléctrico","Contacto con superficie caliente","Proyección de partículas","Pérdida de contención"],
+  interaccion:["Proximidad o cruce de trayectorias","Contacto directo","Inhalación","Contacto cutáneo",
+    "Contacto ocular","Exposición a ruido","Exposición a vibraciones","Manipulación manual","Exposición por radiación"],
+  riesgo:["Contusión","Corte o herida","Esguince","Fractura","Quemadura","Intoxicación","Hipoacusia",
+    "Lesión musculoesquelética","Amputación","Muerte"],
+};
+
+function addIpercOptions(wrapper, field, key, label) {
+  const select = element("select");
+  select.setAttribute("aria-label",label+" · opciones");
+  const custom = "__nuevo_iperc__";
+  select.add(new Option("Selecciona una opción",""));
+  for (const option of ipercOptions[key]) select.add(new Option(option,option));
+  select.add(new Option("Incluir una opción nueva…",custom));
+  const open = field.value && !ipercOptions[key].includes(field.value);
+  select.value = open ? custom : field.value;
+  field.hidden = !open;
+  field.setAttribute("aria-label",label+" · valor propio");
+  field.placeholder = "Escribe una opción nueva";
+  field.addEventListener("invalid",()=>{
+    field.hidden = false;
+    select.value = custom;
+  });
+  select.addEventListener("change",event=>{
+    event.stopPropagation();
+    const entering = select.value===custom;
+    field.hidden = !entering;
+    field.value = entering ? "" : select.value;
+    if (entering) field.focus();
+    field.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  wrapper.append(select);
+}
+
 function choices(type) {
+  if (ipercScales[type]) return ipercScales[type].map((description,i)=>[String(i+1),(i+1)+" · "+description]);
   if(type==="actividadesPlan") return rowValues("m3").filter(r=>r.actividad).map(r=>[r.id,r.actividad]);
   if (type === "anexoFamilias") return annexStructure;
   if (optionLists[type]) return optionLists[type].map(name=>[name,name]);
@@ -537,6 +580,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     if (!field.multiple) field.value = value;
     if (editorKey === "m3" && key === "plan" && !value) wrapper.hidden = true;
     if (type==="month" && !value) wrapper.hidden = true;
+    if (editorKey === "m2" && ipercOptions[key]) addIpercOptions(wrapper,field,key,label);
     wrapper.append(field);
     if (key === "familia") {
       const guide=element("small",planGuides[value] || "");
