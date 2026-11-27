@@ -10,7 +10,7 @@ import { checksLabels, changedSources, modules, projectState, rubrics, technical
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-5x5";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, scheduledActivities } from "./psst-document.mjs?v=iperc-5x5";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, planTrace, scheduledActivities } from "./psst-document.mjs?v=alcance-plan-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=secuencia-1";
 
@@ -945,6 +945,34 @@ function renderPlanCoverage() {
   const view = moduleId === "m3" && document.getElementById("plan-coverage");
   if (!view?.replaceChildren) return;
   const plans = rowValues("planes");
+  const activitiesByPlan = rowValues("m3");
+  const one = integrationInputs?.m1?.data ?? {};
+  const risks = recordsOf(integrationInputs?.m2?.data?.m2?.filas);
+  const tasks = recordsOf(one.tarea?.actividades);
+  const processes = recordsOf(one.flujo?.procesos);
+  for (const card of editors.get("planes").querySelectorAll(".row-card")) {
+    const plan = plans.find(row=>row.id===card.dataset.id);
+    const {linked,general} = planTrace(plan,{risks,tasks,processes,activities:activitiesByPlan});
+    let coverage = card.querySelector("[data-process-coverage]");
+    if (!coverage) {
+      coverage = element("section");
+      coverage.dataset.processCoverage = "";
+      coverage.className = "field-help";
+      card.querySelector(".fields").after(coverage);
+    }
+    const names = [...new Set(linked.map(item=>item.process?.nombre).filter(Boolean))];
+    coverage.replaceChildren(element("h3","Procesos de trabajo que cubre este plan"));
+    coverage.append(element("p",names.length ? names.join(" · ") :
+      "Selecciona hallazgos de M2 para identificar los procesos cubiertos."));
+    const trace = element("ul");
+    for (const link of linked) {
+      const entry = [link.process?.nombre,link.task?.nombre,link.finding].filter(Boolean).join(" → ");
+      const actions = link.activities.map(row=>row.actividad).join(", ") || "Sin actividad vinculada al hallazgo";
+      trace.append(element("li",entry+" → "+actions+(link.warning ? ". "+link.warning : "")));
+    }
+    for (const activity of general) trace.append(element("li","Actividad general del plan · "+activity.actividad));
+    if (trace.children.length) coverage.append(trace);
+  }
   const activities = scheduledActivities(rowValues("m3")).filter(row=>row.responsable);
   const list = element("ul");
   for (const family of families) {

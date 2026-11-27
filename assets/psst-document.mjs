@@ -55,6 +55,26 @@ function ganttTable(scheduled, includeDetails = false) {
   return '<div class="gantt-calendar">'+calendar+'</div>'+ (details ? '<h3>Fechas y reprogramaciones</h3>'+details : "");
 }
 
+export function planTrace(plan, {risks=[], tasks=[], processes=[], activities=[]} = {}) {
+  const planActivities = activities.filter(row=>row.planRef===plan.id && hasValue(row.actividad));
+  const refs = [...new Set([...recordRefs(plan), ...planActivities.map(row=>row.riesgoRef).filter(Boolean)])];
+  const linked = refs.map(ref=>{
+    const risk = risks.find(row=>row.id===ref);
+    const task = tasks.find(row=>row.id===risk?.tareaRef);
+    const process = processes.find(row=>row.id===task?.procesoRef);
+    return {
+      process,
+      task,
+      people: risk?.exposicionResumen,
+      finding: risk ? [risk.codigo,risk.riesgo].filter(Boolean).join(" · ") : "Referencia de hallazgo por verificar",
+      warning: !risk ? "El hallazgo no está disponible en M2." : !task ? "Vincula el hallazgo a una tarea de M1 en el módulo 2." :
+        !process ? "Vincula la tarea a su proceso de trabajo en el módulo 1." : "",
+      activities: planActivities.filter(row=>row.riesgoRef===ref),
+    };
+  });
+  return {linked, general:planActivities.filter(row=>!row.riesgoRef)};
+}
+
 function planSections(plans, riskLabel, trace=()=> "") {
   return rows(plans).map(row=>"<h3>"+escape([row.codigo,row.nombre].filter(Boolean).join(" · "))+"</h3>"+facts([
     ["Familia",row.familia],["Hallazgos",riskLabel(row)],["Objetivo",row.objetivo],["Meta",row.meta],["Alcance",row.alcance],
@@ -213,17 +233,18 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Puestos y exposición","puestos"],["Medios","medios"],["Organización","organizacion"],["Evidencia","evidencia"],
   ],taskRows.map(row=>({...row,proceso:labelFor(processRows,row.procesoRef)})));
   const planSheets = planSections(planRows,row=>recordRefs(row).map(ref=>labelFor(riskRows,ref)).join(", "),plan=>{
-    const trace = activities.filter(activity=>activity.planRef===plan.id).map(activity=>{
-      const risk=matrix.find(item=>item.id===activity.riesgoRef);
-      const task=taskRows.find(item=>item.id===risk?.tareaRef);
-      const process=processRows.find(item=>item.id===task?.procesoRef);
-      const dates=schedule(activity);
-      return {...activity,process:process?.nombre || task?.etapa,people:risk?.exposicionResumen,
-        finding:[risk?.codigo,risk?.situacion || risk?.riesgo].filter(Boolean).join(" · "),
-        dates:dates ? dates.from+" a "+dates.to : "Por programar"};
-    });
-    return table([["Proceso de trabajo","process"],["Puestos y exposición","people"],["Hallazgo","finding"],
-      ["Acción","actividad"],["Responsable","responsable"],["Fechas","dates"],["Verificación de eficacia","eficacia"]],trace);
+    const coverage = planTrace(plan,{risks:matrix,tasks:taskRows,processes:processRows,activities});
+    const trace = coverage.linked.flatMap(link=>(link.activities.length ? link.activities : [{}]).map(activity=>({
+      ...activity,
+      process:link.process?.nombre || "Por vincular",
+      task:link.task ? [link.task.codigo,link.task.nombre].filter(Boolean).join(" · ") : "",
+      people:link.people, finding:link.finding,
+      dates:schedule(activity) ? schedule(activity).from+" a "+schedule(activity).to : "Por programar",
+      warning:link.warning || (!activity.actividad ? "Sin actividad vinculada a este hallazgo" : ""),
+    })));
+    const general = coverage.general.map(activity=>({...activity,finding:"Actividad general del plan"}));
+    return table([["Proceso de trabajo","process"],["Tarea","task"],["Puestos y exposición","people"],["Hallazgo","finding"],["Actividad","actividad"],
+      ["Responsable","responsable"],["Fechas","dates"],["Eficacia","eficacia"],["Vínculo por revisar","warning"]],[...trace,...general]);
   });
   const productionMap = table([["Código","codigo"],["Bien o servicio","nombre"],["Entradas","entradas"],
     ["Secuencia","secuencia"],["Salidas","salidas"],["Evidencia","evidencia"]],productionFlows);
