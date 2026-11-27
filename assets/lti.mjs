@@ -10,7 +10,7 @@ import { checksLabels, changedSources, modules, projectState, rubrics, technical
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-5x5";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, planTrace, scheduledActivities } from "./psst-document.mjs?v=alcance-plan-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, planTrace, scheduledActivities } from "./psst-document.mjs?v=participacion-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=secuencia-1";
 
@@ -111,6 +111,7 @@ const rowSchemas = {
     ["codigo","Código del plan",true], ["nombre","Nombre del plan",true],
     ["familia","Familia de plan",true,"familias"], ["riesgoRefs","Hallazgos vinculados",false,"riesgos-multiple"],
     ["detalleFamilia","Desarrollo específico de la familia"],
+    ["participacionPlan","Aportes incorporados · código, cambio en el plan y referencia de revisión"],
     ["objetivo","Objetivo",true], ["meta","Meta verificable",true], ["alcance","Alcance",true],
     ["frecuencia","Frecuencia",true], ["responsable","Personal y responsabilidades",true],
     ["procedimiento","Procedimiento de ejecución",true], ["instrumentos","Formularios e instrumentos",true],
@@ -491,7 +492,7 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
     const wrapper = element("label", label);
     const isInput = !type || ["date","verification-date","hours","headcount"].includes(type);
-    const long = ["acuerdoInicio","acuerdoEjecucion","acuerdoCierre","detalleFamilia","detalleEnfoque","observacion","consulta","devolucion","contraste","controlPropuesto","justificacionControl"].includes(key);
+    const long = ["participacionPlan","acuerdoInicio","acuerdoEjecucion","acuerdoCierre","detalleFamilia","detalleEnfoque","observacion","consulta","devolucion","contraste","controlPropuesto","justificacionControl"].includes(key);
     const field = element(long ? "textarea" : isInput ? "input" : "select");
     const value = key==="riesgoRefs" ? recordRefs(values)
       : key==="estado" && editorKey==="m3" ? (values.estado || "Pendiente")
@@ -2268,6 +2269,26 @@ async function exportProjectPackage(archived=false){
 }
 
 function setupBuilder(info){
+  for (const button of form.querySelectorAll('[data-module="'+moduleId+'"] [data-participation-format]')) {
+    button.addEventListener("click",()=>{
+      const report = document.implementation.createHTMLDocument("Hoja de participación en el PSST");
+      report.body.append(element("h1","Hoja de participación en el PSST"),
+        element("p","Registra un aporte por ficha. Vincula la observación con el dato que cambió y devuelve el resultado al grupo."));
+      const prompts = [
+        ["Contexto","Fecha, área, proceso, tarea, puesto y turno"],
+        ["Participantes y técnica","Grupo consultado y rol. Observación acompañada, conversación, recorrido, taller o revisión en CSSL"],
+        ["Hecho observado","Indica qué ocurrió, en qué condiciones y dónde se encuentra la evidencia"],
+        ["Aporte y contraste","Resume la explicación, propuesta o desacuerdo. Indica qué se confirmó y qué sigue pendiente"],
+        ["Decisión y trazabilidad","Código del aporte, referencia, decisión y fundamento. Vincula tarea, hallazgo, plan o capítulo"],
+        ["Devolución y seguimiento","A quién se devolvió, fecha y respuesta. Responsable, plazo y comprobación pendiente"],
+      ];
+      for (const [title,guide] of prompts) report.body.append(element("h2",title),element("p",guide),element("p","[Completar]"));
+      report.body.append(element("h2","Ejemplo de despacho"),
+        element("p","AP-01. Las personas del relevo reportan que los pedidos quedan junto al cruce. El recorrido E-02 confirma el punto de espera. Ajustar T-01 y R-01, e incorporar la separación de rutas en PL-01. Despacho devuelve el acuerdo en el siguiente relevo y el SSST verifica la medida."));
+      downloadBlob(wordFromReport(report.documentElement.outerHTML),"PSST_Registro_de_participacion.docx");
+    });
+  }
+
   if(!info.projectKey) return;
   const entry=document.getElementById("practice-entry");
   if(entry) entry.hidden=Boolean(practice);
