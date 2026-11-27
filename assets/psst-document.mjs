@@ -187,6 +187,10 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Situación","situacion"],["Puestos y personas expuestas","exposicionResumen"],["Controles","controles"],["Valoración","valoracion"],
     ["Evidencia","evidencia"],["Por evaluar","pendiente"],
   ],matrix);
+  const reasoning = table([["Hallazgo","codigo"],["Trabajo real","trabajoReal"],["Interacción","interaccion"],
+    ["Evento","evento"],["Método","metodoHallazgo"],["Estado residual","estadoResidual"],
+    ["Valoración residual","valoracionResidual"],["Evidencia de eficacia","evidenciaResidual"]],
+    matrix.filter(row=>[row.trabajoReal,row.interaccion,row.evento,row.metodoHallazgo,row.estadoResidual,row.valoracionResidual,row.evidenciaResidual].some(hasValue)));
   const exposureDetail=table([["Hallazgo","hallazgo"],["Tarea","tarea"],["Puesto","puesto"],["Área o zona","area"],["Turno","turno"],
     ["Personal","grupo"],["Personas expuestas","cantidadVisible"],["Frecuencia","frecuencia"],["Duración","duracion"],["Fuente del conteo","fuente"]],exposureRows(two,taskRows));
   const unassignedActivities = table([
@@ -259,7 +263,7 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     0: objectives,
     2: process + diagramSections(one) + (productionMap ? "<h3>Descripción del proceso productivo</h3>"+productionMap : "") + (inventory ? "<h3>Inventario de procesos de trabajo</h3>"+inventory+elements : "") +
       (tasks ? "<h3>Etapas y tareas</h3>"+tasks : "") + (observationTable ? "<h3>Observaciones y consultas</h3>"+observationTable : "") +
-      (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
+      (verification ? "<h3>Estado de las evaluaciones por tarea</h3>"+verification : "") + (risks ? "<h3>Matriz inicial de riesgos</h3>"+risks : "") + (reasoning ? "<h3>Razonamiento IPERC y riesgo residual</h3>"+reasoning : "") + (exposureDetail ? "<h3>Exposición por puesto, área y turno</h3>"+exposureDetail : "") + (evaluationTable ? "<h3>Medidas y verificaciones pendientes</h3>"+evaluationTable : "") +
       facts([["Matriz anterior o referencia",two.matriz],["Evaluaciones pendientes",two.pendientes],["Evidencia de campo",two.evidencia]]),
     3: (investment ? "<h3>Plan anual de inversión 2027</h3>"+budgetSummary+investment : "") + (planSheets ? "<h3>Fichas de los planes</h3>"+planSheets : "") + (unassignedActivities ? "<h3>Actividades sin ficha de plan vinculada</h3>"+unassignedActivities : "") +
       (evaluationCriteria ? "<h3>Enfoques y evidencias de las actividades</h3>"+evaluationCriteria : "") +
