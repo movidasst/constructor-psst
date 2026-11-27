@@ -110,15 +110,43 @@ ${hasValue(legacyReference) ? "<h2>Referencia al cronograma anterior</h2>"+note(
 </body></html>`;
 }
 
+export function organizationDiagram(records) {
+  const nodes = organizationTree(records);
+  if (!nodes.length) return "";
+  const branches = new Map();
+  for (const node of nodes) {
+    const parent = node.cycle ? undefined : node.parent?.id;
+    if (!branches.has(parent)) branches.set(parent, []);
+    branches.get(parent).push(node);
+  }
+  const boxes = [], lines = [];
+  let column = 0, depth = 0;
+  function place(node, level) {
+    const y = 20 + level * 110;
+    depth = Math.max(depth, level);
+    const children = (branches.get(node.id) ?? []).map(child => place(child, level + 1));
+    const x = children.length ? (children[0] + children.at(-1)) / 2 : 120 + 240 * column++;
+    for (const child of children) lines.push(`<path d="M ${x} ${y+72} V ${y+91} H ${child} V ${y+110}"/>`);
+    const label = String(node.nombre).match(/.{1,24}(?:\s|$)|.{1,24}/gu) ?? [];
+    const visible = label.slice(0, 3);
+    if (label.length > 3) visible[2] = visible[2].trimEnd() + "…";
+    boxes.push(`<g><title>${escape(node.nombre)}</title><rect x="${x-106}" y="${y}" width="212" height="72" rx="9" fill="${level ? "#edf8f7" : "#00205b"}" stroke="#007b85"/><text x="${x}" y="${y+32-(visible.length-1)*8}" text-anchor="middle" fill="${level ? "#00205b" : "#ffffff"}">${visible.map((part,i)=>`<tspan x="${x}" dy="${i ? 16 : 0}">${escape(part.trim())}</tspan>`).join("")}</text>${node.orphan || node.cycle ? `<text x="${x}" y="${y+65}" text-anchor="middle" fill="${level ? "#9c2623" : "#ffdb6e"}" font-size="12">Revisar relación de reporte</text>` : ""}</g>`);
+    return x;
+  }
+  for (const root of branches.get(undefined) ?? []) place(root, 0);
+  const width = 240 * column, height = 110 * depth + 110;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Organigrama del centro" font-family="Arial,sans-serif" font-size="14"><g stroke="#007b85" stroke-width="2" fill="none">${lines.join("")}</g>${boxes.join("")}</svg>`;
+}
+
 function diagramSections(data,kind){
-  const organization=organizationTree(data.alcance?.estructura);
-  const org=kind!=="flow"&&table([["Nivel","nivel"],["Cargo o área","nombre"],["Reporta a","jefatura"],["Función o coordinación","observacion"]],
-    organization.map(row=>({...row,nivel:row.cycle||row.orphan?"Por verificar":row.level+1,jefatura:row.parent?.nombre??""})));
+  const org = kind !== "flow" && organizationDiagram(data.alcance?.estructura);
+  const chart = org ? org.replace("<svg ", '<svg style="max-width:100%;height:auto" ') +
+    "<p>Organigrama gráfico disponible como anexo SVG desde el módulo 1.</p>" : "";
   const flows=kind!=="org"?orderedFlows(data).filter(flow=>flow.stages.length).map(flow=>"<h3>"+escape(flow.nombre)+"</h3>"+
     table([["Orden","orden"],["Etapa","nombre"],["Área","area"],["Entrada","entradas"],["Salida","salidas"],["Desvío o devolución","excepcion"]],
       flow.stages.map((row,i)=>({...row,orden:i+1})))).join(""):"";
   const fallback=kind!=="flow"&&!org ? note(data.alcance?.organigrama) : "";
-  return (org||fallback?"<h3>Organigrama del centro</h3>"+(org||fallback):"")+
+  return (org||fallback?"<h3>Organigrama del centro</h3>"+(chart||fallback):"")+
     (flows?"<h3>Mapa de etapas del proceso productivo</h3>"+flows:"");
 }
 
