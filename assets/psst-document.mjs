@@ -79,7 +79,7 @@ function planSections(plans, riskLabel, trace=()=> "") {
   return rows(plans).map(row=>"<h3>"+escape([row.codigo,row.nombre].filter(Boolean).join(" · "))+"</h3>"+facts([
     ["Familia",row.familia],["Hallazgos",riskLabel(row)],["Objetivo",row.objetivo],["Meta",row.meta],["Alcance",row.alcance],
     ["Frecuencia",row.frecuencia],["Responsables",row.responsable],["Procedimiento",row.procedimiento],
-    ["Instrumentos",row.instrumentos],["Recursos",row.recursos],["Seguimiento",row.seguimiento],["Contenido específico",row.detalleFamilia],
+    ["Instrumentos",row.instrumentos],["Recursos",row.recursos],["Seguimiento",row.seguimiento],["Contenido específico",row.detalleFamilia],["Aportes incorporados y revisión",row.participacionPlan],
   ])+facts(surveillanceFields(row.familia).map(({key,label})=>[
     label,planReviewNotes(row.revisionArt18)["vigilancia/"+row.familia]?.[key]
   ]))+trace(row)).join("");
