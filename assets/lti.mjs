@@ -7,10 +7,10 @@ import { executionStats, followupLabels, nextCode, operationalSchedule, orderedF
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
 import { tutorials, glossary } from "./psst-tutorial.mjs?v=secuencia-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
-import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-2";
+import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=iperc-5x5";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, scheduledActivities } from "./psst-document.mjs?v=iperc-2";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, scheduledActivities } from "./psst-document.mjs?v=iperc-5x5";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=secuencia-1";
 
@@ -124,25 +124,27 @@ const rowSchemas = {
     ["fuente","Fuente del conteo o cómo se confirmará",true],
   ]},
   m2: { group:"m2", key:"filas", singular:"Hallazgo IPERC", fields:[
-    ["codigo","Código del hallazgo",true], ["tareaRef","Tarea registrada en M1",false,"tareas"],
-    ["etapa","Etapa o tarea",true], ["situacion","Situación de trabajo",false,"situacionesTrabajo"],
-    ["trabajoReal","Trabajo previsto y variaciones observadas"],
-    ["peligro","Fuente o condición con capacidad de causar daño",true], ["proceso","Proceso peligroso asociado"],
-    ["expuestos","Nota sobre personas expuestas o registro anterior"],
-    ["interaccion","Vía de exposición, patrón y magnitud cuando aplique"],
-    ["evento","Evento posible · qué podría ocurrir"],
-    ["riesgo","Consecuencia posible · qué daño podría causar",true],
-    ["controles","Controles existentes y evidencia de su funcionamiento"],
+    ["codigo","Código del hallazgo",true], ["procesoTrabajo","1 · Proceso de trabajo"],
+    ["tareaRef","2 · Tarea registrada en M1",false,"tareas"], ["etapa","Nombre de la tarea",true],
+    ["situacion","Situación de trabajo",false,"situacionesTrabajo"], ["trabajoReal","Variaciones del trabajo real"],
+    ["elementoProceso","3 · Elemento del proceso de trabajo",false,"elementosIPERC"],
+    ["proceso","4 · Proceso peligroso"], ["peligro","5 · Peligro",true],
+    ["evento","6 · Evento posible"], ["expuestos","7 · Personas expuestas"],
+    ["interaccion","Exposición · vía, frecuencia, duración y magnitud"],
+    ["riesgo","Consecuencia posible · daño",true],
+    ["probabilidad","8 · Probabilidad inicial (1 a 5)",false,"escalaIPERC"], ["consecuencia","Consecuencia inicial (1 a 5)",false,"escalaIPERC"],
     ["metodoHallazgo","Método, versión y escala para este hallazgo"],
     ["valoracion","Valoración inicial · factores, fundamento y resultado"],
     ["prioridad","Prioridad de actuación",false,"prioridades"],
     ["evidencia","Referencia de la evidencia"], ["pendiente","Dato o medición que falta"],
     ["estadoEvaluacion","Estado de la evaluación",false,"evaluaciones"], ["responsableEvaluacion","Responsable de verificar"],
     ["fechaEvaluacion","Fecha prevista de verificación",false,"verification-date"],
-    ["controlPropuesto","Medida propuesta y nivel en la jerarquía"], ["justificacionControl","Qué variable cambia y por qué"],
+    ["controles","9 · Factor de protección existente y evidencia"],
+    ["controlPropuesto","Factor de protección adicional y nivel en la jerarquía"], ["justificacionControl","Qué variable cambia y por qué"],
     ["criterioEficacia","¿Qué resultado demostrará que la medida funciona?"],
-    ["estadoResidual","Estado del riesgo residual",false,"estadosResiduales"],
-    ["valoracionResidual","Valoración residual · factores y resultado con el mismo método"],
+    ["estadoResidual","10 · Estado del riesgo residual",false,"estadosResiduales"],
+    ["probabilidadResidual","Probabilidad residual (1 a 5)",false,"escalaIPERC"], ["consecuenciaResidual","Consecuencia residual (1 a 5)",false,"escalaIPERC"],
+    ["valoracionResidual","Fundamento de la valoración residual"],
     ["evidenciaResidual","Evidencia de eficacia · registro, fecha y resultado observado"],
   ] },
   m3: { group:"m3", key:"filas", singular: "Actividad", fields: [
@@ -184,6 +186,8 @@ function element(tag, content) {
 const families = Object.keys(planGuides);
 const optionLists = {
   familias:families, estados:statuses, prioridades:["Inmediata","Programada","Por determinar"],
+  escalaIPERC:["1","2","3","4","5"],
+  elementosIPERC:["Objeto o sujeto","Medios","Actividad","Organización del trabajo","División del trabajo"],
   estadosResiduales:["Pendiente","Previsto","Verificado"],
   enfoques:Object.keys(approaches), evaluaciones:["En evaluación","Valorada","Pendiente de medición"],
   resultadoEficacia:followupLabels,
@@ -485,15 +489,6 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
   const fields = element("div");
   fields.className = "fields";
   for (const [key, label, required, type] of rowSchemas[editorKey].fields) {
-    if (editorKey === "m2") {
-      const heading = {codigo:"1 · Actividad y trabajo real",peligro:"2 · Peligro",expuestos:"3 · Exposición",
-        evento:"4 · Evento",riesgo:"5 · Consecuencia",controles:"6 · Valoración inicial",controlPropuesto:"7 · Control y riesgo residual"}[key];
-      if (heading) {
-        const title = element("h3",heading);
-        title.className = "wide";
-        fields.append(title);
-      }
-    }
     const wrapper = element("label", label);
     const isInput = !type || ["date","verification-date","hours","headcount"].includes(type);
     const long = ["acuerdoInicio","acuerdoEjecucion","acuerdoCierre","detalleFamilia","detalleEnfoque","observacion","consulta","devolucion","contraste","controlPropuesto","justificacionControl"].includes(key);
@@ -567,7 +562,23 @@ function appendRow(editorKey, editor, values = {}, focus = false) {
     rowChanged();
   });
   row.append(element("legend"));
-  if (editorKey === "m2") row.append(document.getElementById("iperc-guide").content.cloneNode(true));
+  if (editorKey === "m2") {
+    row.append(document.getElementById("iperc-guide").content.cloneNode(true));
+    const result = element("p");
+    result.setAttribute("aria-live","polite");
+    const score = (p,c) => {
+      const pValue = fields.querySelector('[data-key="'+p+'"]').value;
+      const cValue = fields.querySelector('[data-key="'+c+'"]').value;
+      return pValue && cValue ? Number(pValue)*Number(cValue) : "Pendiente";
+    };
+    const updateScores = () => {
+      result.textContent = "Nivel inicial (P × C): "+score("probabilidad","consecuencia")+
+        " · Residual (P × C): "+score("probabilidadResidual","consecuenciaResidual");
+    };
+    fields.addEventListener("change",updateScores);
+    updateScores();
+    row.append(result);
+  }
   row.append(fields);
   if (editorKey === "contratistas") {
     row.append(actionButton("Descargar esta ficha en Word",()=>{
