@@ -10,7 +10,7 @@ import { checksLabels, changedSources, modules, projectState, rubrics, technical
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=gantt-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
-import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, scheduledActivities } from "./psst-document.mjs?v=gantt-1";
+import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, organizationDiagram, scheduledActivities } from "./psst-document.mjs?v=org-grafico-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
 import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=secuencia-1";
 
@@ -2110,28 +2110,10 @@ function setupOrganizationImport() {
 function renderDiagrams() {
   const org = document.getElementById("organization-view");
   if (!editors.has("estructura") || !org) return;
-  const structure = organizationTree(rowValues("estructura"));
-  const branches = new Map();
-  for (const row of structure) {
-    const parent = row.cycle ? undefined : row.parent?.id;
-    if (!branches.has(parent)) branches.set(parent, []);
-    branches.get(parent).push(row);
-  }
-  function branch(parent) {
-    const list = element("ul");
-    for (const row of branches.get(parent) ?? []) {
-      const item = element("li");
-      item.append(element("span", row.nombre));
-      if (row.orphan || row.cycle) item.append(element("small", "Revisa a quién reporta."));
-      if (branches.has(row.id)) item.append(branch(row.id));
-      list.append(item);
-    }
-    return list;
-  }
-  const tree = branch(undefined);
-  tree.className = "org-tree";
-  org.replaceChildren(structure.length ? tree : element("p","El organigrama aparecerá aquí al escribir el primer cargo."));
-  document.getElementById("download-org").hidden = structure.length === 0;
+  const chart = organizationDiagram(rowValues("estructura"));
+  org.style.overflowX = "auto";
+  org.innerHTML = chart || "<p>El organigrama aparecerá aquí al escribir el primer cargo.</p>";
+  document.getElementById("download-org").hidden = !chart;
   const flow = document.getElementById("flow-view");
   const processes = orderedFlows({flujo:{productivos:rowValues("productivos"),etapasMapa:rowValues("mapa")}});
   flow.replaceChildren();
@@ -2244,7 +2226,11 @@ function setupBuilder(info){
   }
   if(moduleId==="m1"){
     setupOrganizationImport();
-    for(const [id,name,kind] of [["download-org","Organigrama","org"],["download-flow","Mapa_productivo","flow"]]){
+    document.getElementById("download-org").addEventListener("click",()=>{
+      const svg = organizationDiagram(rowValues("estructura"));
+      if (svg) downloadBlob(new Blob([svg],{type:"image/svg+xml"}),"Organigrama.svg");
+    });
+    for(const [id,name,kind] of [["download-flow","Mapa_productivo","flow"]]){
       document.getElementById(id)?.addEventListener("click",()=>{
         downloadBlob(wordFromReport(buildDiagramDocument({label:info.label,inputs:{m1:{data:collectDraft()}}},kind)),name+".docx");
       });
