@@ -5,14 +5,14 @@ import { exposureRows } from "./psst-exposure.mjs?v=exposicion-1";
 import { pdfFromReport } from "./psst-pdf.mjs?v=documento-2";
 import { executionStats, followupLabels, nextCode, operationalSchedule, orderedFlows, organizationImport, organizationTree, practiceStore, recordsOf, statusLabels, technicalChecks } from "./psst-builder.mjs?v=organigrama-1";
 import { fieldHelp } from "./psst-field-help.mjs?v=organigrama-1";
-import { tutorials, glossary } from "./psst-tutorial.mjs?v=elementos-1";
+import { tutorials, glossary } from "./psst-tutorial.mjs?v=secuencia-1";
 import { checksLabels, changedSources, modules, projectState, rubrics, technicalPrompts, workTrace } from "./psst-project.mjs?v=organigrama-1";
 import { excelGantt, workbookForPSST, zipDocuments, wordFromReport } from "./psst-office.mjs?v=gantt-1";
 import { approaches, chapterTemplates, coherenceIssues, familyTemplates, outline, sources, trainingHours, annualTraining, planReviewNotes, surveillanceFields, planExamples } from "./psst-coach.mjs?v=planes-guiados-1";
 import { draftReadiness, planGuides, projectFields, recordRefs, schedule, statuses } from "./psst-program.mjs?v=sve-1";
 import { buildDiagramDocument, buildGanttDocument, buildPsstDocument, contractorSheet, scheduledActivities } from "./psst-document.mjs?v=gantt-1";
 import { reviewGroups } from "./psst-review.mjs?v=linked-1";
-import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=capitulos-1";
+import { annexStructure, chapterKey, chapterStructure } from "./psst-chapters.mjs?v=secuencia-1";
 
 const apiRoot = "https://edeydaueyxilutczhazm.supabase.co/functions/v1/psst-lti/";
 const status = document.getElementById("status");
@@ -1154,6 +1154,7 @@ function setupChapterFields() {
     for (const [key,title,guide] of definition[1]) {
       const label = element("label",title);
       label.className = "wide";
+      label.hidden = moduleId === "m1" && ["objetivo_general","objetivos_especificos"].includes(key);
       const control = element("textarea");
       const fullKey = chapterKey(number,key);
       control.name = prefix + (moduleId === "m1" ? key : fullKey);
