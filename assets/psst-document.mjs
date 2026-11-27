@@ -187,10 +187,10 @@ export function buildPsstDocument({ label, inputs = {}, draft = {}, version, sub
     ["Situación","situacion"],["Puestos y personas expuestas","exposicionResumen"],["Controles","controles"],["Valoración","valoracion"],
     ["Evidencia","evidencia"],["Por evaluar","pendiente"],
   ],matrix);
-  const reasoning = table([["Hallazgo","codigo"],["Trabajo real","trabajoReal"],["Interacción","interaccion"],
+  const reasoning = table([["Hallazgo","codigo"],["Proceso de trabajo","procesoTrabajo"],["Elemento","elementoProceso"],["P × C inicial","inicial5x5"],["P × C residual","residual5x5"],["Trabajo real","trabajoReal"],["Interacción","interaccion"],
     ["Evento","evento"],["Método","metodoHallazgo"],["Estado residual","estadoResidual"],
     ["Valoración residual","valoracionResidual"],["Evidencia de eficacia","evidenciaResidual"]],
-    matrix.filter(row=>[row.trabajoReal,row.interaccion,row.evento,row.metodoHallazgo,row.estadoResidual,row.valoracionResidual,row.evidenciaResidual].some(hasValue)));
+    matrix.map(row=>({...row,inicial5x5:row.probabilidad && row.consecuencia ? row.probabilidad+" × "+row.consecuencia+" = "+Number(row.probabilidad)*Number(row.consecuencia) : "",residual5x5:row.probabilidadResidual && row.consecuenciaResidual ? row.probabilidadResidual+" × "+row.consecuenciaResidual+" = "+Number(row.probabilidadResidual)*Number(row.consecuenciaResidual) : ""})).filter(row=>[row.procesoTrabajo,row.elementoProceso,row.inicial5x5,row.residual5x5,row.trabajoReal,row.interaccion,row.evento,row.metodoHallazgo,row.estadoResidual,row.valoracionResidual,row.evidenciaResidual].some(hasValue)));
   const exposureDetail=table([["Hallazgo","hallazgo"],["Tarea","tarea"],["Puesto","puesto"],["Área o zona","area"],["Turno","turno"],
     ["Personal","grupo"],["Personas expuestas","cantidadVisible"],["Frecuencia","frecuencia"],["Duración","duracion"],["Fuente del conteo","fuente"]],exposureRows(two,taskRows));
   const unassignedActivities = table([
