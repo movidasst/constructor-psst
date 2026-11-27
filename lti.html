@@ -8,7 +8,7 @@
   <title>Constructor de PSST</title>
   <link rel="stylesheet" href="assets/vendor/frappe-gantt/frappe-gantt.css">
   <link rel="stylesheet" href="assets/lti.css?v=gantt-1">
-  <script src="assets/lti.mjs?v=gantt-1" type="module"></script>
+  <script src="assets/lti.mjs?v=secuencia-1" type="module"></script>
 </head>
 <body>
   <div class="shell">
@@ -103,7 +103,7 @@
         </fieldset>
         <fieldset id="m1-generalidades" class="card" data-module="m1">
           <legend>Redacta las generalidades</legend>
-          <p>Usa la información de la entidad y del centro. Completa estos apartados aquí y pasarán al capítulo I del borrador.</p>
+          <p>Usa la información de la entidad y del centro. Completa los datos del centro. En el módulo 4 redactarás la política y los objetivos del PSST con base en el IPERC y los planes.</p>
           <div data-chapter="1"></div>
         </fieldset>
         <fieldset id="m1-inventario" class="card" data-module="m1">
@@ -394,26 +394,15 @@
           <label>Introducción del PSST<textarea name="m4.introduccion" maxlength="2000" placeholder="Presenta el centro de trabajo, la finalidad del PSST, cómo se elaboró y las fuentes que integra."></textarea></label>
         </fieldset>
         <fieldset class="card" data-module="m4" hidden disabled>
-          <legend>Capítulos I a III</legend>
+          <legend>Capítulo III · Diagnóstico</legend>
           <div class="step-help">
-            <p><strong>Qué hacer.</strong> Redacta generalidades, política y descripción de procesos, o remite a una sección identificable.</p>
-            <p><strong>Por qué importa.</strong> Estos capítulos explican dónde aplica el programa, quién responde por él y de qué diagnóstico parte.</p>
+            <p><strong>Qué hacer.</strong> Revisa los procesos y las tareas de M1 y las prioridades de la matriz IPERC de M2.</p>
+            <p><strong>Por qué importa.</strong> El diagnóstico sustenta las medidas y los planes que revisarás en el paso siguiente.</p>
             <details><summary>Ejemplo y referencia</summary>
               <p>En el capítulo III vincula P-01, T-02 y R-01 con el organigrama, los diagramas y las evidencias.</p><p class="reference">Guía de Elaboración e instrumento, capítulos I a III.</p>
             </details>
           </div>
           <div class="chapter-grid">
-            <details class="module-details">
-              <summary>Capítulo I · Revisa las generalidades de M1</summary>
-              <div data-chapter="1"></div>
-              <div class="row-editor" data-editor="objetivos"><div data-rows></div><button type="button" data-add>Agregar objetivo específico</button></div>
-              <label>Notas generales o referencia adicional<textarea name="m4.cap1" maxlength="1500"></textarea></label>
-            </details>
-            <details class="module-details" open>
-              <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
-              <div data-chapter="2"></div>
-              <label>Notas generales o referencia adicional<textarea name="m4.cap2" maxlength="1500"></textarea></label>
-            </details>
             <details class="module-details">
               <summary>Capítulo III · Revisa el diagnóstico de M1 y M2</summary>
               <div data-chapter="3"></div>
@@ -492,6 +481,19 @@
               <label>Notas generales o referencia adicional<textarea name="m4.cap8" maxlength="1500"></textarea></label>
             </details>
 
+            <h3>Redacta la política y los objetivos del PSST</h3>
+            <p>Después de revisar el diagnóstico y los planes, usa sus prioridades, medidas y recursos para formular los compromisos y resultados del programa. La política y los objetivos se imprimirán al inicio del documento.</p>
+            <details class="module-details">
+              <summary>Capítulo I · Objetivos del PSST y generalidades</summary>
+              <div data-chapter="1"></div>
+              <div class="row-editor" data-editor="objetivos"><div data-rows></div><button type="button" data-add>Agregar objetivo específico</button></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap1" maxlength="1500"></textarea></label>
+            </details>
+            <details class="module-details">
+              <summary>Capítulo 2 · Política de Seguridad y Salud en el Trabajo</summary>
+              <div data-chapter="2"></div>
+              <label>Notas generales o referencia adicional<textarea name="m4.cap2" maxlength="1500"></textarea></label>
+            </details>
           </div>
         </fieldset>
         <fieldset class="card" data-module="m4" hidden disabled>

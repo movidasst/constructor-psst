@@ -95,7 +95,7 @@ export const tutorials = {
     title:"Integra el borrador del PSST",
     chapters:"Construye los capítulos II y V a VIII, la introducción y los anexos. Integra I y III desde M1 y M2, y IV desde M3.",
     first:"Revisa qué versiones de M1, M2 y M3 están disponibles y escribe la introducción.",
-    destinations:["Introducción · Fuentes del borrador", "Capítulos I a III · Generalidades, política y diagnóstico", "Capítulos IV a VI · Planes, investigación y compromiso", "Capítulos VII y VIII · Contratación y evaluación", "Capítulos I a VIII · Pendientes de revisión", "Capítulos I a VIII y anexos · Cotejo con los instrumentos"],
+    destinations:["Introducción · Fuentes del borrador", "Capítulo III · Diagnóstico", "Capítulos IV a VI · Planes, investigación y compromiso", "Capítulos VII y VIII · Evaluación, política y objetivos", "Capítulos I a VIII · Pendientes de revisión", "Capítulos I a VIII y anexos · Cotejo con los instrumentos"],
     result:"Un primer borrador del PSST que integra el diagnóstico, los planes, el cronograma y el registro de lo que falta validar.",
     supplies:"Verifica qué entregas de M1, M2 y M3 están disponibles. Ten a mano las referencias a tus evidencias y documentos internos.",
     next:"La entrega queda disponible para revisión técnica. Conserva la copia descargada y vuelve al módulo para consultar la devolución.",
@@ -104,17 +104,18 @@ export const tutorials = {
         "Revisa Fuentes y documento de trabajo. Identifica qué versión se está usando de M1, M2 y M3.",
         "Si falta una fuente importante, vuelve al módulo de origen para completarla. Escribe una introducción breve que indique dónde y cómo se preparó el borrador.",
       ],"El borrador de Centro Norte usa el levantamiento de despacho, la matriz con el hallazgo R-01 y el plan PL-01. Falta comprobar el turno de relevo.","Sabes qué fuentes respaldan el borrador y qué información aún debes validar."],
-      ["Redacta la política y revisa los capítulos I y III",[
-        "Empieza por el Capítulo II. Redacta la política a partir de las prioridades del centro o identifica su versión vigente. Registra consulta, suscripción, difusión y revisión.",
-        "Revisa los capítulos I y III. El borrador incorpora las generalidades de M1 y el diagnóstico de M1 y M2. Completa solo los apartados que necesiten ajustes o información adicional.",
-      ],"En el capítulo III, describe el proceso productivo F-01, ubica P-01 y T-01 y vincula R-01 con el croquis E-01.","Los capítulos dejan claro a quién aplica el PSST, qué política lo orienta y cómo se preparó el diagnóstico."],
+      ["Contrasta el diagnóstico del capítulo III",[
+        "Comprueba que los peligros, niveles de riesgo y prioridades del IPERC se relacionen con las tareas de origen.",
+        "Revisa la descripción del trabajo de M1 y el diagnóstico de M2 antes de revisar los planes de M3.",
+      ],"En el capítulo III, describe el proceso productivo F-01, ubica P-01 y T-01 y vincula R-01 con el croquis E-01.","La matriz deja identificadas las prioridades que sustentan los planes."],
       ["Prepara la investigación y la carta compromiso",[
         "Comprueba las fichas, la inversión y la Gantt que incorpora el capítulo IV desde M3. Completa solo lo que necesite explicación.",
         "En el capítulo V indica cómo se investigarán accidentes y enfermedades y dónde estarán los formatos. En el capítulo VI prepara o referencia la carta compromiso y registra su estado.",
       ],"R-01 queda vinculado a PL-01 y a su actividad de febrero. La carta compromiso permanece en borrador hasta la revisión y suscripción correspondientes.","Los planes y sus fechas pueden localizarse y queda documentado el estado de los procedimientos y la carta."],
-      ["Redacta los capítulos VII y VIII",[
+      ["Revisa los capítulos VII y VIII y redacta la política y los objetivos",[
         "Describe cómo se coordina el trabajo con contratistas cuando intervienen. Si una situación no aplica, explica el motivo.",
         "Registra cómo se evaluarán los planes. Para cada indicador, indica qué se mide, quién revisa el resultado y con qué frecuencia.",
+        "Con el IPERC y los planes revisados, redacta la política del capítulo II y los objetivos del programa en el capítulo I. Sustenta los compromisos en los riesgos prioritarios y vincula los objetivos con planes e indicadores.",
       ],"Indicador propuesto: porcentaje de cruces inspeccionados según el cronograma. Fuente: listas de inspección; revisión mensual a cargo del SSST.","Queda claro cómo se coordina el trabajo de terceros cuando corresponda y cómo se medirá el avance."],
       ["Registra las brechas de revisión",[
         "Revisa el borrador y pulsa Agregar brecha si falta información, evidencia, revisión o validación. Especifica capítulo, acción, responsable y plazo.",

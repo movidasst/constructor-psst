@@ -1,15 +1,15 @@
 export const chapterStructure = [
   ["Generalidades", [
     ["entidad","Entidad y centro de trabajo","Indica razón social, RIF, NIL, centro, dirección y actividad. La ficha de M1 aporta datos si dejas este campo vacío."],
-    ["objetivo_general","Objetivo general","Define qué busca lograr el programa, a qué población beneficia y dónde se aplicará."],
-    ["objetivos_especificos","Objetivos específicos","Escribe resultados concretos que ayuden a lograr el objetivo general."],
+    ["objetivo_general","Objetivo general","Con la matriz IPERC y los planes revisados, define qué resultado busca el PSST, para quién y en qué centro."],
+    ["objetivos_especificos","Objetivos específicos","Formula resultados del programa y vincúlalos con los planes e indicadores que permiten comprobarlos."],
     ["alcance","Alcance y aplicación","Indica centros, áreas, turnos, población propia y de terceros, límites y quién aplica el programa."],
     ["basamento","Basamento legal","Identifica la ley, el reglamento, la norma técnica y las disposiciones propias de sus actividades."],
     ["responsabilidades","Responsabilidades y corresponsabilidades","Registra los roles del empleador, el SSST, el CSSL, los delegados y los trabajadores."],
     ["definiciones","Definiciones","Incluye un glosario breve con los términos que usa el programa."],
   ]],
   ["Política de Seguridad y Salud en el Trabajo", [
-    ["politica","Política o referencia a la versión vigente","Transcribe el borrador o identifica el documento y su versión. Incluye los compromisos preventivos y de participación."],
+    ["politica","Política o referencia a la versión vigente","Transcribe el borrador o identifica el documento y su versión. Contrasta la política con los riesgos prioritarios y los planes. Incluye los compromisos preventivos y de participación."],
     ["principios","Principios y compromisos","Indica cómo se aplicarán la prevención, la participación y la corresponsabilidad en este centro."],
     ["suscripcion","Suscripción y vigencia","Registra fecha, responsables y estado de firma o endoso. Si está en preparación, déjalo indicado."],
     ["difusion","Difusión y revisión","Explica cómo conocerán la política los trabajadores, quién coordina su revisión y con qué frecuencia."],
